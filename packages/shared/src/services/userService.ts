@@ -157,7 +157,7 @@ export class UserService {
     const q = query(
       collection(this.db, COLLECTIONS.USERS),
       where('role', '==', 'deliverer'),
-      where('delivererInfo.isAvailable', '==', true)
+      where('status', '==', 'active')
     );
 
     const querySnapshot = await getDocs(q);
@@ -165,86 +165,15 @@ export class UserService {
   }
 
   /**
-   * Update deliverer availability
+   * Update user status
    */
-  async updateDelivererAvailability(
-    delivererId: string,
-    isAvailable: boolean
+  async updateUserStatus(
+    userId: string,
+    status: 'active' | 'suspended' | 'deleted'
   ): Promise<void> {
-    const docRef = doc(this.db, COLLECTIONS.USERS, delivererId);
-    await updateDoc(docRef, {
-      'delivererInfo.isAvailable': isAvailable,
-      updatedAt: Timestamp.now(),
-    });
-  }
-
-  /**
-   * Update deliverer location
-   */
-  async updateDelivererLocation(
-    delivererId: string,
-    latitude: number,
-    longitude: number
-  ): Promise<void> {
-    const docRef = doc(this.db, COLLECTIONS.USERS, delivererId);
-    await updateDoc(docRef, {
-      'delivererInfo.currentLocation': {
-        latitude,
-        longitude,
-        accuracy: 10,
-        timestamp: Timestamp.now(),
-      },
-      updatedAt: Timestamp.now(),
-    });
-  }
-
-  /**
-   * Increment deliverer stats
-   */
-  async incrementDelivererStats(
-    delivererId: string,
-    newRating?: number
-  ): Promise<void> {
-    const user = await this.getUserById(delivererId);
-    if (!user || !user.delivererInfo) {
-      throw new Error('Deliverer not found');
-    }
-
-    const deliveryCount = user.delivererInfo.deliveryCount + 1;
-    let rating = user.delivererInfo.rating;
-
-    if (newRating) {
-      // Calculate new average rating
-      const totalRating = user.delivererInfo.rating * user.delivererInfo.deliveryCount;
-      rating = (totalRating + newRating) / deliveryCount;
-    }
-
-    const docRef = doc(this.db, COLLECTIONS.USERS, delivererId);
-    await updateDoc(docRef, {
-      'delivererInfo.deliveryCount': deliveryCount,
-      'delivererInfo.rating': rating,
-      updatedAt: Timestamp.now(),
-    });
-  }
-
-  /**
-   * Verify user email
-   */
-  async verifyEmail(userId: string): Promise<void> {
     const docRef = doc(this.db, COLLECTIONS.USERS, userId);
     await updateDoc(docRef, {
-      isEmailVerified: true,
-      updatedAt: Timestamp.now(),
-    });
-  }
-
-  /**
-   * Verify user phone
-   */
-  async verifyPhone(userId: string): Promise<void> {
-    const docRef = doc(this.db, COLLECTIONS.USERS, userId);
-    await updateDoc(docRef, {
-      isPhoneVerified: true,
+      status,
       updatedAt: Timestamp.now(),
     });
   }
@@ -255,7 +184,7 @@ export class UserService {
   async updateProfileImage(userId: string, imageUrl: string): Promise<void> {
     const docRef = doc(this.db, COLLECTIONS.USERS, userId);
     await updateDoc(docRef, {
-      profileImage: imageUrl,
+      photoURL: imageUrl,
       updatedAt: Timestamp.now(),
     });
   }

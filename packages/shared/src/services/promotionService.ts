@@ -104,7 +104,7 @@ export class PromotionService {
       return { valid: false, error: 'Code promo expiré' };
     }
 
-    if (promotion.usageCount >= promotion.usageLimit) {
+    if (promotion.maxTotalUses && promotion.currentUses >= promotion.maxTotalUses) {
       return { valid: false, error: 'Code promo épuisé' };
     }
 
@@ -122,15 +122,6 @@ export class PromotionService {
       };
     }
 
-    if (
-      promotion.minLoyaltyPoints &&
-      (userLoyaltyPoints || 0) < promotion.minLoyaltyPoints
-    ) {
-      return {
-        valid: false,
-        error: `Nécessite ${promotion.minLoyaltyPoints} points de fidélité`,
-      };
-    }
 
     // Calculate discount
     let discountAmount = 0;
@@ -161,7 +152,7 @@ export class PromotionService {
 
     const docRef = doc(this.db, COLLECTIONS.PROMOTIONS, promotionId);
     await updateDoc(docRef, {
-      usageCount: promotion.usageCount + 1,
+      currentUses: promotion.currentUses + 1,
       updatedAt: Timestamp.now(),
     });
   }
@@ -170,12 +161,12 @@ export class PromotionService {
    * Create new promotion (Admin only)
    */
   async createPromotion(
-    promotion: Omit<Promotion, 'id' | 'usageCount' | 'createdAt' | 'updatedAt'>
+    promotion: Omit<Promotion, 'id' | 'currentUses' | 'createdAt' | 'updatedAt'>
   ): Promise<string> {
     const docRef = await addDoc(collection(this.db, COLLECTIONS.PROMOTIONS), {
       ...promotion,
       code: promotion.code.toUpperCase(),
-      usageCount: 0,
+      currentUses: 0,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
     });
@@ -247,9 +238,10 @@ export class PromotionService {
       throw new Error('Promotion not found');
     }
 
-    const remainingUses = promotion.usageLimit - promotion.usageCount;
+    const maxUses = promotion.maxTotalUses || Infinity;
+    const remainingUses = maxUses === Infinity ? Infinity : maxUses - promotion.currentUses;
     const usagePercentage =
-      (promotion.usageCount / promotion.usageLimit) * 100;
+      maxUses === Infinity ? 0 : (promotion.currentUses / maxUses) * 100;
 
     const now = Date.now();
     const endDate = promotion.endDate.toDate().getTime();
@@ -258,8 +250,8 @@ export class PromotionService {
     const daysRemaining = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
 
     return {
-      usageCount: promotion.usageCount,
-      remainingUses: Math.max(0, remainingUses),
+      usageCount: promotion.currentUses,
+      remainingUses: remainingUses === Infinity ? 999999 : Math.max(0, remainingUses),
       usagePercentage: Math.min(100, usagePercentage),
       isExpired,
       daysRemaining: Math.max(0, daysRemaining),

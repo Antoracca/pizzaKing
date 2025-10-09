@@ -174,9 +174,15 @@ export class PizzaService {
     newRating: number,
     reviewCount: number
   ): Promise<void> {
+    const pizza = await this.getPizzaById(id);
+    if (!pizza) return;
+
     await this.updatePizza(id, {
-      rating: newRating,
-      reviewCount,
+      stats: {
+        ...pizza.stats,
+        averageRating: newRating,
+        reviewCount,
+      },
     });
   }
 

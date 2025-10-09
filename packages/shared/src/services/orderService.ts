@@ -97,7 +97,8 @@ export class OrderService {
       'pending',
       'confirmed',
       'preparing',
-      'on_route',
+      'ready',
+      'out_for_delivery',
     ];
 
     const q = query(
@@ -147,7 +148,7 @@ export class OrderService {
       updates.confirmedAt = Timestamp.now();
     } else if (status === 'preparing') {
       updates.preparingAt = Timestamp.now();
-    } else if (status === 'on_route') {
+    } else if (status === 'out_for_delivery') {
       updates.onRouteAt = Timestamp.now();
     } else if (status === 'delivered') {
       updates.deliveredAt = Timestamp.now();
@@ -214,8 +215,7 @@ export class OrderService {
     cancelledBy: 'customer' | 'admin'
   ): Promise<void> {
     await this.updateOrderStatus(orderId, 'cancelled', {
-      cancellationReason: reason,
-      cancelledBy,
+      internalNotes: `Cancelled by ${cancelledBy}: ${reason}`,
     });
   }
 
@@ -295,9 +295,12 @@ export class OrderService {
       pending: 0,
       confirmed: 0,
       preparing: 0,
-      on_route: 0,
+      ready: 0,
+      out_for_delivery: 0,
       delivered: 0,
+      completed: 0,
       cancelled: 0,
+      refunded: 0,
     };
 
     orders.forEach(order => {
