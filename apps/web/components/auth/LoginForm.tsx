@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@pizza-king/shared';
 import { useRouter } from 'next/navigation';
 import { validateEmail, checkEmailExists, checkIsGoogleUser } from '@/lib/auth/validation';
@@ -14,8 +14,15 @@ export default function LoginForm() {
   const [checking, setChecking] = useState(false);
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
   const [showGooglePrompt, setShowGooglePrompt] = useState(false);
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn, signInWithGoogle, user } = useAuth();
   const router = useRouter();
+
+  // Redirect to home when user is authenticated
+  useEffect(() => {
+    if (user && !loading) {
+      router.push('/');
+    }
+  }, [user, loading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +62,7 @@ export default function LoginForm() {
 
     try {
       await signIn(email, password);
-      router.push('/'); // Redirect to home after login
+      // Redirect will happen automatically via useEffect when user state updates
     } catch (err: any) {
       // Translate Firebase errors to French
       let errorMessage = 'Erreur lors de la connexion';
@@ -84,8 +91,7 @@ export default function LoginForm() {
 
     try {
       await signInWithGoogle();
-      // Success - will redirect automatically via onAuthStateChanged
-      router.push('/');
+      // Redirect will happen automatically via useEffect when user state updates
     } catch (err: any) {
       let errorMessage = 'Erreur lors de la connexion avec Google';
 

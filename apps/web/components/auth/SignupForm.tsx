@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@pizza-king/shared';
 import { useRouter } from 'next/navigation';
 import { validateEmail, validatePhone, validatePassword, checkEmailExists, checkPhoneExists } from '@/lib/auth/validation';
@@ -19,8 +19,15 @@ export default function SignupForm() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(false);
-  const { signUp, signInWithGoogle } = useAuth();
+  const { signUp, signInWithGoogle, user } = useAuth();
   const router = useRouter();
+
+  // Redirect to home when user is authenticated
+  useEffect(() => {
+    if (user && !loading) {
+      router.push('/');
+    }
+  }, [user, loading, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -89,7 +96,7 @@ export default function SignupForm() {
         formData.phoneNumber
       );
       setSuccess('Compte créé avec succès! Redirection...');
-      setTimeout(() => router.push('/'), 1500);
+      // Redirect will happen automatically via useEffect when user state updates
     } catch (err: any) {
       // Translate Firebase errors
       let errorMessage = "Erreur lors de l'inscription";
@@ -116,10 +123,9 @@ export default function SignupForm() {
 
     try {
       await signInWithGoogle();
-      router.push('/');
+      // Redirect will happen automatically via useEffect when user state updates
     } catch (err: any) {
       setError(err.message || 'Erreur lors de la connexion avec Google');
-    } finally {
       setLoading(false);
     }
   };

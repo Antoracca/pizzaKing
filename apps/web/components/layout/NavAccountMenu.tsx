@@ -123,86 +123,86 @@ export default function NavAccountMenu({ user, photoURL, email, onSignOut }: Pro
       </Button>
 
       {open && (
-        <div className="absolute right-0 mt-3 w-80 origin-top-right rounded-3xl border border-gray-100 bg-white shadow-2xl ring-1 ring-black/5 z-[80]">
-          <div className="px-5 pt-5 pb-4">
+        <div className="absolute right-0 mt-3 w-[calc(100vw-2rem)] max-w-sm origin-top-right rounded-3xl border border-gray-100 bg-white shadow-2xl ring-1 ring-black/5 z-[80] sm:w-80">
+          <div className="px-4 pt-4 pb-3 sm:px-5 sm:pt-5 sm:pb-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-orange-200 bg-orange-50 text-orange-600 text-base font-bold">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-orange-200 bg-orange-50 text-orange-600 text-base font-bold sm:h-14 sm:w-14">
                 {photoURL ? (
                   <img src={photoURL} alt={displayName} className="h-full w-full object-cover" />
                 ) : (
                   avatarInitials
                 )}
               </div>
-              <div>
-                <p className="text-base font-semibold text-gray-900">{displayName}</p>
-                <p className="text-xs text-gray-500">{email ?? user.email}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-900 truncate sm:text-base">{displayName}</p>
+                <p className="text-xs text-gray-500 truncate">{email ?? user.email}</p>
               </div>
             </div>
 
-            <div className="mt-4 grid gap-3 rounded-2xl bg-gray-50 p-4 text-xs text-gray-600">
-              <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
-                <Sparkles className="h-4 w-4 text-orange-500" />
+            <div className="mt-3 grid gap-2 rounded-2xl bg-gray-50 p-3 text-xs text-gray-600 sm:mt-4 sm:gap-3 sm:p-4">
+              <div className="flex items-center gap-2 text-xs font-semibold text-gray-800 sm:text-sm">
+                <Sparkles className="h-3.5 w-3.5 text-orange-500 sm:h-4 sm:w-4" />
                 {loyaltyLabel}
               </div>
-              <div className="flex items-center gap-2">
-                <UserCircle className="h-4 w-4 text-gray-400" />
+              <div className="flex items-center gap-2 text-xs">
+                <UserCircle className="h-3.5 w-3.5 text-gray-400 sm:h-4 sm:w-4" />
                 Rôle : <span className="font-medium text-gray-800 capitalize">{user.role}</span>
               </div>
               {user.phoneNumber && (
-                <div className="flex items-center gap-2">
-                  <UserCircle className="h-4 w-4 text-gray-400" />
-                  Téléphone : <span className="font-medium text-gray-800">{user.phoneNumber}</span>
+                <div className="flex items-center gap-2 text-xs">
+                  <UserCircle className="h-3.5 w-3.5 text-gray-400 sm:h-4 sm:w-4" />
+                  Téléphone : <span className="font-medium text-gray-800 truncate">{user.phoneNumber}</span>
                 </div>
               )}
               {createdAt && (
-                <div className="flex items-center gap-2">
-                  <CalendarClock className="h-4 w-4 text-gray-400" />
+                <div className="flex items-center gap-2 text-xs">
+                  <CalendarClock className="h-3.5 w-3.5 text-gray-400 sm:h-4 sm:w-4" />
                   Compte créé :{' '}
-                  <span className="font-medium text-gray-800">
+                  <span className="font-medium text-gray-800 truncate">
                     {formatDate(createdAt)}
                   </span>
                 </div>
               )}
               {notificationSummary && (
-                <div className="rounded-xl border border-orange-100 bg-white px-3 py-2 text-sm font-medium text-gray-800">
+                <div className="rounded-xl border border-orange-100 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-800 sm:px-3 sm:py-2 sm:text-sm">
                   Notifications : <span className="text-gray-600 font-semibold">{notificationSummary}</span>
                 </div>
               )}
               {typeof user.totalOrders === 'number' && (
-                <div className="flex items-center justify-between rounded-xl border border-orange-100 bg-white px-3 py-2 text-sm font-medium text-gray-800">
+                <div className="flex items-center justify-between rounded-xl border border-orange-100 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-800 sm:px-3 sm:py-2 sm:text-sm">
                   <span>Total commandes</span>
                   <span>{user.totalOrders}</span>
                 </div>
               )}
               {typeof user.totalSpent === 'number' && (
-                <div className="flex items-center justify-between rounded-xl border border-orange-100 bg-white px-3 py-2 text-sm font-medium text-gray-800">
+                <div className="flex items-center justify-between rounded-xl border border-orange-100 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-800 sm:px-3 sm:py-2 sm:text-sm">
                   <span>Dépensé</span>
-                  <span>{formatPrice(user.totalSpent)}</span>
+                  <span className="truncate ml-2">{formatPrice(user.totalSpent)}</span>
                 </div>
               )}
               {lastLoginAt && (
-                <p className="text-[11px] text-gray-400">
+                <p className="text-[10px] text-gray-400 sm:text-[11px]">
                   Dernière connexion : {formatDate(lastLoginAt)}
                 </p>
               )}
             </div>
 
-            <div className="mt-4 flex flex-col gap-2">
+            <div className="mt-3 flex flex-col gap-2 sm:mt-4">
               <Link
                 href="/account"
                 onClick={() => setOpen(false)}
-                className="block w-full rounded-xl border border-gray-200 px-4 py-2.5 text-center text-sm font-semibold text-gray-700 transition hover:border-orange-400 hover:text-orange-600"
+                className="block w-full rounded-xl border border-gray-200 px-3 py-2 text-center text-xs font-semibold text-gray-700 transition hover:border-orange-400 hover:text-orange-600 sm:px-4 sm:py-2.5 sm:text-sm"
               >
                 Voir mon compte
               </Link>
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-center gap-2 rounded-xl border border-transparent text-sm font-semibold text-red-600 hover:bg-red-50"
+                className="w-full justify-center gap-2 rounded-xl border border-transparent text-xs font-semibold text-red-600 hover:bg-red-50 sm:text-sm"
                 onClick={handleSignOut}
                 disabled={signingOut}
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 {signingOut ? 'Déconnexion...' : 'Se déconnecter'}
               </Button>
             </div>
