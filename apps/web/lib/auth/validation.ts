@@ -18,6 +18,27 @@ export async function checkEmailExists(email: string): Promise<boolean> {
 }
 
 /**
+ * Check if user signed in with Google (no password set)
+ */
+export async function checkIsGoogleUser(email: string): Promise<boolean> {
+  try {
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('email', '==', email.toLowerCase()), limit(1));
+    const snapshot = await getDocs(q);
+
+    if (!snapshot.empty) {
+      const userData = snapshot.docs[0].data();
+      // If user has no password provider, they signed in with Google
+      return userData.provider === 'google' || !userData.hasPassword;
+    }
+    return false;
+  } catch (error) {
+    console.error('Error checking user provider:', error);
+    return false;
+  }
+}
+
+/**
  * Check if a phone number already exists in Firestore users collection
  */
 export async function checkPhoneExists(phoneNumber: string): Promise<boolean> {

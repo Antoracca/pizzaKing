@@ -57,11 +57,6 @@ interface Pizza {
   availableIngredients: Ingredient[];
 }
 
-interface PizzaDetailsModalProps {
-  pizza: Pizza | null;
-  isOpen: boolean;
-  onClose: () => void;
-  // Correct :
 interface CartConfig {
   pizzaId: string;
   size: PizzaSize | null;
@@ -71,7 +66,12 @@ interface CartConfig {
   totalPrice: number;
 }
 
-onAddToCart: (configuration: CartConfig) => void;
+interface PizzaDetailsModalProps {
+  pizza: Pizza | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onAddToCart: (configuration: CartConfig) => void;
+}
 
 
 export default function PizzaDetailsModal({

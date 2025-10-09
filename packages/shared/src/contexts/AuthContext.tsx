@@ -78,7 +78,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     email: string,
     firstName: string,
     lastName: string,
-    phoneNumber: string
+    phoneNumber: string,
+    provider: 'password' | 'google' = 'password'
   ): Promise<void> => {
     const userData: Omit<User, 'id'> = {
       email,
@@ -102,6 +103,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     await setDoc(doc(db, COLLECTIONS.USERS, uid), {
       id: uid,
       ...userData,
+      provider,
+      hasPassword: provider === 'password',
     });
   };
 
@@ -170,7 +173,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
           firebaseUser.email || '',
           names[0],
           names.slice(1).join(' '),
-          firebaseUser.phoneNumber || ''
+          firebaseUser.phoneNumber || '',
+          'google'
         );
       }
     } catch (error: any) {
