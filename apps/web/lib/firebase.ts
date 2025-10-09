@@ -38,11 +38,14 @@ const db = getFirestore(app, 'pizzaking');
 const storage = getStorage(app);
 
 // Initialize Analytics only on client-side
-let analytics: any = null;
+let analytics: ReturnType<typeof getAnalytics> | null = null;
+
 if (typeof window !== 'undefined') {
   analytics = getAnalytics(app);
 }
 
+// eslint-disable-next-line no-console
 console.log('✅ Firebase initialized successfully for project:', firebaseConfig.projectId);
+
 
 export { app, auth, db, storage, analytics, isFirebaseConfigured };
