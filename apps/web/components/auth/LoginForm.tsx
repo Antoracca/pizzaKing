@@ -93,11 +93,11 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
-      hasAttemptedAuth.current = true;
+      // This will redirect the user to Google
+      // No need to set hasAttemptedAuth because the page will reload after redirect
       await signInWithGoogle();
-      // Redirect will happen automatically via useEffect when user state updates
+      // User will be redirected to Google, then back to the app
     } catch (err: any) {
-      hasAttemptedAuth.current = false;
       let errorMessage = 'Erreur lors de la connexion avec Google';
 
       if (err.code === 'auth/popup-closed-by-user') {
@@ -111,7 +111,6 @@ export default function LoginForm() {
       }
 
       setError(errorMessage);
-    } finally {
       setLoading(false);
     }
   };

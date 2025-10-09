@@ -125,11 +125,11 @@ export default function SignupForm() {
     setLoading(true);
 
     try {
-      hasAttemptedAuth.current = true;
+      // This will redirect the user to Google
+      // No need to set hasAttemptedAuth because the page will reload after redirect
       await signInWithGoogle();
-      // Redirect will happen automatically via useEffect when user state updates
+      // User will be redirected to Google, then back to the app
     } catch (err: any) {
-      hasAttemptedAuth.current = false;
       setError(err.message || 'Erreur lors de la connexion avec Google');
       setLoading(false);
     }

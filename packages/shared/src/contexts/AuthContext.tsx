@@ -8,7 +8,8 @@ import {
   sendPasswordResetEmail,
   updateProfile,
   GoogleAuthProvider,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   Auth,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, Firestore, Timestamp } from 'firebase/firestore';
@@ -170,23 +171,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const signInWithGoogle = async (): Promise<void> => {
     try {
       const provider = new GoogleAuthProvider();
-      const { user: firebaseUser } = await signInWithPopup(auth, provider);
-
-      // Check if user document exists
-      const userData = await fetchUserData(firebaseUser.uid);
-
-      if (!userData) {
-        // Create user document if it doesn't exist
-        const names = firebaseUser.displayName?.split(' ') || ['', ''];
-        await createUserDocument(
-          firebaseUser.uid,
-          firebaseUser.email || '',
-          names[0],
-          names.slice(1).join(' '),
-          firebaseUser.phoneNumber || '',
-          'google'
-        );
-      }
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
+      await signInWithRedirect(auth, provider);
+      // User will be redirected, onAuthStateChanged will handle the rest
     } catch (error: any) {
       throw new Error(
         error.message || 'Erreur lors de la connexion avec Google'
@@ -255,6 +244,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     }
     return user.role === role;
   };
+
+  /**
+   * Handle Google redirect result
+   */
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result?.user) {
+          // Check if user document exists
+          const userData = await fetchUserData(result.user.uid);
+
+          if (!userData) {
+            // Create user document if it doesn't exist
+            const names = result.user.displayName?.split(' ') || ['', ''];
+            await createUserDocument(
+              result.user.uid,
+              result.user.email || '',
+              names[0],
+              names.slice(1).join(' '),
+              result.user.phoneNumber || '',
+              'google'
+            );
+          }
+        }
+      } catch (error) {
+        console.error('Error handling redirect result:', error);
+      }
+    };
+
+    handleRedirectResult();
+  }, [auth, db]);
 
   /**
    * Auth state listener

@@ -18,7 +18,9 @@
       "Bash(vercel env:*)",
       "Bash(vercel:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(firebase deploy:*)",
+      "Bash(firebase use:*)"
     ],
     "deny": [],
     "ask": []
