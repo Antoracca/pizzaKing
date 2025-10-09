@@ -11,7 +11,7 @@ import {
   signInWithPopup,
   Auth,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, Firestore } from 'firebase/firestore';
+import { doc, getDoc, setDoc, Firestore, Timestamp } from 'firebase/firestore';
 import { User, UserRole } from '../types/user';
 import { COLLECTIONS } from '../constants/collections';
 
@@ -100,8 +100,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         language: 'fr',
         newsletter: true,
       },
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
     };
 
     await setDoc(doc(db, COLLECTIONS.USERS, uid), {
@@ -225,7 +225,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         doc(db, COLLECTIONS.USERS, user.id),
         {
           ...updates,
-          updatedAt: new Date(),
+          updatedAt: Timestamp.now(),
         },
         { merge: true }
       );
