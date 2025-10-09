@@ -188,11 +188,16 @@ export default function PizzaDetailsModal({
                     className="relative"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full blur-3xl opacity-30 animate-pulse" />
-                    <img
-                      src={pizza.image}
-                      alt={pizza.name}
-                      className="relative w-full max-w-md rounded-full shadow-2xl"
-                    />
+                    // Correct :
+import Image from "next/image";
+<Image
+  src={pizza.image}
+  alt={pizza.name}
+  width={512}
+  height={512}
+  className="relative w-full max-w-md rounded-full shadow-2xl"
+/>
+
                   </motion.div>
 
                   {/* Action Buttons */}
