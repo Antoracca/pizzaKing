@@ -213,7 +213,7 @@ export default function Header() {
                 <Clock className="h-4 w-4" />
                 <div className="flex flex-col leading-tight">
                   <span className="font-medium">Livraison express à Bangui</span>
-                  <span className="font-medium">en 30 min ou c'est gratuit</span>
+                  <span className="font-medium">en 30 min ou c&apos;est gratuit</span>
                 </div>
               </div>
 

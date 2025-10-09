@@ -1,5 +1,6 @@
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
-import { db } from '@pizza-king/shared';
+// ✅ corrige l'import : ne pas prendre @pizza-king/shared
+import { db } from '@pizza-king/firebase-config'; // ou: import { db } from '@/lib/firebase';
 
 /**
  * Check if an email already exists in Firestore users collection
@@ -34,7 +35,7 @@ export async function checkPhoneExists(phoneNumber: string): Promise<boolean> {
 /**
  * Check if a user exists in Firebase Auth by email
  */
-export async function checkUserExistsInAuth(email: string): Promise<{
+export async function checkUserExistsInAuth(_email: string): Promise<{
   exists: boolean;
   hasPassword: boolean;
   provider: string | null;
@@ -56,11 +57,11 @@ export function validateEmail(email: string): { valid: boolean; message: string 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   if (!email) {
-    return { valid: false, message: 'L\'email est requis' };
+    return { valid: false, message: "L'email est requis" };
   }
 
   if (!emailRegex.test(email)) {
-    return { valid: false, message: 'Format d\'email invalide' };
+    return { valid: false, message: "Format d'email invalide" };
   }
 
   return { valid: true, message: '' };
@@ -71,8 +72,8 @@ export function validateEmail(email: string): { valid: boolean; message: string 
  */
 export function validatePhone(phone: string): { valid: boolean; message: string } {
   // Remove spaces and special characters
+  // ✅ garde UNE SEULE version, sans les marqueurs de conflit
   const cleanPhone = phone.replace(/[\s\-()]/g, '');
-
 
   if (!cleanPhone) {
     return { valid: false, message: 'Le numéro de téléphone est requis' };

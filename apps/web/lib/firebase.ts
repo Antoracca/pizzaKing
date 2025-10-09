@@ -2,9 +2,9 @@
 
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore /* , initializeFirestore */ } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
-import { getAnalytics } from 'firebase/analytics';
+import { getAnalytics, type Analytics } from 'firebase/analytics';
 
 // Firebase configuration - PizzaKing Production
 const firebaseConfig = {
@@ -25,27 +25,35 @@ const isFirebaseConfigured = Boolean(
 );
 
 if (!isFirebaseConfigured) {
-  console.error('❌ Firebase configuration is missing! Check your .env.local file');
-  throw new Error('Firebase configuration required. Please check .env.local file.');
+  throw new Error('Firebase configuration required. Confirm your .env.local values.');
 }
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app);
 
-// Use the specific database ID "pizzaking" in africa-south1
-const db = getFirestore(app, 'pizzaking');
+// --- Option simple (recommandée) ---
+const db = getFirestore(app);
+
+// --- Option avancée (si tu tiens à un databaseId dédié) ---
+// initializeFirestore(app, {}, 'pizzaking');
+// const db = getFirestore(app);
+
 const storage = getStorage(app);
 
 // Initialize Analytics only on client-side
-let analytics: ReturnType<typeof getAnalytics> | null = null;
+let analytics: Analytics | null = null;
 
 if (typeof window !== 'undefined') {
-  analytics = getAnalytics(app);
+  try {
+    analytics = getAnalytics(app);
+  } catch {
+    // eslint-disable-next-line no-console
+    console.log('ℹ️ Analytics not available in this environment.');
+  }
 }
 
 // eslint-disable-next-line no-console
 console.log('✅ Firebase initialized successfully for project:', firebaseConfig.projectId);
-
 
 export { app, auth, db, storage, analytics, isFirebaseConfigured };
