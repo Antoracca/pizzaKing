@@ -71,7 +71,8 @@ export function validateEmail(email: string): { valid: boolean; message: string 
  */
 export function validatePhone(phone: string): { valid: boolean; message: string } {
   // Remove spaces and special characters
-  const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+  const cleanPhone = phone.replace(/[\s\-()]/g, '');
+
 
   if (!cleanPhone) {
     return { valid: false, message: 'Le numéro de téléphone est requis' };
