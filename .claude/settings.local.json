@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx shadcn@latest init:*)",
+      "Bash(npm install:*)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm add:*)",
+      "Bash(npx:*)",
+      "WebSearch",
+      "Bash(npm run build:*)",
+      "Bash(taskkill:*)",
+      "Bash(pnpm web:*)",
+      "Bash(pnpm dev:*)",
+      "Bash(ipconfig)",
+      "Bash(findstr:*)",
+      "Bash(pnpm dev:web:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -1,0 +1,39 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+             firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin'];
+    }
+
+    // Images des pizzas (public read, admin write)
+    match /pizzas/{pizzaId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Photos de profil utilisateurs
+    match /users/{userId}/profile/{fileName} {
+      allow read: if true;
+      allow write: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Photos des reviews/avis
+    match /reviews/{orderId}/{fileName} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // Documents admin
+    match /admin/{allPaths=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
