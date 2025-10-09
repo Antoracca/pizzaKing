@@ -55,20 +55,17 @@ export async function checkPhoneExists(phoneNumber: string): Promise<boolean> {
 
 /**
  * Check if a user exists in Firebase Auth by email
+ * Note: This is a placeholder function as Firebase doesn't provide a public API
+ * to check user existence for security reasons
  */
-export async function checkUserExistsInAuth(_email: string): Promise<{
+export async function checkUserExistsInAuth(): Promise<{
   exists: boolean;
   hasPassword: boolean;
   provider: string | null;
 }> {
-  try {
-    // This will be handled by the actual sign-in attempt
-    // Firebase doesn't provide a public API to check user existence for security reasons
-    // We'll use the error codes from sign-in attempts instead
-    return { exists: false, hasPassword: false, provider: null };
-  } catch (error) {
-    return { exists: false, hasPassword: false, provider: null };
-  }
+  // This will be handled by the actual sign-in attempt
+  // We'll use the error codes from sign-in attempts instead
+  return { exists: false, hasPassword: false, provider: null };
 }
 
 /**
