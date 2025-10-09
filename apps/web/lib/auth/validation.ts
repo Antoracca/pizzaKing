@@ -1,7 +1,7 @@
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 // ✅ corrige l'import : ne pas prendre @pizza-king/shared
-import { db } from '@pizza-king/firebase-config'; // ou: import { db } from '@/lib/firebase';
-
+// ou: import { db } from '@/lib/firebase';
+import { db } from '@/lib/firebase'; 
 /**
  * Check if an email already exists in Firestore users collection
  */
