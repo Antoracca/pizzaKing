@@ -91,10 +91,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       isPhoneVerified: false,
       loyaltyPoints: 0,
       preferences: {
+        notifications: {
+          push: true,
+          sms: false,
+          email: true,
+          whatsapp: false,
+        },
+        language: 'fr',
         newsletter: true,
-        pushNotifications: true,
-        smsNotifications: false,
-        whatsappNotifications: false,
       },
       createdAt: new Date(),
       updatedAt: new Date(),
