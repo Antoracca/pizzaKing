@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from "next/image";
 import {
   X,
   Plus,
@@ -188,8 +189,8 @@ export default function PizzaDetailsModal({
                     className="relative"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full blur-3xl opacity-30 animate-pulse" />
-                    // Correct :
-import Image from "next/image";
+                  
+
 <Image
   src={pizza.image}
   alt={pizza.name}
