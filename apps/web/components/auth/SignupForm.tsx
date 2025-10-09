@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@pizza-king/shared';
 import { useRouter } from 'next/navigation';
 import { validateEmail, validatePhone, validatePassword, checkEmailExists, checkPhoneExists } from '@/lib/auth/validation';
@@ -19,15 +19,16 @@ export default function SignupForm() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(false);
-  const { signUp, signInWithGoogle, user } = useAuth();
+  const { signUp, signInWithGoogle, user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const hasAttemptedAuth = useRef(false);
 
-  // Redirect to home when user is authenticated
+  // Only redirect if we just signed up (not on initial page load)
   useEffect(() => {
-    if (user && !loading) {
+    if (user && hasAttemptedAuth.current && !authLoading) {
       router.push('/');
     }
-  }, [user, loading, router]);
+  }, [user, authLoading, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -88,6 +89,7 @@ export default function SignupForm() {
     setLoading(true);
 
     try {
+      hasAttemptedAuth.current = true;
       await signUp(
         formData.email,
         formData.password,
@@ -98,6 +100,7 @@ export default function SignupForm() {
       setSuccess('Compte créé avec succès! Redirection...');
       // Redirect will happen automatically via useEffect when user state updates
     } catch (err: any) {
+      hasAttemptedAuth.current = false;
       // Translate Firebase errors
       let errorMessage = "Erreur lors de l'inscription";
 
@@ -122,9 +125,11 @@ export default function SignupForm() {
     setLoading(true);
 
     try {
+      hasAttemptedAuth.current = true;
       await signInWithGoogle();
       // Redirect will happen automatically via useEffect when user state updates
     } catch (err: any) {
+      hasAttemptedAuth.current = false;
       setError(err.message || 'Erreur lors de la connexion avec Google');
       setLoading(false);
     }
