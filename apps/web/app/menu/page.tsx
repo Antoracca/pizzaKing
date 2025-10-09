@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Header from '@/components/layout/Header';
@@ -230,7 +230,7 @@ const categories = [
   { id: 'fromages', label: 'Fromages', icon: Milk },
 ];
 
-export default function MenuPage() {
+function MenuContent() {
   const searchParams = useSearchParams();
   const categoryParam = searchParams?.get('category');
 
@@ -707,5 +707,20 @@ export default function MenuPage() {
 
       <Footer />
     </main>
+  );
+}
+
+export default function MenuPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4 animate-bounce">🍕</div>
+          <p className="text-gray-600 font-semibold">Chargement du menu...</p>
+        </div>
+      </div>
+    }>
+      <MenuContent />
+    </Suspense>
   );
 }
