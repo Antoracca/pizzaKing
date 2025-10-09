@@ -81,15 +81,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     phoneNumber: string,
     provider: 'password' | 'google' = 'password'
   ): Promise<void> => {
+    const now = Timestamp.now();
     const userData: Omit<User, 'id'> = {
       email,
       phoneNumber,
+      displayName: `${firstName} ${lastName}`.trim() || email,
       firstName,
       lastName,
       role: 'customer',
-      isEmailVerified: false,
-      isPhoneVerified: false,
+      status: 'active',
       loyaltyPoints: 0,
+      loyaltyTier: 'bronze',
+      totalSpent: 0,
+      totalOrders: 0,
       preferences: {
         notifications: {
           push: true,
@@ -100,8 +104,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         language: 'fr',
         newsletter: true,
       },
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
+      referralCode: `PK${uid.substring(0, 8).toUpperCase()}`,
+      createdAt: now,
+      updatedAt: now,
+      lastLoginAt: now,
     };
 
     await setDoc(doc(db, COLLECTIONS.USERS, uid), {
