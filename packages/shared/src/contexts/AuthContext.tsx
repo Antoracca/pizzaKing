@@ -7,6 +7,7 @@ import {
   signOut as firebaseSignOut,
   sendPasswordResetEmail,
   updateProfile,
+  sendEmailVerification,
   GoogleAuthProvider,
   signInWithRedirect,
   getRedirectResult,
@@ -151,6 +152,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       await updateProfile(firebaseUser, {
         displayName: `${firstName} ${lastName}`,
       });
+
+      // Send email verification to the new user
+      try {
+        await sendEmailVerification(firebaseUser);
+      } catch (verificationError) {
+        // Non-blocking: log but do not fail signup if email send fails
+        console.error('Failed to send verification email:', verificationError);
+      }
 
       // Create Firestore document
       await createUserDocument(

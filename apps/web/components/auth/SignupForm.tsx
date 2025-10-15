@@ -99,6 +99,9 @@ export default function SignupForm() {
       );
       setSuccess('Compte créé avec succès! Redirection...');
       // Redirect will happen automatically via useEffect when user state updates
+      // Override: route to verification page for email/password sign-up
+      hasAttemptedAuth.current = false;
+      router.push('/auth/verify');
     } catch (err: any) {
       hasAttemptedAuth.current = false;
       // Translate Firebase errors
