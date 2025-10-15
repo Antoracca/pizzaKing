@@ -3,7 +3,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
     function isSignedIn() {
       return request.auth != null;
     }
@@ -12,107 +11,36 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isAdmin() {
-      return isSignedIn() &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin'];
+    function isValidProvider() {
+      return request.resource.data.provider in ['password', 'google'];
     }
 
-    // Users collection
+    function isValidRole() {
+      return request.resource.data.role == 'customer';
+    }
+
+    function preservesImmutableFields() {
+      return request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.referralCode == resource.data.referralCode
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.provider == resource.data.provider;
+    }
+
     match /users/{userId} {
-      // Anyone can read any user (for public profiles, leaderboards, etc.)
-      allow read: if true;
+      allow get: if isOwner(userId);
+      allow list: if false;
 
-      // Users can create their own document during signup
-      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isSignedIn()
+        && request.auth.uid == userId
+        && request.resource.data.id == userId
+        && request.resource.data.email == request.auth.token.email
+        && isValidProvider()
+        && isValidRole();
 
-      // Users can update their own document, admins can update any
-      allow update: if isOwner(userId) || isAdmin();
+      allow update: if isOwner(userId)
+        && preservesImmutableFields();
 
-      // Only admins can delete users
-      allow delete: if isAdmin();
-    }
-
-    // Pizzas collection
-    match /pizzas/{pizzaId} {
-      // Anyone can read pizzas
-      allow read: if true;
-
-      // Only admins can create, update, or delete pizzas
-      allow write: if isAdmin();
-    }
-
-    // Orders collection
-    match /orders/{orderId} {
-      // Users can read their own orders, deliverers can read assigned orders, admins can read all
-      allow read: if isSignedIn() && (
-        resource.data.userId == request.auth.uid ||
-        resource.data.delivererId == request.auth.uid ||
-        isAdmin()
-      );
-
-      // Users can create their own orders
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-
-      // Users can update their own orders (for cancellation), deliverers can update assigned orders, admins can update all
-      allow update: if isSignedIn() && (
-        resource.data.userId == request.auth.uid ||
-        resource.data.delivererId == request.auth.uid ||
-        isAdmin()
-      );
-
-      // Only admins can delete orders
-      allow delete: if isAdmin();
-    }
-
-    // Addresses collection
-    match /addresses/{addressId} {
-      // Users can read their own addresses
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-
-      // Users can create their own addresses
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-
-      // Users can update and delete their own addresses
-      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-    }
-
-    // Promotions collection
-    match /promotions/{promoId} {
-      // Anyone can read active promotions
-      allow read: if true;
-
-      // Only admins can write promotions
-      allow write: if isAdmin();
-    }
-
-    // Reviews collection
-    match /reviews/{reviewId} {
-      // Anyone can read reviews
-      allow read: if true;
-
-      // Users can create reviews for their own orders
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-
-      // Users can update/delete their own reviews, admins can moderate
-      allow update, delete: if isSignedIn() && (
-        resource.data.userId == request.auth.uid ||
-        isAdmin()
-      );
-    }
-
-    // Notifications collection
-    match /notifications/{notificationId} {
-      // Users can read their own notifications
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-
-      // System and admins can create notifications
-      allow create: if isAdmin();
-
-      // Users can update their own notifications (mark as read)
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
-
-      // Users can delete their own notifications
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow delete: if false;
     }
   }
 }

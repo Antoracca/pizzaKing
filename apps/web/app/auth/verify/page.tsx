@@ -1,75 +1,476 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@pizza-king/shared';
-import { sendEmailVerification } from 'firebase/auth';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
+import {
+  sendEmailVerification,
+  reload,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  PhoneAuthProvider,
+  updatePhoneNumber,
+  type ConfirmationResult,
+} from 'firebase/auth';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { Loader2, MailCheck, MailQuestion, Smartphone, X } from 'lucide-react';
+import { useAuth, type UserStatus, type User } from '@pizza-king/shared';
+import { db, auth } from '@/lib/firebase';
+
+type Alert = { type: 'info' | 'success' | 'error' | 'warning'; message: string } | null;
+
+const alertStyles: Record<NonNullable<Alert>['type'], string> = {
+  info: 'border-blue-200 bg-blue-50 text-blue-800',
+  success: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+  error: 'border-red-200 bg-red-50 text-red-800',
+  warning: 'border-amber-200 bg-amber-50 text-amber-800',
+};
 
 export default function VerifyPage() {
   const router = useRouter();
-  const { firebaseUser, loading } = useAuth();
-  const [status, setStatus] = useState<string>('');
-  const [sending, setSending] = useState(false);
+  const { firebaseUser, loading, updateUserProfile, user } = useAuth();
+
+  const [alert, setAlert] = useState<Alert>(null);
+  const [resending, setResending] = useState(false);
+  const [checking, setChecking] = useState(false);
+
+  const [phoneModalOpen, setPhoneModalOpen] = useState(false);
+  const [phoneValue, setPhoneValue] = useState('');
+  const [phoneCode, setPhoneCode] = useState('');
+  const [phoneStep, setPhoneStep] = useState<'idle' | 'code'>('idle');
+  const [phoneLoading, setPhoneLoading] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
+
+  const recaptchaVerifier = useRef<RecaptchaVerifier | null>(null);
+  const confirmationResult = useRef<ConfirmationResult | null>(null);
 
   useEffect(() => {
     if (!loading && !firebaseUser) {
       router.replace('/auth/login');
+      return;
     }
-    if (!loading && firebaseUser?.emailVerified) {
-      router.replace('/account');
-    }
-  }, [firebaseUser, loading, router]);
 
-  const handleResendEmail = async () => {
-    if (!firebaseUser) return;
-    setStatus('');
-    setSending(true);
+    if (!loading && firebaseUser?.emailVerified) {
+      handleVerified({ via: 'email' });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firebaseUser?.emailVerified, loading]);
+
+  useEffect(() => {
+    if (phoneModalOpen && !phoneValue) {
+      setPhoneValue(user?.phoneNumber || firebaseUser?.phoneNumber || '');
+    }
+  }, [phoneModalOpen, phoneValue, user?.phoneNumber, firebaseUser?.phoneNumber]);
+
+  const handleVerified = async (
+    options: { via: 'email' | 'phone'; phoneNumber?: string } = { via: 'email' }
+  ) => {
     try {
-      await sendEmailVerification(firebaseUser);
-      setStatus("Email de vérification envoyé. Vérifiez votre boîte mail.");
-    } catch (e: any) {
-      setStatus(e?.message || "Échec de l'envoi de l'email de vérification");
-    } finally {
-      setSending(false);
+      if (!firebaseUser) return;
+
+      const profileUpdates: Partial<User> & { status: UserStatus } = {
+        status: 'active',
+      };
+
+      if (options.via === 'email') {
+        profileUpdates.emailVerified = true;
+      }
+
+      if (options.via === 'phone') {
+        profileUpdates.phoneVerified = true;
+        if (options.phoneNumber) {
+          profileUpdates.phoneNumber = options.phoneNumber;
+        }
+      }
+
+      if (user) {
+        await updateUserProfile(profileUpdates);
+      } else {
+        const userRef = doc(db, 'users', firebaseUser.uid);
+        await updateDoc(userRef, {
+          ...profileUpdates,
+          updatedAt: serverTimestamp(),
+        });
+      }
+
+      setAlert({
+        type: 'success',
+        message:
+          options.via === 'email'
+            ? 'Votre email est vérifié. Redirection…'
+            : 'Votre numéro est vérifié. Redirection…',
+      });
+
+      router.replace('/auth/verify/success');
+    } catch (error: any) {
+      console.error('Failed to update user profile after verification:', error);
+      setAlert({
+        type: 'error',
+        message:
+          options.via === 'email'
+            ? "Email vérifié mais la mise à jour du profil a échoué. Contactez le support."
+            : "SMS vérifié mais la mise à jour du profil a échoué. Contactez le support.",
+      });
     }
   };
 
+  const handleResendEmail = async () => {
+    if (!firebaseUser) return;
+    setResending(true);
+    setAlert(null);
+
+    try {
+      await sendEmailVerification(firebaseUser);
+      setAlert({
+        type: 'success',
+        message: 'Email de vérification renvoyé. Vérifiez votre boîte mail.',
+      });
+    } catch (error: any) {
+      setAlert({
+        type: 'error',
+        message: error?.message || "Impossible d'envoyer l'email. Réessayez plus tard.",
+      });
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const handleCheckVerification = async () => {
+    if (!firebaseUser) return;
+    setChecking(true);
+    setAlert({
+      type: 'info',
+      message: 'Nous vérifions votre statut de vérification…',
+    });
+
+    try {
+      await reload(firebaseUser);
+
+      if (firebaseUser.emailVerified) {
+        await handleVerified({ via: 'email' });
+        return;
+      }
+
+      setAlert({
+        type: 'warning',
+        message: "Votre email n'est pas encore confirmé. Cliquez sur le lien reçu ou renvoyez un email.",
+      });
+    } catch (error: any) {
+      console.error('Verification check failed:', error);
+      setAlert({
+        type: 'error',
+        message: error?.message || 'Impossible de vérifier votre email. Réessayez.',
+      });
+    } finally {
+      setChecking(false);
+    }
+  };
+
+const resetPhoneFlow = () => {
+  setPhoneStep('idle');
+  setPhoneCode('');
+  setPhoneLoading(false);
+  setPhoneError('');
+  confirmationResult.current = null;
+  if (recaptchaVerifier.current) {
+    recaptchaVerifier.current.clear();
+    recaptchaVerifier.current = null;
+  }
+};
+
+const closePhoneModal = () => {
+  setPhoneModalOpen(false);
+  resetPhoneFlow();
+};
+
+const getRecaptcha = () => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  if (!recaptchaVerifier.current) {
+    recaptchaVerifier.current = new RecaptchaVerifier(auth, 'phone-verification-recaptcha', {
+      size: 'invisible',
+    });
+  }
+
+  return recaptchaVerifier.current;
+};
+
+const formatPhoneError = (error: any): string => {
+  const code = error?.code ?? '';
+  const suffix = code ? ` (code: ${code})` : '';
+
+  switch (code) {
+    case 'auth/invalid-phone-number':
+      return 'Numéro de téléphone invalide.' + suffix;
+    case 'auth/missing-phone-number':
+      return 'Merci de renseigner un numéro.' + suffix;
+    case 'auth/too-many-requests':
+      return 'Trop de tentatives. Réessayez plus tard.' + suffix;
+    case 'auth/operation-not-allowed':
+      return "La connexion par SMS n’est pas activée sur Firebase. Vérifiez la console Firebase." + suffix;
+    case 'auth/invalid-verification-code':
+      return 'Code invalide. Vérifiez et réessayez.' + suffix;
+    case 'auth/missing-verification-code':
+      return 'Merci de saisir le code reçu.' + suffix;
+    default:
+      return (error?.message || 'Une erreur est survenue. Réessayez.') + suffix;
+  }
+};
+
+  const handleSendPhoneCode = async () => {
+    if (!phoneValue) {
+      setPhoneError('Merci de saisir un numéro de téléphone valide.');
+      return;
+    }
+
+    const verifier = getRecaptcha();
+    if (!verifier) {
+      setPhoneError('Vérification indisponible. Réessayez.');
+      return;
+    }
+
+    setPhoneLoading(true);
+    setPhoneError('');
+
+    try {
+      await verifier.render();
+      await verifier.verify();
+      const confirmation = await signInWithPhoneNumber(auth, phoneValue, verifier);
+      confirmationResult.current = confirmation;
+      setPhoneStep('code');
+    } catch (error: any) {
+      console.error('Phone verification send failed:', error);
+      setPhoneError(formatPhoneError(error));
+      setPhoneStep('idle');
+      if (recaptchaVerifier.current) {
+        recaptchaVerifier.current.clear();
+        recaptchaVerifier.current = null;
+      }
+    } finally {
+      setPhoneLoading(false);
+    }
+  };
+
+  const handleConfirmPhoneCode = async () => {
+    if (!firebaseUser || !confirmationResult.current) {
+      setPhoneError('Vérification indisponible. Réessayez.');
+      return;
+    }
+
+    if (!phoneCode.trim()) {
+      setPhoneError('Merci de saisir le code reçu.');
+      return;
+    }
+
+    setPhoneLoading(true);
+    setPhoneError('');
+
+    try {
+      const credential = PhoneAuthProvider.credential(
+        confirmationResult.current.verificationId,
+        phoneCode.trim()
+      );
+
+      await updatePhoneNumber(firebaseUser, credential);
+
+      await handleVerified({ via: 'phone', phoneNumber: phoneValue });
+      closePhoneModal();
+    } catch (error: any) {
+      console.error('Phone verification confirm failed:', error);
+      setPhoneError(formatPhoneError(error));
+    } finally {
+      setPhoneLoading(false);
+    }
+  };
+
+  const showPhoneOption = !user?.phoneVerified;
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100 px-4 py-12">
-      <div className="w-full max-w-md space-y-6 bg-white rounded-2xl shadow p-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">Vérifiez votre compte</h1>
-          <p className="mt-2 text-gray-600">
-            Choisissez une méthode de vérification pour activer votre compte.
+      <div className="w-full max-w-xl space-y-6 rounded-3xl bg-white p-8 shadow-xl">
+        <div className="flex flex-col items-center text-center">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-orange-100 text-orange-600">
+            <MailQuestion className="h-7 w-7" aria-hidden />
+          </div>
+          <h1 className="text-2xl font-semibold text-gray-900">Vérifiez votre adresse email</h1>
+          <p className="mt-2 text-sm text-gray-600">
+            Un email de confirmation a été envoyé à {firebaseUser?.email}. Cliquez sur le lien pour activer votre compte.
           </p>
         </div>
 
-        {status && (
-          <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">{status}</div>
+        {alert && (
+          <div className={`rounded-xl border p-4 text-sm font-medium ${alertStyles[alert.type]}`} role="alert">
+            {alert.message}
+          </div>
         )}
 
-        <div className="space-y-3">
+        <div className="space-y-4 rounded-2xl border border-gray-100 bg-gray-50 p-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 text-orange-600">
+              <MailCheck className="h-5 w-5" aria-hidden />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-semibold text-gray-800">Pas reçu de mail ?</p>
+              <p className="text-xs text-gray-600">Vérifiez vos spams ou renvoyez un email.</p>
+            </div>
+          </div>
           <button
+            type="button"
             onClick={handleResendEmail}
-            disabled={sending}
-            className="w-full bg-orange-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-orange-600 transition-colors disabled:opacity-50"
+            disabled={resending}
+            className="w-full rounded-lg border border-orange-200 bg-white px-4 py-2 text-sm font-semibold text-orange-600 transition hover:border-orange-300 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {sending ? 'Envoi...' : "Vérifier par e‑mail"}
-          </button>
-
-          <button
-            onClick={() => router.push('/account?verify=1')}
-            className="w-full border border-gray-300 text-gray-800 py-2 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors"
-          >
-            Vérifier par numéro de téléphone
+            {resending ? 'Envoi en cours…' : 'Renvoyer l’email de vérification'}
           </button>
         </div>
 
-        <p className="text-center text-sm text-gray-500">
-          Une fois vérifié, vous serez redirigé vers votre compte.
+        <div className="rounded-2xl border border-gray-100 bg-white p-5">
+          <div className="mb-3 text-left">
+            <p className="text-sm font-semibold text-gray-800">J’ai cliqué sur le lien</p>
+            <p className="text-xs text-gray-600">Cliquez ci-dessous pour confirmer que votre email est vérifié.</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleCheckVerification}
+            disabled={checking}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {checking && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
+            {checking ? 'Vérification…' : 'J’ai confirmé mon email'}
+          </button>
+        </div>
+
+        {showPhoneOption && (
+          <div className="rounded-2xl border border-gray-100 bg-white p-5">
+            <div className="mb-3 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-100 text-teal-600">
+                <Smartphone className="h-5 w-5" aria-hidden />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-semibold text-gray-800">Préférez la vérification par SMS ?</p>
+                <p className="text-xs text-gray-600">
+                  Recevez un code à usage unique sur votre numéro de téléphone.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPhoneModalOpen(true)}
+              className="w-full rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
+            >
+              Vérifier via le numéro de téléphone
+            </button>
+          </div>
+        )}
+
+        <p className="text-center text-xs text-gray-500">
+          Si vous rencontrez toujours des difficultés, contactez le support Pizza King.
         </p>
       </div>
+
+      {phoneModalOpen && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="relative w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
+            <button
+              type="button"
+              onClick={closePhoneModal}
+              className="absolute right-4 top-4 text-gray-400 hover:text-gray-600"
+              aria-label="Fermer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="mb-4 text-center">
+              <h2 className="text-xl font-semibold text-gray-900">Vérification par SMS</h2>
+              <p className="mt-1 text-sm text-gray-600">
+                Confirmez votre numéro pour activer votre compte sans email.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-gray-700">Numéro de téléphone</label>
+                <PhoneInput
+                  international
+                  defaultCountry="FR"
+                  value={phoneValue || undefined}
+                  onChange={value => setPhoneValue(value ?? '')}
+                  numberInputProps={{
+                    required: true,
+                    className:
+                      'w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20',
+                  }}
+                  countrySelectProps={{
+                    className:
+                      'rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20',
+                  }}
+                />
+              </div>
+
+              {phoneStep === 'code' && (
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-gray-700">Code SMS</label>
+                  <input
+                    value={phoneCode}
+                    onChange={event => setPhoneCode(event.target.value)}
+                    maxLength={6}
+                    inputMode="numeric"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg tracking-widest focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+                    placeholder="123456"
+                  />
+                  <p className="text-xs text-gray-500">Entrez le code reçu par SMS.</p>
+                </div>
+              )}
+
+              {phoneError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {phoneError}
+                </div>
+              )}
+
+              <div className="flex flex-col gap-3">
+                {phoneStep === 'code' ? (
+                  <button
+                    type="button"
+                    onClick={handleConfirmPhoneCode}
+                    disabled={phoneLoading}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {phoneLoading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
+                    {phoneLoading ? 'Vérification…' : 'Confirmer le code'}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSendPhoneCode}
+                    disabled={phoneLoading}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {phoneLoading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
+                    {phoneLoading ? 'Envoi du code…' : 'Envoyer le code par SMS'}
+                  </button>
+                )}
+
+                {phoneStep === 'code' && (
+                  <button
+                    type="button"
+                    onClick={handleSendPhoneCode}
+                    disabled={phoneLoading}
+                    className="text-sm font-medium text-orange-600 hover:text-orange-500"
+                  >
+                    Renvoyer le code
+                  </button>
+                )}
+              </div>
+
+              <div id="phone-verification-recaptcha" className="hidden" />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-

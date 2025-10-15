@@ -84,14 +84,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     provider: 'password' | 'google' = 'password'
   ): Promise<void> => {
     const now = Timestamp.now();
-    const userData: Omit<User, 'id'> = {
-      email,
-      phoneNumber,
-      displayName: `${firstName} ${lastName}`.trim() || email,
+    const trimmedEmail = email.trim();
+    const trimmedPhone = phoneNumber.trim();
+    const userRef = doc(db, COLLECTIONS.USERS, uid);
+    const displayName = `${firstName} ${lastName}`.trim() || trimmedEmail;
+
+    const baseData: Omit<User, 'id'> = {
+      email: trimmedEmail,
+      phoneNumber: trimmedPhone,
+      displayName,
       firstName,
       lastName,
       role: 'customer',
-      status: 'active',
+      status: provider === 'password' ? 'pending' : 'active',
       loyaltyPoints: 0,
       loyaltyTier: 'bronze',
       totalSpent: 0,
@@ -110,14 +115,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       createdAt: now,
       updatedAt: now,
       lastLoginAt: now,
-    };
-
-    await setDoc(doc(db, COLLECTIONS.USERS, uid), {
-      id: uid,
-      ...userData,
       provider,
       hasPassword: provider === 'password',
-    });
+      emailVerified: provider === 'google',
+      phoneVerified: false,
+    };
+
+    try {
+      await setDoc(userRef, {
+        id: uid,
+        ...baseData,
+      });
+    } catch (error) {
+      console.error('Failed to create user document:', error);
+      throw new Error('Impossible de sauvegarder le profil utilisateur.');
+    }
   };
 
   /**
@@ -170,6 +182,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         phoneNumber
       );
     } catch (error: any) {
+      // Attempt to clean up partially created auth user
+      try {
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          await currentUser.delete();
+        }
+      } catch (cleanupError) {
+        console.error('Failed to cleanup auth user after signup error:', cleanupError);
+      }
+
       throw new Error(error.message || "Erreur lors de l'inscription");
     }
   };

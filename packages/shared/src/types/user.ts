@@ -1,7 +1,7 @@
 import { Timestamp } from 'firebase/firestore';
 
 export type UserRole = 'customer' | 'admin' | 'deliverer' | 'superadmin';
-export type UserStatus = 'active' | 'suspended' | 'deleted';
+export type UserStatus = 'pending' | 'active' | 'suspended' | 'deleted';
 export type LoyaltyTier = 'bronze' | 'silver' | 'gold' | 'platinum';
 export type Language = 'fr' | 'en' | 'ar';
 
@@ -44,6 +44,10 @@ export interface User {
   updatedAt: Timestamp;
   lastLoginAt?: Timestamp;
   stats?: UserStats;
+  provider?: 'password' | 'google';
+  hasPassword?: boolean;
+  emailVerified?: boolean;
+  phoneVerified?: boolean;
 }
 
 export interface DelivererInfo extends User {

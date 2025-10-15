@@ -49,6 +49,44 @@
   }
 }
 
+.PhoneInput {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.PhoneInputCountry {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.PhoneInputCountrySelect {
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  background-color: #fff;
+}
+
+.PhoneInputInput {
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+}
+
+.PhoneInputCountrySelect:focus,
+.PhoneInputInput:focus {
+  outline: none;
+  border-color: #f97316;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
+}
+
+.PhoneInput input {
+  width: 100%;
+}
+
 @layer base {
   * {
     @apply border-border;

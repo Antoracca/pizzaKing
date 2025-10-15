@@ -32,7 +32,8 @@
     "@vis.gl/react-google-maps": "^1.1.0",
     "@stripe/stripe-js": "^3.3.0",
     "@stripe/react-stripe-js": "^2.7.0",
-    "framer-motion": "^11.1.7"
+    "framer-motion": "^11.1.7",
+    "react-phone-number-input": "^3.3.2"
   },
   "devDependencies": {
     "@types/node": "^20.12.7",

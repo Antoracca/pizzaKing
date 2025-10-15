@@ -1,8 +1,9 @@
+
 'use client';
 
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore /* , initializeFirestore */ } from 'firebase/firestore';
+import { getAuth, connectAuthEmulator } from 'firebase/auth';
+import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAnalytics, type Analytics } from 'firebase/analytics';
 
@@ -33,7 +34,8 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app);
 
 // --- Option simple (recommandée) ---
-const db = getFirestore(app);
+const databaseId = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_ID;
+const db = databaseId ? getFirestore(app, databaseId) : getFirestore(app);
 
 // --- Option avancée (si tu tiens à un databaseId dédié) ---
 // initializeFirestore(app, {}, 'pizzaking');
@@ -57,3 +59,16 @@ if (typeof window !== 'undefined') {
 console.log('✅ Firebase initialized successfully for project:', firebaseConfig.projectId);
 
 export { app, auth, db, storage, analytics, isFirebaseConfigured };
+
+// Optional: connect to Firebase emulators in local dev
+if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_USE_EMULATORS === '1') {
+  try {
+    connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+    connectFirestoreEmulator(db, 'localhost', 8080);
+    // eslint-disable-next-line no-console
+    console.log('Connected to Firebase emulators (auth, firestore).');
+  } catch {
+    // eslint-disable-next-line no-console
+    console.log('Emulator connection failed or already connected.');
+  }
+}
