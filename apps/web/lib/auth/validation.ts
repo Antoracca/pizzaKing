@@ -68,7 +68,7 @@ export async function getEmailByPhone(
 ): Promise<string | null> {
   const user = await getUserByPhone(phoneNumber);
   if (!user) return null;
-  const email = (user as any).email as string | undefined;
+  const email = (user as { email?: string } | null)?.email;
   return email?.trim() || null;
 }
 

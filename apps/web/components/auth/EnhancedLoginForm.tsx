@@ -121,11 +121,10 @@ export default function EnhancedLoginForm({ backHref = '/' }: EnhancedLoginFormP
           setEmailStatus('valid');
           setEmailHint('Compte trouvé. Vous pouvez saisir votre mot de passe.');
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const msg = (error as { message?: string } | null)?.message;
         setEmailStatus('invalid');
-        setEmailHint(
-          error?.message || "Impossible de vérifier l'adresse e‑mail pour le moment."
-        );
+        setEmailHint(msg || "Impossible de vérifier l'adresse e‑mail pour le moment.");
       }
     }, 400);
 
@@ -161,7 +160,7 @@ export default function EnhancedLoginForm({ backHref = '/' }: EnhancedLoginFormP
           setPhoneStatus('invalid');
           setPhoneHint('Aucun compte trouvé avec ce numéro.');
         } else {
-          const verified = Boolean((userDoc as any).phoneVerified);
+          const verified = Boolean((userDoc as { phoneVerified?: boolean } | null)?.phoneVerified);
           if (!verified) {
             setPhoneStatus('warning');
             setPhoneHint(
@@ -172,11 +171,10 @@ export default function EnhancedLoginForm({ backHref = '/' }: EnhancedLoginFormP
             setPhoneHint('Compte trouvé. Vous pouvez saisir votre mot de passe.');
           }
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const msg = (error as { message?: string } | null)?.message;
         setPhoneStatus('invalid');
-        setPhoneHint(
-          error?.message || 'Impossible de vérifier le numéro pour le moment.'
-        );
+        setPhoneHint(msg || 'Impossible de vérifier le numéro pour le moment.');
       }
     }, 400);
 
@@ -257,8 +255,8 @@ export default function EnhancedLoginForm({ backHref = '/' }: EnhancedLoginFormP
             return;
           }
           phoneVerifiedOk = true;
-        } catch {
-          // If we fail to read the doc, fall back to email mapping
+        } catch (_e) {
+          void 0; // noop
         }
 
         const mapped = await getEmailByPhone(trimmedPhone);
@@ -272,24 +270,24 @@ export default function EnhancedLoginForm({ backHref = '/' }: EnhancedLoginFormP
         }
         resolvedEmail = mapped;
       }
-    } catch (validationError: any) {
-      // Surface the validation failure under the appropriate field
-      if (mode === 'email') {
-        setEmailStatus('invalid');
-        setEmailHint(
-          validationError?.message ||
-            'Impossible de vérifier votre compte. Réessayez.'
-        );
-      } else {
-        setPhoneStatus('invalid');
-        setPhoneHint(
-          validationError?.message ||
-            'Impossible de vérifier votre compte. Réessayez.'
-        );
+      } catch (validationError: unknown) {
+        // Surface the validation failure under the appropriate field
+        if (mode === 'email') {
+          setEmailStatus('invalid');
+          setEmailHint(
+            (validationError as { message?: string } | null)?.message ||
+              'Impossible de vérifier votre compte. Réessayez.'
+          );
+        } else {
+          setPhoneStatus('invalid');
+          setPhoneHint(
+            (validationError as { message?: string } | null)?.message ||
+              'Impossible de vérifier votre compte. Réessayez.'
+          );
+        }
+        setChecking(false);
+        return;
       }
-      setChecking(false);
-      return;
-    }
 
     setChecking(false);
     setLoading(true);
@@ -303,7 +301,7 @@ export default function EnhancedLoginForm({ backHref = '/' }: EnhancedLoginFormP
           if (typeof window !== 'undefined') {
             window.sessionStorage.setItem('pk_phone_login_success', '1');
           }
-        } catch {}
+        } catch { /* empty */ }
         router.replace(redirectParam || '/');
       } else {
         await signIn((resolvedEmail as string).trim(), password);
@@ -311,28 +309,28 @@ export default function EnhancedLoginForm({ backHref = '/' }: EnhancedLoginFormP
           if (typeof window !== 'undefined') {
             window.sessionStorage.setItem('pk_email_login_success', '1');
           }
-        } catch {}
+        } catch { /* empty */ }
         router.replace(redirectParam || '/');
       }
-    } catch (signInError: any) {
-      // stay on the page and surface a clear message
+      } catch (signInError: unknown) {
+        // stay on the page and surface a clear message
 
-      // Map Firebase errors to field-level messages
-      const code = signInError?.code || '';
-      if (code === 'auth/email-not-verified') {
-        setPendingVerification(true);
-        setEmailStatus('invalid');
-        setEmailHint(
-          "Votre email n'est pas encore vérifié. Ouvrez le lien reçu par email pour activer votre compte, puis revenez vous connecter. Vous pouvez renvoyer le mail ci‑dessous."
-        );
-        // If user was logging in via phone, surface the message under the email field
-        if (mode === 'phone' && resolvedEmail) {
-          setEmail(resolvedEmail);
-          setMode('email');
+        // Map Firebase errors to field-level messages
+        const code = (signInError as { code?: string } | null)?.code || '';
+        if (code === 'auth/email-not-verified') {
+          setPendingVerification(true);
+          setEmailStatus('invalid');
+          setEmailHint(
+            "Votre email n'est pas encore vérifié. Ouvrez le lien reçu par email pour activer votre compte, puis revenez vous connecter. Vous pouvez renvoyer le mail ci‑dessous."
+          );
+          // If user was logging in via phone, surface the message under the email field
+          if (mode === 'phone' && resolvedEmail) {
+            setEmail(resolvedEmail);
+            setMode('email');
+          }
+          setLoading(false);
+          return;
         }
-        setLoading(false);
-        return;
-      }
 
       switch (code) {
         case 'auth/wrong-password':
@@ -357,25 +355,26 @@ export default function EnhancedLoginForm({ backHref = '/' }: EnhancedLoginFormP
         default:
           setPasswordHint('Connexion impossible. Réessayez.');
       }
-    } finally {
-      setLoading(false);
-    }
-  };
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleResendEmail = async () => {
-    if (!email) return;
-    setResendLoading(true);
-    setPasswordHint('');
+    const handleResendEmail = async (): Promise<void> => {
+      if (!email) return;
+      setResendLoading(true);
+      setPasswordHint('');
 
-    try {
-      await resendEmailVerification(email.trim(), password);
-      setEmailStatus('info');
-      setEmailHint(
-        "Un nouvel email de vérification vient d'être envoyé. Vérifiez votre boîte mail."
-      );
-    } catch (resendError: any) {
-      const code = resendError?.code || '';
-      const msg = (resendError?.message || '').toLowerCase();
+      try {
+        await resendEmailVerification(email.trim(), password);
+        setEmailStatus('info');
+        setEmailHint(
+          "Un nouvel email de vérification vient d'être envoyé. Vérifiez votre boîte mail."
+        );
+    } catch (resendError: unknown) {
+      const code = (resendError as { code?: string } | null)?.code || '';
+      const raw = (resendError as { message?: string } | null)?.message || '';
+      const msg = raw.toLowerCase();
       if (code === 'auth/too-many-requests' || msg.includes('too-many-requests')) {
         setEmailStatus('warning');
         setEmailHint(
@@ -393,29 +392,32 @@ export default function EnhancedLoginForm({ backHref = '/' }: EnhancedLoginFormP
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-    setPasswordHint('');
-    try {
-      await signInWithGoogle();
-    } catch (googleError: any) {
-      const code = googleError?.code || '';
-      let message = 'Connexion Google impossible. Réessayez.';
-      switch (code) {
-        case 'auth/popup-closed-by-user':
-          message = 'Fenêtre fermée avant la validation.';
-          break;
-        case 'auth/network-request-failed':
-          message = 'Problème réseau. Vérifiez votre connexion.';
-          break;
-        default:
-          if (googleError?.message) message = googleError.message;
+    const handleGoogleLogin = async (): Promise<void> => {
+      setLoading(true);
+      setPasswordHint('');
+      try {
+        await signInWithGoogle();
+      } catch (googleError: unknown) {
+        const code = (googleError as { code?: string } | null)?.code || '';
+        let message = 'Connexion Google impossible. Réessayez.';
+        switch (code) {
+          case 'auth/popup-closed-by-user':
+            message = 'Fenêtre fermée avant la validation.';
+            break;
+          case 'auth/network-request-failed':
+            message = 'Problème réseau. Vérifiez votre connexion.';
+            break;
+          default:
+            {
+              const m = (googleError as { message?: string } | null)?.message;
+              if (m) message = m;
+            }
+        }
+        setPasswordHint(message);
+      } finally {
+        setLoading(false);
       }
-      setPasswordHint(message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
   const EmailStatusIcon = useMemo(() => {
     if (emailStatus === 'valid') return <CheckCircle2 className="h-4 w-4 text-emerald-500" aria-hidden />;
