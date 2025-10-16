@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
-import { Eye, EyeOff, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Eye, EyeOff, Loader2, CheckCircle2, XCircle, Pizza } from 'lucide-react';
 import { useAuth } from '@pizza-king/shared';
 import {
   validateEmail,
@@ -13,6 +13,7 @@ import {
   checkPhoneExists,
   validatePhone,
 } from '@/lib/auth/validation';
+import { useDetectedCountry } from '@/lib/utils/countryDetection';
 
 type FormState = {
   firstName: string;
@@ -48,9 +49,20 @@ export default function SignupForm() {
   const [lastNameHint, setLastNameHint] = useState('');
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [passwordHint, setPasswordHint] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const router = useRouter();
   const { signUp } = useAuth();
+  const { country, detectedCountry, isDetecting } = useDetectedCountry();
+  
+  // Force le re-render du PhoneInput quand le pays est détecté
+  const [phoneInputKey, setPhoneInputKey] = useState(0);
+
+  useEffect(() => {
+    if (detectedCountry && !isDetecting) {
+      setPhoneInputKey(prev => prev + 1); // Force re-render
+    }
+  }, [detectedCountry, isDetecting]);
 
   const handleChange = (field: keyof FormState, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -280,6 +292,15 @@ export default function SignupForm() {
         form.phone.trim()
       );
 
+      // Marquer le succès de l'inscription pour pré-charger les données
+      try {
+        if (typeof window !== 'undefined') {
+          window.sessionStorage.setItem('pk_signup_success', '1');
+          window.sessionStorage.setItem('pk_signup_email', form.email.trim());
+          window.sessionStorage.setItem('pk_signup_phone', form.phone.trim());
+        }
+      } catch { /* empty */ }
+
       router.push('/auth/verify');
     } catch (signupError: any) {
       setError(signupError?.message || 'Impossible de créer votre compte. Réessayez plus tard.');
@@ -289,41 +310,41 @@ export default function SignupForm() {
   };
 
     return (
-      <div className="relative w-full max-w-md rounded-3xl bg-white p-6 shadow-xl sm:p-8 lg:p-8">
+      <div className="relative w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl sm:p-8 lg:p-10 lg:max-w-xl">
         <a
           href="/auth/login"
-          className="absolute left-4 top-4 z-10 rounded-full bg-white p-2 shadow-md hover:bg-gray-100"
+          className="absolute left-4 top-4 z-10 rounded-full bg-white p-2.5 shadow-lg hover:bg-gray-50 hover:shadow-xl transition-all duration-200"
           aria-label="Retour à la connexion"
         >
-          <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
-            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <svg viewBox="0 0 24 24" className="h-5 w-5 text-gray-600" aria-hidden>
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </a>
-        <div className="mb-6 text-center sm:mb-8">
-        <h1 className="text-2xl font-semibold text-gray-900 sm:text-3xl">
+        <div className="mb-8 text-center sm:mb-10 pt-12 sm:pt-8">
+        <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
           Créez votre compte
         </h1>
-        <p className="mt-2 text-sm text-gray-600">
+        <p className="mt-3 text-base text-gray-600 sm:text-lg">
           Rejoignez Pizza King et profitez des meilleures offres.
         </p>
       </div>
 
       {error && (
-        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <div className="mb-8 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 font-medium">
           {error}
         </div>
       )}
 
       <form
-        className="space-y-4 sm:space-y-6"
+        className="space-y-6 sm:space-y-8"
         onSubmit={handleSubmit}
         noValidate
       >
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
-            <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-8">
+            <div className="flex flex-col gap-3">
               <label
                 htmlFor="firstName"
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-semibold text-gray-800"
               >
                 Prénom
               </label>
@@ -334,18 +355,18 @@ export default function SignupForm() {
                 value={form.firstName}
                 onChange={event => handleChange('firstName', event.target.value)}
                 autoComplete="given-name"
-                className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-base sm:text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+                className="w-full rounded-2xl border border-gray-300 px-5 py-3.5 text-base focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200"
                 placeholder="Jean"
                 required
               />
               {firstNameHint && (
-                <p className="text-xs text-red-600">{firstNameHint}</p>
+                <p className="text-xs text-red-600 mt-1">{firstNameHint}</p>
               )}
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
               <label
                 htmlFor="lastName"
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-semibold text-gray-800"
               >
                 Nom
               </label>
@@ -356,18 +377,18 @@ export default function SignupForm() {
                 value={form.lastName}
                 onChange={event => handleChange('lastName', event.target.value)}
                 autoComplete="family-name"
-                className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-base sm:text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+                className="w-full rounded-2xl border border-gray-300 px-5 py-3.5 text-base focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200"
                 placeholder="Dupont"
                 required
               />
               {lastNameHint && (
-                <p className="text-xs text-red-600">{lastNameHint}</p>
+                <p className="text-xs text-red-600 mt-1">{lastNameHint}</p>
               )}
             </div>
           </div>
 
-        <div className="flex flex-col gap-2">
-          <label htmlFor="email" className="text-sm font-medium text-gray-700">
+        <div className="flex flex-col gap-3">
+          <label htmlFor="email" className="text-sm font-semibold text-gray-800">
             Email
           </label>
             <div className="relative">
@@ -380,24 +401,24 @@ export default function SignupForm() {
                 autoComplete="email"
                 aria-invalid={emailStatus === 'invalid'}
                 aria-describedby="signup-email-help"
-                className="w-full rounded-xl border border-gray-300 px-4 py-2.5 pr-12 text-base sm:text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+                className="w-full rounded-2xl border border-gray-300 px-5 py-3.5 pr-12 text-base focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200"
                 placeholder="vous@example.com"
                 required
               />
-              <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2">
                 {emailStatus === 'checking' ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-gray-400" aria-hidden />
+                  <Loader2 className="h-5 w-5 animate-spin text-gray-400" aria-hidden />
                 ) : emailStatus === 'valid' ? (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" aria-hidden />
+                  <CheckCircle2 className="h-5 w-5 text-emerald-500" aria-hidden />
                 ) : emailStatus === 'invalid' ? (
-                  <XCircle className="h-4 w-4 text-red-500" aria-hidden />
+                  <XCircle className="h-5 w-5 text-red-500" aria-hidden />
                 ) : null}
               </div>
             </div>
             {emailHint && (
               <p
                 id="signup-email-help"
-                className={`text-xs ${
+                className={`text-xs mt-1 ${
                   emailStatus === 'invalid'
                     ? 'text-red-600'
                     : emailStatus === 'valid'
@@ -408,15 +429,15 @@ export default function SignupForm() {
                 {emailHint}
               </p>
             )}
-          {/* Pas de message d'erreur sous l'email (demandé) */}
         </div>
 
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700">Téléphone</label>
+        <div className="flex flex-col gap-3">
+          <label className="text-sm font-semibold text-gray-800">Téléphone</label>
           <div className="relative">
             <PhoneInput
+              key={phoneInputKey}
               international
-              defaultCountry="FR"
+              defaultCountry={country}
               value={form.phone || undefined}
               onChange={value => handleChange('phone', value ?? '')}
               className="PhoneInput"
@@ -425,27 +446,27 @@ export default function SignupForm() {
                 'aria-invalid': phoneStatus === 'invalid',
                 'aria-describedby': 'signup-phone-help',
                 className:
-                  'w-full rounded-lg border border-gray-300 px-4 py-2.5 pr-12 text-base sm:text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20',
+                  'w-full rounded-2xl border border-gray-300 px-5 py-3.5 pr-12 text-base focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200',
               }}
               countrySelectProps={{
                 className:
-                  'rounded-lg border border-gray-300 bg-white px-2 py-2 text-base sm:text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20',
+                  'rounded-2xl border border-gray-300 bg-white px-3 py-3.5 text-base focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200',
               }}
             />
-            <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+            <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2">
               {phoneStatus === 'checking' ? (
-                <Loader2 className="h-4 w-4 animate-spin text-gray-400" aria-hidden />
+                <Loader2 className="h-5 w-5 animate-spin text-gray-400" aria-hidden />
               ) : phoneStatus === 'valid' ? (
-                <CheckCircle2 className="h-4 w-4 text-emerald-500" aria-hidden />
+                <CheckCircle2 className="h-5 w-5 text-emerald-500" aria-hidden />
               ) : phoneStatus === 'invalid' ? (
-                <XCircle className="h-4 w-4 text-red-500" aria-hidden />
+                <XCircle className="h-5 w-5 text-red-500" aria-hidden />
               ) : null}
             </div>
           </div>
           {phoneHint && (
             <p
               id="signup-phone-help"
-              className={`text-xs ${
+              className={`text-xs mt-1 ${
                 phoneStatus === 'invalid'
                   ? 'text-red-600'
                   : phoneStatus === 'valid'
@@ -458,10 +479,10 @@ export default function SignupForm() {
           )}
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
           <label
             htmlFor="password"
-            className="text-sm font-medium text-gray-700"
+            className="text-sm font-semibold text-gray-800"
           >
             Mot de passe
           </label>
@@ -473,7 +494,7 @@ export default function SignupForm() {
                 value={form.password}
                 onChange={event => handleChange('password', event.target.value)}
                 autoComplete="new-password"
-                className="w-full rounded-xl border border-gray-300 px-4 py-2.5 pr-12 text-base sm:text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+                className="w-full rounded-2xl border border-gray-300 px-5 py-3.5 pr-12 text-base focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200"
                 placeholder="••••••••"
                 required
               />
@@ -495,34 +516,39 @@ export default function SignupForm() {
               </button>
             </div>
           {passwordHint && (
-            <p className="text-xs text-red-600">{passwordHint}</p>
+            <p className="text-xs text-red-600 mt-1">{passwordHint}</p>
           )}
-          <div className="mt-2 grid grid-cols-1 gap-1.5 text-xs sm:text-xs">
-            <div className={`${passChecks.length ? 'text-emerald-600' : 'text-gray-500'}`}>
-              • Au moins 8 caractères {passChecks.length ? '✓' : ''}
+          <div className="mt-3 grid grid-cols-1 gap-2 text-xs bg-gray-50 rounded-xl p-4">
+            <div className={`flex items-center gap-2 ${passChecks.length ? 'text-emerald-600' : 'text-gray-500'}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${passChecks.length ? 'bg-emerald-500' : 'bg-gray-400'}`}></span>
+              Au moins 8 caractères {passChecks.length ? '✓' : ''}
             </div>
-            <div className={`${passChecks.upper ? 'text-emerald-600' : 'text-gray-500'}`}>
-              • Une majuscule (A‑Z) {passChecks.upper ? '✓' : ''}
+            <div className={`flex items-center gap-2 ${passChecks.upper ? 'text-emerald-600' : 'text-gray-500'}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${passChecks.upper ? 'bg-emerald-500' : 'bg-gray-400'}`}></span>
+              Une majuscule (A‑Z) {passChecks.upper ? '✓' : ''}
             </div>
-            <div className={`${passChecks.lower ? 'text-emerald-600' : 'text-gray-500'}`}>
-              • Une minuscule (a‑z) {passChecks.lower ? '✓' : ''}
+            <div className={`flex items-center gap-2 ${passChecks.lower ? 'text-emerald-600' : 'text-gray-500'}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${passChecks.lower ? 'bg-emerald-500' : 'bg-gray-400'}`}></span>
+              Une minuscule (a‑z) {passChecks.lower ? '✓' : ''}
             </div>
-            <div className={`${passChecks.digit ? 'text-emerald-600' : 'text-gray-500'}`}>
-              • Un chiffre (0‑9) {passChecks.digit ? '✓' : ''}
+            <div className={`flex items-center gap-2 ${passChecks.digit ? 'text-emerald-600' : 'text-gray-500'}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${passChecks.digit ? 'bg-emerald-500' : 'bg-gray-400'}`}></span>
+              Un chiffre (0‑9) {passChecks.digit ? '✓' : ''}
             </div>
-            <div className={`${passChecks.special ? 'text-emerald-600' : 'text-gray-500'}`}>
-              • Un caractère spécial (!@#$…)
+            <div className={`flex items-center gap-2 ${passChecks.special ? 'text-emerald-600' : 'text-gray-500'}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${passChecks.special ? 'bg-emerald-500' : 'bg-gray-400'}`}></span>
+              Un caractère spécial (!@#$…) {passChecks.special ? '✓' : ''}
             </div>
-            <div className="text-gray-500">
+            <div className="text-gray-500 mt-2 text-xs italic">
               Exemples: Pizza#2024, King!89ab, Pk@Secure9
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
           <label
             htmlFor="confirmPassword"
-            className="text-sm font-medium text-gray-700"
+            className="text-sm font-semibold text-gray-800"
           >
             Confirmer le mot de passe
           </label>
@@ -536,7 +562,7 @@ export default function SignupForm() {
                   handleChange('confirmPassword', event.target.value)
                 }
                 autoComplete="new-password"
-                className="w-full rounded-xl border border-gray-300 px-4 py-2.5 pr-12 text-base sm:text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+                className="w-full rounded-2xl border border-gray-300 px-5 py-3.5 pr-12 text-base focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200"
                 placeholder="••••••••"
                 required
               />
@@ -558,28 +584,34 @@ export default function SignupForm() {
               </button>
             </div>
           {confirmHint && (
-            <p className="text-xs text-red-600">{confirmHint}</p>
+            <p className="text-xs text-red-600 mt-1">{confirmHint}</p>
           )}
         </div>
 
-        <div className="flex items-start gap-3 rounded-2xl bg-gray-50 p-3 text-xs text-gray-600 sm:gap-4 sm:p-4">
+        <div className="flex items-start gap-3 rounded-2xl bg-gray-50 p-4 text-xs text-gray-600 sm:gap-4 sm:p-5">
           <input
             type="checkbox"
+            checked={termsAccepted}
+            onChange={(e) => setTermsAccepted(e.target.checked)}
             required
             className="mt-1 h-4 w-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
           />
-          <p className="text-xs sm:text-sm">
+          <p className="text-xs sm:text-sm leading-relaxed">
             En créant un compte, vous acceptez nos{' '}
             <a
               href="/terms"
-              className="font-medium text-orange-600 hover:text-orange-500"
+              className="font-medium text-orange-600 hover:text-orange-500 underline"
+              target="_blank"
+              rel="noopener noreferrer"
             >
-              Conditions d’utilisation
+              Conditions d'utilisation
             </a>{' '}
             et notre{' '}
             <a
               href="/privacy"
-              className="font-medium text-orange-600 hover:text-orange-500"
+              className="font-medium text-orange-600 hover:text-orange-500 underline"
+              target="_blank"
+              rel="noopener noreferrer"
             >
               Politique de confidentialité
             </a>
@@ -589,8 +621,12 @@ export default function SignupForm() {
 
         <button
           type="submit"
-          disabled={loading || checking}
-          className="flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-orange-500 to-red-500 px-4 py-3 text-base font-semibold text-white shadow-lg transition hover:from-orange-600 hover:to-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={loading || checking || !termsAccepted}
+          className={`flex w-full items-center justify-center rounded-xl px-4 py-3 text-base font-semibold shadow-lg transition-all duration-200 ${
+            termsAccepted && !loading && !checking
+              ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600 hover:shadow-xl transform hover:scale-[1.02]'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          }`}
         >
           {(loading || checking) && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -599,19 +635,54 @@ export default function SignupForm() {
             ? 'Vérification…'
             : loading
               ? 'Création du compte…'
-              : 'S’inscrire'}
+              : "S'inscrire"}
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-gray-600">
+      <p className="mt-8 text-center text-base text-gray-600">
         Vous avez déjà un compte ?{' '}
         <a
           href="/auth/login"
-          className="font-medium text-orange-600 hover:text-orange-500"
+          className="font-semibold text-orange-600 hover:text-orange-500 underline transition-colors"
         >
           Connectez-vous
         </a>
       </p>
+
+      {/* Loader fullscreen */}
+      {(loading || checking) && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-6 rounded-3xl bg-white p-10 shadow-2xl">
+            <div className="relative">
+              <Pizza 
+                className="h-16 w-16 text-orange-500 animate-spin" 
+                style={{ animationDuration: '2s' }}
+              />
+              <div className="absolute inset-0 -z-10 rounded-full bg-orange-400 blur-xl opacity-30 animate-pulse" />
+            </div>
+            <div className="text-center">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                {checking ? 'Vérification en cours...' : 'Inscription en cours...'}
+              </h3>
+              <p className="text-sm text-gray-600">
+                {checking 
+                  ? 'Nous vérifions vos informations' 
+                  : 'Création de votre compte Pizza King'
+                }
+              </p>
+            </div>
+            <div className="flex gap-2">
+              {[0, 1, 2].map(i => (
+                <div
+                  key={i}
+                  className="h-2 w-2 rounded-full bg-orange-500 animate-bounce"
+                  style={{ animationDelay: `${i * 0.2}s` }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

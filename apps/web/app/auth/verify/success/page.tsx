@@ -3,17 +3,35 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle2 } from 'lucide-react';
+import { useAuth } from '@pizza-king/shared';
 
 export default function VerifySuccessPage() {
   const router = useRouter();
+  const { user, firebaseUser } = useAuth();
   const [secondsRemaining, setSecondsRemaining] = useState(5);
 
   useEffect(() => {
+    // Nettoyer les données d'inscription du sessionStorage après succès
+    try {
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.removeItem('pk_signup_success');
+        window.sessionStorage.removeItem('pk_signup_email');
+        window.sessionStorage.removeItem('pk_signup_phone');
+      }
+    } catch { /* empty */ }
+
     const interval = setInterval(() => {
       setSecondsRemaining(prev => {
         if (prev <= 1) {
           clearInterval(interval);
-          router.push('/');
+          // Attendre que l'état utilisateur soit à jour puis rediriger
+          if (user && firebaseUser) {
+            console.log('✅ Utilisateur connecté, redirection...');
+            router.replace('/');
+          } else {
+            console.log('⚠️ État utilisateur pas encore à jour, force refresh...');
+            window.location.href = '/';
+          }
           return 0;
         }
         return prev - 1;
@@ -45,14 +63,26 @@ export default function VerifySuccessPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
           <button
             type="button"
-            onClick={() => router.push('/')}
+            onClick={() => {
+              if (user && firebaseUser) {
+                router.replace('/');
+              } else {
+                window.location.href = '/';
+              }
+            }}
             className="w-full rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 sm:w-auto"
           >
-            Aller à l’accueil
+            Aller à l'accueil
           </button>
           <button
             type="button"
-            onClick={() => router.push('/account')}
+            onClick={() => {
+              if (user && firebaseUser) {
+                router.replace('/account');
+              } else {
+                window.location.href = '/account';
+              }
+            }}
             className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-400 hover:bg-gray-50 sm:w-auto"
           >
             Voir mon compte

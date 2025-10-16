@@ -17,6 +17,7 @@ import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Loader2, MailCheck, MailQuestion, Smartphone, X, ArrowLeft } from 'lucide-react';
 import { useAuth, type UserStatus, type User } from '@pizza-king/shared';
 import { db, auth } from '@/lib/firebase';
+import { useDetectedCountry } from '@/lib/utils/countryDetection';
 
 const MAX_SMS_ATTEMPTS = 10;
 const BLOCK_DURATION_MS = 15 * 60 * 1000;
@@ -105,6 +106,7 @@ const alertStyles: Record<NonNullable<Alert>['type'], string> = {
 export default function VerifyPage() {
   const router = useRouter();
   const { firebaseUser, loading, updateUserProfile, user } = useAuth();
+  const { country, detectedCountry, isDetecting } = useDetectedCountry();
 
   const [alert, setAlert] = useState<Alert>(null);
   const [resending, setResending] = useState(false);
@@ -117,6 +119,16 @@ export default function VerifyPage() {
   const [phoneLoading, setPhoneLoading] = useState(false);
   const [phoneError, setPhoneError] = useState('');
   const [phoneEditable, setPhoneEditable] = useState(false);
+  const [cooldownTime, setCooldownTime] = useState(0);
+  
+  // Force le re-render du PhoneInput quand le pays est détecté
+  const [phoneInputKey, setPhoneInputKey] = useState(0);
+
+  useEffect(() => {
+    if (detectedCountry && !isDetecting) {
+      setPhoneInputKey(prev => prev + 1); // Force re-render
+    }
+  }, [detectedCountry, isDetecting]);
 
   const recaptchaVerifier = useRef<RecaptchaVerifier | null>(null);
   const confirmationResult = useRef<ConfirmationResult | null>(null);
@@ -137,12 +149,23 @@ export default function VerifyPage() {
   useEffect(() => {
     if (!phoneModalOpen) return;
 
-    const derived = user?.phoneNumber || firebaseUser?.phoneNumber || '';
-    initialPhoneRef.current = derived;
-    setPhoneValue(derived);
+    // Récupérer le téléphone depuis le sessionStorage si disponible (post-inscription)
+    let derivedPhone = user?.phoneNumber || firebaseUser?.phoneNumber || '';
+    
+    try {
+      if (typeof window !== 'undefined') {
+        const signupPhone = window.sessionStorage.getItem('pk_signup_phone');
+        if (signupPhone && !derivedPhone) {
+          derivedPhone = signupPhone;
+        }
+      }
+    } catch { /* empty */ }
+
+    initialPhoneRef.current = derivedPhone;
+    setPhoneValue(derivedPhone);
     setPhoneCode('');
     setPhoneStep('idle');
-    setPhoneEditable(false);
+    setPhoneEditable(!derivedPhone); // Permettre l'édition seulement si pas de numéro
   }, [phoneModalOpen, user?.phoneNumber, firebaseUser?.phoneNumber]);
 
   useEffect(() => {
@@ -195,6 +218,13 @@ export default function VerifyPage() {
             : 'Votre numéro est vérifié. Redirection…',
       });
 
+      // Marquer que l'utilisateur vient de terminer la vérification
+      try {
+        if (typeof window !== 'undefined') {
+          window.sessionStorage.setItem('pk_verification_success', '1');
+        }
+      } catch { /* empty */ }
+      
       router.replace('/auth/verify/success');
     } catch (error: any) {
       console.error('Failed to update user profile after verification:', error);
@@ -269,12 +299,23 @@ export default function VerifyPage() {
     setPhoneCode('');
     setPhoneLoading(false);
     setPhoneError('');
+    setCooldownTime(0);
     confirmationResult.current = null;
     if (recaptchaVerifier.current) {
       recaptchaVerifier.current.clear();
       recaptchaVerifier.current = null;
     }
   };
+
+  // Effet pour gérer le cooldown
+  useEffect(() => {
+    if (cooldownTime > 0) {
+      const timer = setTimeout(() => {
+        setCooldownTime(prev => prev - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [cooldownTime]);
 
   const closePhoneModal = () => {
     setPhoneModalOpen(false);
@@ -362,6 +403,7 @@ export default function VerifyPage() {
       );
       confirmationResult.current = confirmation;
       setPhoneStep('code');
+      setCooldownTime(24); // Délai de 24 secondes
     } catch (error: any) {
       console.error('Phone verification send failed:', error);
       setPhoneError(formatPhoneError(error));
@@ -543,21 +585,37 @@ export default function VerifyPage() {
                   Numéro de téléphone
                 </label>
                 <PhoneInput
-                  className="pk-phone-outside w-full"
+                  key={phoneInputKey}
                   international
-                  defaultCountry="FR"
+                  defaultCountry={country}
                   value={phoneValue || undefined}
-                  onChange={value => setPhoneValue(value ?? '')}
+                  onChange={value => phoneEditable && setPhoneValue(value ?? '')}
+                  className="PhoneInput"
                   numberInputProps={{
                     required: true,
-                    className:
-                      'w-full h-12 rounded-lg border border-gray-300 px-4 text-base focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20',
+                    disabled: !phoneEditable,
+                    'aria-invalid': false,
+                    'aria-describedby': 'verify-phone-help',
+                    className: `w-full rounded-2xl border border-gray-300 px-5 py-3.5 text-base focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200 ${
+                      !phoneEditable ? 'bg-gray-100 cursor-not-allowed' : ''
+                    }`,
                   }}
                   countrySelectProps={{
-                    className:
-                      'min-w-[4.25rem] h-12 rounded-xl border border-gray-300 bg-white px-3 py-2 text-base focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20',
+                    disabled: !phoneEditable,
+                    className: `rounded-2xl border border-gray-300 bg-white px-3 py-3.5 text-base focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200 ${
+                      !phoneEditable ? 'bg-gray-100 cursor-not-allowed' : ''
+                    }`,
                   }}
                 />
+                {!phoneEditable && phoneValue && (
+                  <button
+                    type="button"
+                    onClick={() => setPhoneEditable(true)}
+                    className="text-xs text-orange-600 hover:text-orange-500 underline mt-2"
+                  >
+                    Modifier le numéro de téléphone
+                  </button>
+                )}
               </div>
 
               {phoneStep === 'code' && (
@@ -618,10 +676,17 @@ export default function VerifyPage() {
                   <button
                     type="button"
                     onClick={handleSendPhoneCode}
-                    disabled={phoneLoading}
-                    className="text-sm font-medium text-orange-600 hover:text-orange-500"
+                    disabled={phoneLoading || cooldownTime > 0}
+                    className={`text-sm font-medium ${
+                      cooldownTime > 0 
+                        ? 'text-gray-400 cursor-not-allowed' 
+                        : 'text-orange-600 hover:text-orange-500'
+                    }`}
                   >
-                    Renvoyer le code
+                    {cooldownTime > 0 
+                      ? `Renvoyer le code (${cooldownTime}s)` 
+                      : 'Renvoyer le code'
+                    }
                   </button>
                 )}
               </div>

@@ -434,7 +434,378 @@ export default function AccountPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      <div className="container mx-auto max-w-6xl px-4 py-12">
+      {/* Mobile Layout */}
+      <div className="md:hidden">
+        <div className="px-4 py-6">
+          {feedback && (
+            <div
+              className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${
+                feedback.type === 'success'
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                  : 'border-red-200 bg-red-50 text-red-600'
+              }`}
+            >
+              {feedback.message}
+            </div>
+          )}
+
+          {/* Header Profile Mobile */}
+          <div className="mb-6 rounded-3xl bg-white p-6 shadow-lg">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="relative">
+                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border-2 border-orange-400 bg-gradient-to-br from-orange-400 to-red-500 text-lg font-bold text-white shadow-md">
+                  {user.photoURL ? (
+                    <img
+                      src={user.photoURL}
+                      alt={user.displayName ?? 'Photo de profil'}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <UserIcon className="h-8 w-8 text-white" />
+                  )}
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={handlePhotoChange}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-white p-0 text-gray-700 shadow hover:bg-gray-100"
+                  onClick={handlePhotoClick}
+                  disabled={photoLoading}
+                >
+                  {photoLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              
+              <div className="flex-1">
+                <h1 className="text-lg font-bold text-gray-900">
+                  {user.firstName || user.lastName
+                    ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim()
+                    : (user.displayName ?? 'Compte Pizza King')}
+                </h1>
+                <p className="text-xs text-gray-600">{user.email}</p>
+                <div className="mt-1 flex items-center gap-2">
+                  {emailVerified ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                      <CheckCircle className="h-3 w-3" />
+                      Vérifié
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleSendVerificationEmail}
+                      className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-600 hover:bg-red-200"
+                    >
+                      Vérifier
+                    </button>
+                  )}
+                  <Badge className="rounded-full bg-orange-50 text-orange-600 border-orange-200">
+                    <Award className="h-3 w-3 mr-1" />
+                    {user.loyaltyPoints ?? 0} pts
+                  </Badge>
+                </div>
+              </div>
+            </div>
+
+            {/* Stats Mobile Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              {stats.map((stat) => (
+                <div key={stat.label} className="rounded-2xl bg-gray-50 p-3 text-center">
+                  <div className={`mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-xl ${stat.background}`}>
+                    <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                  </div>
+                  <p className="text-xs text-gray-500">{stat.label}</p>
+                  <p className="text-sm font-bold text-gray-900">{stat.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Mobile Tabs */}
+          <div className="mb-6 flex rounded-2xl bg-white p-1 shadow-sm">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold transition ${
+                  activeTab === tab.id
+                    ? 'bg-orange-500 text-white shadow-md'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <tab.icon className="h-4 w-4" />
+                {tab.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Mobile Content */}
+          <div className="space-y-4">
+            {activeTab === 'overview' && (
+              <div className="space-y-4">
+                {/* Activité récente */}
+                <div className="rounded-2xl bg-white p-5 shadow-sm">
+                  <h2 className="mb-2 text-lg font-bold text-gray-900">Activité récente</h2>
+                  <p className="mb-4 text-sm text-gray-600">Suivez vos commandes et progression fidélité.</p>
+                  <div className="rounded-xl border border-dashed border-gray-200 p-4 text-center text-sm text-gray-500">
+                    Aucune commande récente. Commencez une nouvelle commande !
+                  </div>
+                </div>
+
+                {/* Préférences notifications */}
+                <div className="rounded-2xl bg-white p-5 shadow-sm">
+                  <h3 className="mb-2 text-lg font-bold text-gray-900">Notifications</h3>
+                  <p className="mb-4 text-sm text-gray-600">Vos préférences de notification actuelles.</p>
+                  <div className="space-y-3">
+                    {[
+                      { label: 'Email', value: preferencesForm.newsletter, description: 'Promotions & nouveautés' },
+                      { label: 'Push', value: preferencesForm.push, description: 'Suivi commandes' },
+                      { label: 'SMS', value: preferencesForm.sms, description: 'Alertes livraison' },
+                      { label: 'WhatsApp', value: preferencesForm.whatsapp, description: 'Support rapide' },
+                    ].map(pref => (
+                      <div key={pref.label} className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">{pref.label}</p>
+                          <p className="text-xs text-gray-500">{pref.description}</p>
+                        </div>
+                        <span className={`text-xs font-semibold ${pref.value ? 'text-emerald-600' : 'text-gray-400'}`}>
+                          {pref.value ? 'Activé' : 'Désactivé'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'settings' && (
+              <div className="space-y-4">
+                <div className="rounded-2xl bg-white p-5 shadow-sm">
+                  <h2 className="mb-2 text-lg font-bold text-gray-900">Informations personnelles</h2>
+                  <p className="mb-4 text-sm text-gray-600">Mettez à jour vos informations et préférences.</p>
+
+                  <form className="space-y-4" onSubmit={handleProfileSubmit}>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="mb-2 block text-sm font-semibold text-gray-800">Prénom</label>
+                        <input
+                          type="text"
+                          value={profileForm.firstName}
+                          onChange={event => setProfileForm(prev => ({ ...prev, firstName: event.target.value }))}
+                          className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+                          placeholder="Votre prénom"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-2 block text-sm font-semibold text-gray-800">Nom</label>
+                        <input
+                          type="text"
+                          value={profileForm.lastName}
+                          onChange={event => setProfileForm(prev => ({ ...prev, lastName: event.target.value }))}
+                          className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+                          placeholder="Votre nom"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-2 block text-sm font-semibold text-gray-800">Téléphone</label>
+                        <input
+                          type="tel"
+                          value={profileForm.phoneNumber}
+                          onChange={event => setProfileForm(prev => ({ ...prev, phoneNumber: event.target.value }))}
+                          className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+                          placeholder="+236 70 00 00 00"
+                        />
+                        <p className="mt-2 text-xs text-gray-500">Validez dans la section Sécurité.</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-semibold text-gray-800">Préférences notifications</h3>
+                      {[
+                        { key: 'newsletter' as const, label: 'Newsletter', description: 'Actualités & offres' },
+                        { key: 'push' as const, label: 'Push', description: 'Statut commandes' },
+                        { key: 'sms' as const, label: 'SMS', description: 'Alertes importantes' },
+                        { key: 'whatsapp' as const, label: 'WhatsApp', description: 'Support client' },
+                      ].map(pref => (
+                        <label key={pref.key} className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm hover:border-orange-300">
+                          <div>
+                            <p className="font-semibold text-gray-900">{pref.label}</p>
+                            <p className="text-xs text-gray-500">{pref.description}</p>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={preferencesForm[pref.key]}
+                            onChange={event => setPreferencesForm(prev => ({ ...prev, [pref.key]: event.target.checked }))}
+                            className="h-4 w-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                          />
+                        </label>
+                      ))}
+                    </div>
+
+                    <Button
+                      type="submit"
+                      className="w-full rounded-xl bg-gradient-to-r from-orange-600 to-red-600 py-3 text-sm font-semibold text-white shadow-lg hover:from-orange-700 hover:to-red-700"
+                      disabled={profileSaving}
+                    >
+                      {profileSaving ? (
+                        <span className="inline-flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Sauvegarde…
+                        </span>
+                      ) : (
+                        'Enregistrer les modifications'
+                      )}
+                    </Button>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'security' && (
+              <div className="space-y-4">
+                {/* Email */}
+                <div className="rounded-2xl bg-white p-5 shadow-sm">
+                  <h2 className="mb-2 text-lg font-bold text-gray-900">Email & vérification</h2>
+                  <p className="mb-4 text-sm text-gray-600">Mettez à jour votre email et vérifiez-le.</p>
+                  
+                  <form className="space-y-4" onSubmit={handleEmailUpdate}>
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-gray-800">Email actuel</label>
+                      <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
+                        <Mail className="h-4 w-4 text-gray-400" />
+                        <span>{emailForm.value}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-gray-800">Nouvel email</label>
+                      <input
+                        type="email"
+                        value={emailForm.newEmail}
+                        onChange={event => setEmailForm(prev => ({ ...prev, newEmail: event.target.value }))}
+                        className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+                        placeholder="nouveau@email.com"
+                        required
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full rounded-xl bg-gray-900 py-3 text-sm font-semibold text-white hover:bg-gray-800"
+                      disabled={emailSaving}
+                    >
+                      {emailSaving ? (
+                        <span className="inline-flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Mise à jour…
+                        </span>
+                      ) : (
+                        'Mettre à jour mon email'
+                      )}
+                    </Button>
+                  </form>
+                </div>
+
+                {/* Téléphone */}
+                <div className="rounded-2xl bg-white p-5 shadow-sm">
+                  <h2 className="mb-2 text-lg font-bold text-gray-900">Vérification téléphone</h2>
+                  <p className="mb-4 text-sm text-gray-600">Sécurisez votre compte avec la validation SMS.</p>
+                  
+                  <form
+                    className="space-y-4"
+                    onSubmit={phoneForm.step === 'verify' ? handleVerifyOtp : event => { event.preventDefault(); handleSendOtp(); }}
+                  >
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-gray-800">Numéro de téléphone</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="tel"
+                          value={phoneForm.phone}
+                          onChange={event => setPhoneForm(prev => ({ ...prev, phone: event.target.value }))}
+                          className="flex-1 rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+                          placeholder="+236 70 00 00 00"
+                          disabled={phoneForm.step === 'verify'}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleSendOtp}
+                          disabled={phoneSaving || phoneForm.step === 'verify'}
+                          className="rounded-xl px-4 py-3"
+                        >
+                          {phoneSaving && phoneForm.step === 'idle' ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            'Envoyer'
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {phoneForm.step === 'verify' && (
+                      <>
+                        <div>
+                          <label className="mb-2 block text-sm font-semibold text-gray-800">Code SMS</label>
+                          <input
+                            type="text"
+                            value={phoneForm.code}
+                            onChange={event => setPhoneForm(prev => ({ ...prev, code: event.target.value }))}
+                            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm uppercase tracking-widest focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+                            placeholder="123456"
+                          />
+                        </div>
+                        <Button
+                          type="submit"
+                          className="w-full rounded-xl bg-orange-600 py-3 text-sm font-semibold text-white shadow-lg hover:bg-orange-700"
+                          disabled={phoneSaving}
+                        >
+                          {phoneSaving ? (
+                            <span className="inline-flex items-center gap-2">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Vérification…
+                            </span>
+                          ) : (
+                            'Confirmer le code'
+                          )}
+                        </Button>
+                      </>
+                    )}
+                  </form>
+                  <div id="phone-recaptcha" />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Logout Button Mobile */}
+          <div className="mt-6">
+            <button
+              onClick={handleSignOut}
+              disabled={signingOut}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-100 disabled:opacity-60"
+            >
+              {signingOut ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <LogOut className="h-4 w-4" />
+              )}
+              {signingOut ? 'Déconnexion...' : 'Se déconnecter'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Layout */}
+      <div className="hidden md:block">
+        <div className="container mx-auto max-w-6xl px-4 py-12">
         {feedback && (
           <div
             className={`mb-6 rounded-2xl border px-4 py-3 text-sm ${
@@ -1032,6 +1403,7 @@ export default function AccountPage() {
               </motion.div>
             )}
           </div>
+        </div>
         </div>
       </div>
 

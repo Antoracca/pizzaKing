@@ -10,6 +10,7 @@ import InitialLoader from '@/components/layout/InitialLoader';
 import NavLoadingProvider from '@/providers/NavLoadingProvider';
 import PostLoginToast from '@/components/ui/PostLoginToast';
 import RouteViewport from '@/components/layout/RouteViewport';
+import ForceRefreshHandler from '@/components/auth/ForceRefreshHandler';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -34,6 +35,7 @@ export default function RootLayout({
             <InitialLoader />
             <PageLoader />
             <PostLoginToast />
+            <ForceRefreshHandler />
             <RouteViewport>{children}</RouteViewport>
             <FloatingCartButton />
             <CartSidebar />

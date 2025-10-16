@@ -17,6 +17,7 @@ import {
   getEmailByPhone,
   getUserByPhone,
 } from '@/lib/auth/validation';
+import { useDetectedCountry } from '@/lib/utils/countryDetection';
 
 type FieldStatus = 'idle' | 'checking' | 'valid' | 'invalid' | 'warning' | 'info';
 
@@ -44,6 +45,16 @@ export default function EnhancedLoginForm({ backHref = '/' }: EnhancedLoginFormP
 
   const router = useRouter();
   const { signIn, signInWithGoogle, resendEmailVerification } = useAuth();
+  const { country, detectedCountry, isDetecting } = useDetectedCountry();
+  
+  // Force le re-render du PhoneInput quand le pays est détecté
+  const [phoneInputKey, setPhoneInputKey] = useState(0);
+
+  useEffect(() => {
+    if (detectedCountry && !isDetecting) {
+      setPhoneInputKey(prev => prev + 1); // Force re-render
+    }
+  }, [detectedCountry, isDetecting]);
 
   const [redirectTo, setRedirectTo] = useState<string | null>(null);
   useEffect(() => {
@@ -544,9 +555,10 @@ export default function EnhancedLoginForm({ backHref = '/' }: EnhancedLoginFormP
             <label className="text-sm font-medium text-gray-700">Téléphone</label>
             <div className="relative">
                 <PhoneInput
+                  key={phoneInputKey}
                   className="PhoneInput"
                   international
-                  defaultCountry="FR"
+                  defaultCountry={country}
                   value={phone || undefined}
                   onChange={value => setPhone(value ?? '')}
                 numberInputProps={{

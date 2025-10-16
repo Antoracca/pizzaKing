@@ -1,11 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { LogOut, UserCircle, ChevronDown, Sparkles, CalendarClock } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/utils';
+import { useNavLoading } from '@/hooks/useNavLoading';
 import type { User } from '@pizza-king/shared';
 
 type Props = {
@@ -38,6 +40,14 @@ export default function NavAccountMenu({
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { start } = useNavLoading();
+  const router = useRouter();
+
+  const handleAccountClick = () => {
+    start(); // Déclencher le loader immédiatement
+    setOpen(false);
+    router.push('/account'); // Navigation programmatique
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -109,15 +119,93 @@ export default function NavAccountMenu({
 
   return (
     <>
-      {/* Mobile: Simple icon link */}
-      <div className="md:hidden">
-        <Link
-          href="/account"
-          aria-label="Mon compte"
-          className="inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-gray-200 bg-white text-gray-700"
+      {/* Mobile: Dropdown menu responsive */}
+      <div className="md:hidden" ref={menuRef}>
+        <button
+          onClick={() => setOpen(prev => !prev)}
+          aria-expanded={open}
+          aria-haspopup="true"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-gray-200 bg-white text-gray-700 transition-all hover:border-orange-400 hover:bg-orange-50"
         >
-          <UserCircle className="h-5 w-5" />
-        </Link>
+          <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border-2 border-orange-400 bg-gradient-to-br from-orange-400 to-red-500 text-xs font-bold text-white">
+            {photoURL ? (
+              <Image
+                src={photoURL}
+                alt={displayName}
+                width={24}
+                height={24}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              avatarInitials
+            )}
+          </div>
+        </button>
+
+        {/* Mobile Dropdown */}
+        {open && (
+          <div className="absolute right-4 top-16 z-[90] w-72 origin-top-right rounded-2xl border border-gray-100 bg-white shadow-2xl ring-1 ring-black/5">
+            <div className="p-4">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-orange-200 bg-orange-50 text-sm font-bold text-orange-600">
+                  {photoURL ? (
+                    <Image
+                      src={photoURL}
+                      alt={displayName}
+                      width={32}
+                      height={32}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    avatarInitials
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-gray-900">
+                    {displayName}
+                  </p>
+                  <p className="truncate text-xs text-gray-500">
+                    {email ?? user.email}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mb-4 grid gap-2 rounded-xl bg-gray-50 p-3 text-xs text-gray-600">
+                <div className="flex items-center gap-2 text-xs font-semibold text-gray-800">
+                  <Sparkles className="h-3.5 w-3.5 text-orange-500" />
+                  {loyaltyLabel}
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <UserCircle className="h-3.5 w-3.5 text-gray-400" />
+                  Rôle : <span className="font-medium capitalize text-gray-800">{user.role}</span>
+                </div>
+                {user.phoneNumber && (
+                  <div className="flex items-center gap-2 text-xs">
+                    <UserCircle className="h-3.5 w-3.5 text-gray-400" />
+                    Téléphone : <span className="truncate font-medium text-gray-800">{user.phoneNumber}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={handleAccountClick}
+                  className="block w-full rounded-xl border border-gray-200 px-3 py-2.5 text-center text-sm font-semibold text-gray-700 transition hover:border-orange-400 hover:text-orange-600"
+                >
+                  Voir mon compte
+                </button>
+                <button
+                  onClick={handleSignOut}
+                  disabled={signingOut}
+                  className="w-full rounded-xl border border-transparent py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-60"
+                >
+                  <LogOut className="mr-2 inline h-4 w-4" />
+                  {signingOut ? 'Déconnexion...' : 'Se déconnecter'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Desktop: Full dropdown menu */}
@@ -216,13 +304,12 @@ export default function NavAccountMenu({
               </div>
 
               <div className="mt-3 flex flex-col gap-2 sm:mt-4">
-                <Link
-                  href="/account"
-                  onClick={() => setOpen(false)}
+                <button
+                  onClick={handleAccountClick}
                   className="block w-full rounded-xl border border-gray-200 px-3 py-2 text-center text-xs font-semibold text-gray-700 transition hover:border-orange-400 hover:text-orange-600 sm:px-4 sm:py-2.5 sm:text-sm"
                 >
                   Voir mon compte
-                </Link>
+                </button>
                 <Button
                   variant="ghost"
                   size="sm"
