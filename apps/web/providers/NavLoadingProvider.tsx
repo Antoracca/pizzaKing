@@ -32,21 +32,21 @@ export default function NavLoadingProvider() {
     };
 
     // Patch history to detect programmatic navigations (router push/replace)
-    window.history.pushState = function (...args) {
-      try {
-        const url = (args && args[2]) as string | null;
-        if (!isSameTarget(url)) startNav();
-      } catch {}
-      return originalPush.apply(this, args as any);
-    } as typeof window.history.pushState;
+      window.history.pushState = function (...args) {
+        try {
+          const url = (args && args[2]) as string | null;
+          if (!isSameTarget(url)) startNav();
+        } catch (_e) { /* noop */ }
+        return originalPush.apply(window.history, args as any);
+      } as typeof window.history.pushState;
 
-    window.history.replaceState = function (...args) {
-      try {
-        const url = (args && args[2]) as string | null;
-        if (!isSameTarget(url)) startNav();
-      } catch {}
-      return originalReplace.apply(this, args as any);
-    } as typeof window.history.replaceState;
+      window.history.replaceState = function (...args) {
+        try {
+          const url = (args && args[2]) as string | null;
+          if (!isSameTarget(url)) startNav();
+        } catch (_e) { /* noop */ }
+        return originalReplace.apply(window.history, args as any);
+      } as typeof window.history.replaceState;
 
     // Back/forward
     window.addEventListener('popstate', onPop);
