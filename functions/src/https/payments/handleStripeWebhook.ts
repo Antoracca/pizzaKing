@@ -18,62 +18,74 @@ const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
  * - payment_intent.canceled: Payment was canceled
  * - charge.refunded: Payment was refunded
  */
-export const handleStripeWebhook = functions.https.onRequest(async (req, res) => {
-  const sig = req.headers['stripe-signature'] as string;
+export const handleStripeWebhook = functions.https.onRequest(
+  async (req, res) => {
+    const sig = req.headers['stripe-signature'] as string;
 
-  if (!sig) {
-    functions.logger.error('Missing Stripe signature');
-    res.status(400).send('Missing signature');
-    return;
-  }
-
-  let event: Stripe.Event;
-
-  try {
-    // Verify webhook signature
-    event = stripe.webhooks.constructEvent(req.rawBody, sig, STRIPE_WEBHOOK_SECRET);
-  } catch (error: any) {
-    functions.logger.error('Webhook signature verification failed', { error: error.message });
-    res.status(400).send(`Webhook Error: ${error.message}`);
-    return;
-  }
-
-  functions.logger.info('Stripe webhook received', {
-    type: event.type,
-    id: event.id,
-  });
-
-  try {
-    switch (event.type) {
-      case 'payment_intent.succeeded':
-        await handlePaymentSucceeded(event.data.object as Stripe.PaymentIntent);
-        break;
-
-      case 'payment_intent.payment_failed':
-        await handlePaymentFailed(event.data.object as Stripe.PaymentIntent);
-        break;
-
-      case 'payment_intent.canceled':
-        await handlePaymentCanceled(event.data.object as Stripe.PaymentIntent);
-        break;
-
-      case 'charge.refunded':
-        await handleRefund(event.data.object as Stripe.Charge);
-        break;
-
-      default:
-        functions.logger.info('Unhandled event type', { type: event.type });
+    if (!sig) {
+      functions.logger.error('Missing Stripe signature');
+      res.status(400).send('Missing signature');
+      return;
     }
 
-    res.json({ received: true });
-  } catch (error: any) {
-    functions.logger.error('Error processing webhook', {
-      error: error.message,
-      eventType: event.type,
+    let event: Stripe.Event;
+
+    try {
+      // Verify webhook signature
+      event = stripe.webhooks.constructEvent(
+        req.rawBody,
+        sig,
+        STRIPE_WEBHOOK_SECRET
+      );
+    } catch (error: any) {
+      functions.logger.error('Webhook signature verification failed', {
+        error: error.message,
+      });
+      res.status(400).send(`Webhook Error: ${error.message}`);
+      return;
+    }
+
+    functions.logger.info('Stripe webhook received', {
+      type: event.type,
+      id: event.id,
     });
-    res.status(500).send('Webhook processing failed');
+
+    try {
+      switch (event.type) {
+        case 'payment_intent.succeeded':
+          await handlePaymentSucceeded(
+            event.data.object as Stripe.PaymentIntent
+          );
+          break;
+
+        case 'payment_intent.payment_failed':
+          await handlePaymentFailed(event.data.object as Stripe.PaymentIntent);
+          break;
+
+        case 'payment_intent.canceled':
+          await handlePaymentCanceled(
+            event.data.object as Stripe.PaymentIntent
+          );
+          break;
+
+        case 'charge.refunded':
+          await handleRefund(event.data.object as Stripe.Charge);
+          break;
+
+        default:
+          functions.logger.info('Unhandled event type', { type: event.type });
+      }
+
+      res.json({ received: true });
+    } catch (error: any) {
+      functions.logger.error('Error processing webhook', {
+        error: error.message,
+        eventType: event.type,
+      });
+      res.status(500).send('Webhook processing failed');
+    }
   }
-});
+);
 
 /**
  * Handle successful payment
@@ -148,7 +160,8 @@ async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
   }
 
   const order = orderSnap.data();
-  const failureReason = paymentIntent.last_payment_error?.message || 'Unknown error';
+  const failureReason =
+    paymentIntent.last_payment_error?.message || 'Unknown error';
 
   // Update order payment status
   await orderRef.update({

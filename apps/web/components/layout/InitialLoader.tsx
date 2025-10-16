@@ -1,20 +1,24 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Pizza } from 'lucide-react';
 
 export default function InitialLoader() {
+  const pathname = usePathname();
   const [isLoading, setIsLoading] = useState(true);
+  const isAuthRoute = pathname?.startsWith('/auth');
 
   useEffect(() => {
-    // Hide loader after initial load
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
-
+    // Skip timer behavior on auth routes but keep hook call order stable
+    if (isAuthRoute) return;
+    const timer = setTimeout(() => setIsLoading(false), 1500);
     return () => clearTimeout(timer);
-  }, []);
+  }, [isAuthRoute]);
+
+  // Render nothing on auth routes
+  if (isAuthRoute) return null;
 
   return (
     <AnimatePresence mode="wait">
@@ -76,7 +80,7 @@ export default function InitialLoader() {
               Préparez vos papilles...
             </p>
             <div className="flex gap-2">
-              {[0, 1, 2].map((i) => (
+              {[0, 1, 2].map(i => (
                 <motion.div
                   key={i}
                   animate={{

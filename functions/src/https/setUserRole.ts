@@ -73,13 +73,10 @@ export const setUserRole = functions.https.onCall(
       await admin.auth().setCustomUserClaims(userId, { role });
 
       // Update Firestore document
-      await db
-        .collection(COLLECTIONS.USERS)
-        .doc(userId)
-        .update({
-          role,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
+      await db.collection(COLLECTIONS.USERS).doc(userId).update({
+        role,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
 
       functions.logger.info(
         `Role updated for user ${userId} to ${role} by ${context.auth.uid}`

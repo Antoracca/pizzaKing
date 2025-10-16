@@ -83,24 +83,18 @@ export const onOrderUpdate = functions.firestore
         });
 
         // Update deliverer availability
-        await db
-          .collection(COLLECTIONS.USERS)
-          .doc(after.delivererId)
-          .update({
-            'delivererInfo.isAvailable': false,
-          });
+        await db.collection(COLLECTIONS.USERS).doc(after.delivererId).update({
+          'delivererInfo.isAvailable': false,
+        });
       }
 
       // Order completed (delivered)
       if (before.status !== 'delivered' && after.status === 'delivered') {
         // Make deliverer available again
         if (after.delivererId) {
-          await db
-            .collection(COLLECTIONS.USERS)
-            .doc(after.delivererId)
-            .update({
-              'delivererInfo.isAvailable': true,
-            });
+          await db.collection(COLLECTIONS.USERS).doc(after.delivererId).update({
+            'delivererInfo.isAvailable': true,
+          });
         }
 
         functions.logger.info(`Order ${orderId} delivered successfully`);

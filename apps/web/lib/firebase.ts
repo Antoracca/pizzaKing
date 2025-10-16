@@ -1,4 +1,3 @@
-
 'use client';
 
 import { initializeApp, getApps } from 'firebase/app';
@@ -20,13 +19,13 @@ const firebaseConfig = {
 
 // Validate Firebase configuration
 const isFirebaseConfigured = Boolean(
-  firebaseConfig.apiKey &&
-  firebaseConfig.authDomain &&
-  firebaseConfig.projectId
+  firebaseConfig.apiKey && firebaseConfig.authDomain && firebaseConfig.projectId
 );
 
 if (!isFirebaseConfigured) {
-  throw new Error('Firebase configuration required. Confirm your .env.local values.');
+  throw new Error(
+    'Firebase configuration required. Confirm your .env.local values.'
+  );
 }
 
 // Initialize Firebase
@@ -56,14 +55,22 @@ if (typeof window !== 'undefined') {
 }
 
 // eslint-disable-next-line no-console
-console.log('✅ Firebase initialized successfully for project:', firebaseConfig.projectId);
+console.log(
+  '✅ Firebase initialized successfully for project:',
+  firebaseConfig.projectId
+);
 
 export { app, auth, db, storage, analytics, isFirebaseConfigured };
 
 // Optional: connect to Firebase emulators in local dev
-if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_USE_EMULATORS === '1') {
+if (
+  typeof window !== 'undefined' &&
+  process.env.NEXT_PUBLIC_USE_EMULATORS === '1'
+) {
   try {
-    connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+    connectAuthEmulator(auth, 'http://localhost:9099', {
+      disableWarnings: true,
+    });
     connectFirestoreEmulator(db, 'localhost', 8080);
     // eslint-disable-next-line no-console
     console.log('Connected to Firebase emulators (auth, firestore).');

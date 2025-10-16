@@ -55,7 +55,9 @@ export default function AuthAlert({ type, message, show }: Props) {
           className={`flex items-start gap-3 rounded-xl border ${config.border} ${config.bg} p-4 shadow-sm`}
         >
           <Icon className={`h-5 w-5 flex-shrink-0 ${config.iconColor}`} />
-          <p className={`flex-1 text-sm font-medium ${config.text}`}>{message}</p>
+          <p className={`flex-1 text-sm font-medium ${config.text}`}>
+            {message}
+          </p>
         </motion.div>
       )}
     </AnimatePresence>

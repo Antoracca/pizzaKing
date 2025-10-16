@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -14,11 +14,86 @@ import {
   type ConfirmationResult,
 } from 'firebase/auth';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { Loader2, MailCheck, MailQuestion, Smartphone, X } from 'lucide-react';
+import { Loader2, MailCheck, MailQuestion, Smartphone, X, ArrowLeft } from 'lucide-react';
 import { useAuth, type UserStatus, type User } from '@pizza-king/shared';
 import { db, auth } from '@/lib/firebase';
 
-type Alert = { type: 'info' | 'success' | 'error' | 'warning'; message: string } | null;
+const MAX_SMS_ATTEMPTS = 10;
+const BLOCK_DURATION_MS = 15 * 60 * 1000;
+const ATTEMPT_STORAGE_KEY = 'pk_phone_attempts';
+
+type PhoneAttemptStatus = {
+  allowed: boolean;
+  waitMs: number;
+  attempts: number[];
+  all: Record<string, number[]>;
+};
+
+const readPhoneAttempts = (): Record<string, number[]> => {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = window.localStorage.getItem(ATTEMPT_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, number[]>;
+    return parsed ?? {};
+  } catch (error) {
+    console.error('Failed to read phone attempts from storage:', error);
+    return {};
+  }
+};
+
+const writePhoneAttempts = (data: Record<string, number[]>): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(ATTEMPT_STORAGE_KEY, JSON.stringify(data));
+  } catch (error) {
+    console.error('Failed to persist phone attempts:', error);
+  }
+};
+
+const pruneAttempts = (attempts: number[], now: number): number[] =>
+  attempts.filter(timestamp => now - timestamp < BLOCK_DURATION_MS);
+
+const getPhoneAttemptStatus = (phone: string): PhoneAttemptStatus => {
+  const all = readPhoneAttempts();
+  const now = Date.now();
+  const currentAttempts = pruneAttempts(all[phone] ?? [], now);
+
+  if (currentAttempts.length >= MAX_SMS_ATTEMPTS) {
+    const waitMs = BLOCK_DURATION_MS - (now - currentAttempts[0]);
+    return { allowed: false, waitMs, attempts: currentAttempts, all };
+  }
+
+  all[phone] = currentAttempts;
+  return { allowed: true, waitMs: 0, attempts: currentAttempts, all };
+};
+
+const registerPhoneAttempt = (
+  phone: string,
+  data: PhoneAttemptStatus
+): void => {
+  const now = Date.now();
+  const all = data.all;
+  const updated = pruneAttempts(all[phone] ?? [], now);
+  updated.push(now);
+  all[phone] = updated;
+  writePhoneAttempts(all);
+};
+
+const formatWaitTime = (ms: number): string => {
+  const totalSeconds = Math.ceil(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (minutes <= 0) {
+    return `${seconds}s`;
+  }
+  return `${minutes}m ${seconds.toString().padStart(2, '0')}s`;
+};
+
+type Alert = {
+  type: 'info' | 'success' | 'error' | 'warning';
+  message: string;
+} | null;
 
 const alertStyles: Record<NonNullable<Alert>['type'], string> = {
   info: 'border-blue-200 bg-blue-50 text-blue-800',
@@ -41,9 +116,11 @@ export default function VerifyPage() {
   const [phoneStep, setPhoneStep] = useState<'idle' | 'code'>('idle');
   const [phoneLoading, setPhoneLoading] = useState(false);
   const [phoneError, setPhoneError] = useState('');
+  const [phoneEditable, setPhoneEditable] = useState(false);
 
   const recaptchaVerifier = useRef<RecaptchaVerifier | null>(null);
   const confirmationResult = useRef<ConfirmationResult | null>(null);
+  const initialPhoneRef = useRef<string>('');
 
   useEffect(() => {
     if (!loading && !firebaseUser) {
@@ -58,10 +135,26 @@ export default function VerifyPage() {
   }, [firebaseUser?.emailVerified, loading]);
 
   useEffect(() => {
-    if (phoneModalOpen && !phoneValue) {
-      setPhoneValue(user?.phoneNumber || firebaseUser?.phoneNumber || '');
+    if (!phoneModalOpen) return;
+
+    const derived = user?.phoneNumber || firebaseUser?.phoneNumber || '';
+    initialPhoneRef.current = derived;
+    setPhoneValue(derived);
+    setPhoneCode('');
+    setPhoneStep('idle');
+    setPhoneEditable(false);
+  }, [phoneModalOpen, user?.phoneNumber, firebaseUser?.phoneNumber]);
+
+  useEffect(() => {
+    if (phoneModalOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
     }
-  }, [phoneModalOpen, phoneValue, user?.phoneNumber, firebaseUser?.phoneNumber]);
+    return undefined;
+  }, [phoneModalOpen]);
 
   const handleVerified = async (
     options: { via: 'email' | 'phone'; phoneNumber?: string } = { via: 'email' }
@@ -109,8 +202,8 @@ export default function VerifyPage() {
         type: 'error',
         message:
           options.via === 'email'
-            ? "Email vérifié mais la mise à jour du profil a échoué. Contactez le support."
-            : "SMS vérifié mais la mise à jour du profil a échoué. Contactez le support.",
+            ? 'Email vérifié mais la mise à jour du profil a échoué. Contactez le support.'
+            : 'SMS vérifié mais la mise à jour du profil a échoué. Contactez le support.',
       });
     }
   };
@@ -129,7 +222,9 @@ export default function VerifyPage() {
     } catch (error: any) {
       setAlert({
         type: 'error',
-        message: error?.message || "Impossible d'envoyer l'email. Réessayez plus tard.",
+        message:
+          error?.message ||
+          "Impossible d'envoyer l'email. Réessayez plus tard.",
       });
     } finally {
       setResending(false);
@@ -154,71 +249,88 @@ export default function VerifyPage() {
 
       setAlert({
         type: 'warning',
-        message: "Votre email n'est pas encore confirmé. Cliquez sur le lien reçu ou renvoyez un email.",
+        message:
+          "Votre email n'est pas encore confirmé. Cliquez sur le lien reçu ou renvoyez un email.",
       });
     } catch (error: any) {
       console.error('Verification check failed:', error);
       setAlert({
         type: 'error',
-        message: error?.message || 'Impossible de vérifier votre email. Réessayez.',
+        message:
+          error?.message || 'Impossible de vérifier votre email. Réessayez.',
       });
     } finally {
       setChecking(false);
     }
   };
 
-const resetPhoneFlow = () => {
-  setPhoneStep('idle');
-  setPhoneCode('');
-  setPhoneLoading(false);
-  setPhoneError('');
-  confirmationResult.current = null;
-  if (recaptchaVerifier.current) {
-    recaptchaVerifier.current.clear();
-    recaptchaVerifier.current = null;
-  }
-};
+  const resetPhoneFlow = () => {
+    setPhoneStep('idle');
+    setPhoneCode('');
+    setPhoneLoading(false);
+    setPhoneError('');
+    confirmationResult.current = null;
+    if (recaptchaVerifier.current) {
+      recaptchaVerifier.current.clear();
+      recaptchaVerifier.current = null;
+    }
+  };
 
-const closePhoneModal = () => {
-  setPhoneModalOpen(false);
-  resetPhoneFlow();
-};
+  const closePhoneModal = () => {
+    setPhoneModalOpen(false);
+    resetPhoneFlow();
+  };
 
-const getRecaptcha = () => {
-  if (typeof window === 'undefined') {
-    return null;
-  }
+  const getRecaptcha = () => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
 
-  if (!recaptchaVerifier.current) {
-    recaptchaVerifier.current = new RecaptchaVerifier(auth, 'phone-verification-recaptcha', {
-      size: 'invisible',
-    });
-  }
+    const container = document.getElementById('phone-verification-recaptcha');
+    if (!container) {
+      console.warn('Recaptcha container not found in DOM.');
+      return null;
+    }
 
-  return recaptchaVerifier.current;
-};
+    if (!recaptchaVerifier.current) {
+      recaptchaVerifier.current = new RecaptchaVerifier(
+        auth,
+        'phone-verification-recaptcha',
+        {
+          size: 'invisible',
+        }
+      );
+    }
 
-const formatPhoneError = (error: any): string => {
-  const code = error?.code ?? '';
-  const suffix = code ? ` (code: ${code})` : '';
+    return recaptchaVerifier.current;
+  };
 
-  switch (code) {
-    case 'auth/invalid-phone-number':
-      return 'Numéro de téléphone invalide.' + suffix;
-    case 'auth/missing-phone-number':
-      return 'Merci de renseigner un numéro.' + suffix;
-    case 'auth/too-many-requests':
-      return 'Trop de tentatives. Réessayez plus tard.' + suffix;
-    case 'auth/operation-not-allowed':
-      return "La connexion par SMS n’est pas activée sur Firebase. Vérifiez la console Firebase." + suffix;
-    case 'auth/invalid-verification-code':
-      return 'Code invalide. Vérifiez et réessayez.' + suffix;
-    case 'auth/missing-verification-code':
-      return 'Merci de saisir le code reçu.' + suffix;
-    default:
-      return (error?.message || 'Une erreur est survenue. Réessayez.') + suffix;
-  }
-};
+  const formatPhoneError = (error: any): string => {
+    const code = error?.code ?? '';
+    const suffix = code ? ` (code: ${code})` : '';
+
+    switch (code) {
+      case 'auth/invalid-phone-number':
+        return 'Numéro de téléphone invalide.' + suffix;
+      case 'auth/missing-phone-number':
+        return 'Merci de renseigner un numéro.' + suffix;
+      case 'auth/too-many-requests':
+        return 'Trop de tentatives. Réessayez plus tard.' + suffix;
+      case 'auth/operation-not-allowed':
+        return (
+          'La connexion par SMS n’est pas activée sur Firebase. Vérifiez la console Firebase.' +
+          suffix
+        );
+      case 'auth/invalid-verification-code':
+        return 'Code invalide. Vérifiez et réessayez.' + suffix;
+      case 'auth/missing-verification-code':
+        return 'Merci de saisir le code reçu.' + suffix;
+      default:
+        return (
+          (error?.message || 'Une erreur est survenue. Réessayez.') + suffix
+        );
+    }
+  };
 
   const handleSendPhoneCode = async () => {
     if (!phoneValue) {
@@ -236,9 +348,18 @@ const formatPhoneError = (error: any): string => {
     setPhoneError('');
 
     try {
-      await verifier.render();
+      try {
+        await verifier.render();
+      } catch (renderError) {
+        console.error('Recaptcha render error:', renderError);
+      }
+
       await verifier.verify();
-      const confirmation = await signInWithPhoneNumber(auth, phoneValue, verifier);
+      const confirmation = await signInWithPhoneNumber(
+        auth,
+        phoneValue,
+        verifier
+      );
       confirmationResult.current = confirmation;
       setPhoneStep('code');
     } catch (error: any) {
@@ -289,69 +410,90 @@ const formatPhoneError = (error: any): string => {
   const showPhoneOption = !user?.phoneVerified;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100 px-4 py-12">
-      <div className="w-full max-w-xl space-y-6 rounded-3xl bg-white p-8 shadow-xl">
-        <div className="flex flex-col items-center text-center">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-orange-100 text-orange-600">
-            <MailQuestion className="h-7 w-7" aria-hidden />
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100 px-4 py-10 sm:py-12">
+      <div className="w-full max-w-xl space-y-6 rounded-3xl bg-white p-6 shadow-xl sm:space-y-8 sm:p-8 lg:max-w-2xl lg:p-10">
+        <div className="flex flex-col items-center gap-3 text-center sm:gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 text-orange-600 sm:h-14 sm:w-14 lg:h-16 lg:w-16">
+            <MailQuestion
+              className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8"
+              aria-hidden
+            />
           </div>
-          <h1 className="text-2xl font-semibold text-gray-900">Vérifiez votre adresse email</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            Un email de confirmation a été envoyé à {firebaseUser?.email}. Cliquez sur le lien pour activer votre compte.
+          <h1 className="text-2xl font-semibold text-gray-900 sm:text-3xl lg:text-4xl">
+            Vérifiez votre adresse email
+          </h1>
+          <p className="mt-1 text-sm text-gray-600 sm:text-base">
+            Un email de confirmation a été envoyé à {firebaseUser?.email}.
+            Cliquez sur le lien pour activer votre compte.
           </p>
         </div>
 
         {alert && (
-          <div className={`rounded-xl border p-4 text-sm font-medium ${alertStyles[alert.type]}`} role="alert">
+          <div
+            className={`rounded-xl border p-4 text-sm font-medium ${alertStyles[alert.type]}`}
+            role="alert"
+          >
             {alert.message}
           </div>
         )}
 
-        <div className="space-y-4 rounded-2xl border border-gray-100 bg-gray-50 p-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 text-orange-600">
+        <div className="space-y-4 rounded-2xl border border-gray-100 bg-gray-50 p-4 sm:space-y-5 sm:p-5">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-100 text-orange-600 sm:h-10 sm:w-10">
               <MailCheck className="h-5 w-5" aria-hidden />
             </div>
             <div className="text-left">
-              <p className="text-sm font-semibold text-gray-800">Pas reçu de mail ?</p>
-              <p className="text-xs text-gray-600">Vérifiez vos spams ou renvoyez un email.</p>
+              <p className="text-sm font-semibold text-gray-800 sm:text-base">
+                Pas reçu de mail ?
+              </p>
+              <p className="text-xs text-gray-600 sm:text-sm">
+                Vérifiez vos spams ou renvoyez un email.
+              </p>
             </div>
           </div>
           <button
             type="button"
             onClick={handleResendEmail}
             disabled={resending}
-            className="w-full rounded-lg border border-orange-200 bg-white px-4 py-2 text-sm font-semibold text-orange-600 transition hover:border-orange-300 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-lg border border-orange-200 bg-white px-4 py-2 text-sm font-semibold text-orange-600 transition hover:border-orange-300 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-60 sm:py-2.5 sm:text-base"
           >
             {resending ? 'Envoi en cours…' : 'Renvoyer l’email de vérification'}
           </button>
         </div>
 
-        <div className="rounded-2xl border border-gray-100 bg-white p-5">
+        <div className="rounded-2xl border border-gray-100 bg-white p-4 sm:p-5">
           <div className="mb-3 text-left">
-            <p className="text-sm font-semibold text-gray-800">J’ai cliqué sur le lien</p>
-            <p className="text-xs text-gray-600">Cliquez ci-dessous pour confirmer que votre email est vérifié.</p>
+            <p className="text-sm font-semibold text-gray-800 sm:text-base">
+              J’ai cliqué sur le lien
+            </p>
+            <p className="text-xs text-gray-600 sm:text-sm">
+              Cliquez ci-dessous pour confirmer que votre email est vérifié.
+            </p>
           </div>
           <button
             type="button"
             onClick={handleCheckVerification}
             disabled={checking}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60 sm:py-2.5 sm:text-base"
           >
-            {checking && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
+            {checking && (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            )}
             {checking ? 'Vérification…' : 'J’ai confirmé mon email'}
           </button>
         </div>
 
         {showPhoneOption && (
-          <div className="rounded-2xl border border-gray-100 bg-white p-5">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-100 text-teal-600">
+          <div className="rounded-2xl border border-gray-100 bg-white p-4 sm:p-5">
+            <div className="mb-3 flex items-center gap-3 sm:gap-4">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-100 text-teal-600 sm:h-10 sm:w-10">
                 <Smartphone className="h-5 w-5" aria-hidden />
               </div>
               <div className="text-left">
-                <p className="text-sm font-semibold text-gray-800">Préférez la vérification par SMS ?</p>
-                <p className="text-xs text-gray-600">
+                <p className="text-sm font-semibold text-gray-800 sm:text-base">
+                  Préférez la vérification par SMS ?
+                </p>
+                <p className="text-xs text-gray-600 sm:text-sm">
                   Recevez un code à usage unique sur votre numéro de téléphone.
                 </p>
               </div>
@@ -359,41 +501,49 @@ const formatPhoneError = (error: any): string => {
             <button
               type="button"
               onClick={() => setPhoneModalOpen(true)}
-              className="w-full rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
+              className="w-full rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50 sm:py-2.5 sm:text-base"
             >
               Vérifier via le numéro de téléphone
             </button>
           </div>
         )}
 
-        <p className="text-center text-xs text-gray-500">
-          Si vous rencontrez toujours des difficultés, contactez le support Pizza King.
+        <p className="text-center text-xs text-gray-500 sm:text-sm">
+          Si vous rencontrez toujours des difficultés, contactez le support
+          Pizza King.
         </p>
       </div>
 
       {phoneModalOpen && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="relative w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
-            <button
-              type="button"
-              onClick={closePhoneModal}
-              className="absolute right-4 top-4 text-gray-400 hover:text-gray-600"
-              aria-label="Fermer"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            <div className="mb-4 text-center">
-              <h2 className="text-xl font-semibold text-gray-900">Vérification par SMS</h2>
-              <p className="mt-1 text-sm text-gray-600">
-                Confirmez votre numéro pour activer votre compte sans email.
-              </p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6 sm:py-10">
+          <div className="relative flex w-full max-w-lg flex-col rounded-3xl bg-white p-6 shadow-2xl sm:p-8">
+            <div className="mb-4 flex items-center gap-3 sm:mb-6">
+              <button
+                type="button"
+                onClick={closePhoneModal}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800"
+                aria-label="Retour"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+              <div className="flex-1 text-center">
+                <h2 className="text-xl font-semibold text-gray-900 sm:text-2xl">
+                  Vérification par SMS
+                </h2>
+                <p className="mt-1 text-sm text-gray-600 sm:text-base">
+                  Confirmez votre numéro pour activer votre compte sans email.
+                </p>
+              </div>
+              <div className="h-10 w-10" aria-hidden></div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 sm:space-y-5">
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-gray-700">Numéro de téléphone</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Numéro de téléphone
+                </label>
                 <PhoneInput
+                  className="pk-phone-outside w-full"
                   international
                   defaultCountry="FR"
                   value={phoneValue || undefined}
@@ -401,18 +551,20 @@ const formatPhoneError = (error: any): string => {
                   numberInputProps={{
                     required: true,
                     className:
-                      'w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20',
+                      'w-full h-12 rounded-lg border border-gray-300 px-4 text-base focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20',
                   }}
                   countrySelectProps={{
                     className:
-                      'rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20',
+                      'min-w-[4.25rem] h-12 rounded-xl border border-gray-300 bg-white px-3 py-2 text-base focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20',
                   }}
                 />
               </div>
 
               {phoneStep === 'code' && (
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-gray-700">Code SMS</label>
+                <div className="flex flex-col gap-2 sm:gap-3">
+                  <label className="text-sm font-medium text-gray-700">
+                    Code SMS
+                  </label>
                   <input
                     value={phoneCode}
                     onChange={event => setPhoneCode(event.target.value)}
@@ -421,7 +573,9 @@ const formatPhoneError = (error: any): string => {
                     className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg tracking-widest focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
                     placeholder="123456"
                   />
-                  <p className="text-xs text-gray-500">Entrez le code reçu par SMS.</p>
+                  <p className="text-xs text-gray-500">
+                    Entrez le code reçu par SMS.
+                  </p>
                 </div>
               )}
 
@@ -437,9 +591,11 @@ const formatPhoneError = (error: any): string => {
                     type="button"
                     onClick={handleConfirmPhoneCode}
                     disabled={phoneLoading}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60 sm:py-2.5 sm:text-base"
                   >
-                    {phoneLoading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
+                    {phoneLoading && (
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                    )}
                     {phoneLoading ? 'Vérification…' : 'Confirmer le code'}
                   </button>
                 ) : (
@@ -447,10 +603,14 @@ const formatPhoneError = (error: any): string => {
                     type="button"
                     onClick={handleSendPhoneCode}
                     disabled={phoneLoading}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60 sm:py-2.5 sm:text-base"
                   >
-                    {phoneLoading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
-                    {phoneLoading ? 'Envoi du code…' : 'Envoyer le code par SMS'}
+                    {phoneLoading && (
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                    )}
+                    {phoneLoading
+                      ? 'Envoi du code…'
+                      : 'Envoyer le code par SMS'}
                   </button>
                 )}
 
@@ -466,7 +626,11 @@ const formatPhoneError = (error: any): string => {
                 )}
               </div>
 
-              <div id="phone-verification-recaptcha" className="hidden" />
+              <div
+                id="phone-verification-recaptcha"
+                className="absolute left-0 top-0 h-0 w-0 overflow-hidden"
+                aria-hidden="true"
+              />
             </div>
           </div>
         </div>

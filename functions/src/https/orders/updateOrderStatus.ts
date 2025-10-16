@@ -108,7 +108,8 @@ export const updateOrderStatus = functions.https.onCall(
             .collection(COLLECTIONS.USERS)
             .doc(order.userId)
             .update({
-              loyaltyPoints: admin.firestore.FieldValue.increment(-pointsToRefund),
+              loyaltyPoints:
+                admin.firestore.FieldValue.increment(-pointsToRefund),
             });
         }
       }

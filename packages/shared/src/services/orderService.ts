@@ -263,7 +263,10 @@ export class OrderService {
   /**
    * Get order statistics
    */
-  async getOrderStatistics(startDate?: Date, endDate?: Date): Promise<{
+  async getOrderStatistics(
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<{
     totalOrders: number;
     totalRevenue: number;
     averageOrderValue: number;

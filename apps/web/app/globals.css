@@ -86,6 +86,28 @@
 .PhoneInput input {
   width: 100%;
 }
+.PhoneInput > input.PhoneInputInput {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.PhoneInput > .PhoneInputCountry {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 640px) {
+  .PhoneInput {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .PhoneInputCountry,
+  .PhoneInputCountrySelect {
+    width: auto;
+  }
+  .PhoneInputInput {
+    font-size: 1rem; /* Avoid iOS zoom */
+  }
+}
 
 @layer base {
   * {
@@ -96,8 +118,110 @@
   }
 }
 
-@layer utilities {
-  .bg-gradient-radial {
-    background: radial-gradient(circle, var(--tw-gradient-stops));
+  @layer utilities {
+    .bg-gradient-radial {
+      background: radial-gradient(circle, var(--tw-gradient-stops));
+    }
+  }
+
+/* Inline phone input variant (used on login): keep country selector left of input even on mobile */
+.phone-inline.PhoneInput {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.phone-inline .PhoneInputCountry {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.phone-inline .PhoneInputCountryIcon,
+.phone-inline .PhoneInputInternationalIcon {
+  width: 1.25rem; /* 20px */
+  height: 1.25rem;
+}
+.phone-inline .PhoneInputCountrySelect {
+  position: static !important;
+  opacity: 1 !important;
+  appearance: auto;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  height: 2.5rem; /* match input height */
+  padding: 0 0.5rem;
+  font-size: 0.875rem;
+  flex: 0 0 auto;
+}
+.phone-inline .PhoneInputInput {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Enhanced phone input: place country selector outside, on the left */
+.pk-phone-outside {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem; /* 12px space between selector and input */
+}
+.pk-phone-outside .PhoneInputCountry {
+  position: static;
+  width: auto;
+  height: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+}
+.pk-phone-outside .PhoneInputCountryIcon,
+.pk-phone-outside .PhoneInputInternationalIcon {
+  width: 1.5rem;  /* 24px */
+  height: 1.5rem;
+}
+/* Keep the select styled and clickable next to the input */
+.pk-phone-outside .PhoneInputCountrySelect {
+  appearance: auto;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;           /* match input rounding */
+  padding: 0.625rem 0.875rem;       /* more comfortable */
+  font-size: 1rem;                  /* 16px */
+  height: 3rem;                     /* 48px to match input */
+}
+
+/* Minimal country selector (only flag visible; select is invisible overlay) */
+.pk-phone-minimal .PhoneInputCountry {
+  position: relative;
+  width: 2rem;
+  height: 2rem;
+}
+.pk-phone-minimal .PhoneInputCountryIcon,
+.pk-phone-minimal .PhoneInputInternationalIcon {
+  width: 1.5rem;   /* 24px for better visibility */
+  height: 1.5rem;
+}
+.pk-phone-minimal .PhoneInputCountrySelect {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  opacity: 0;                      /* invisible but clickable */
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  cursor: pointer;
+}
+.pk-phone-minimal .PhoneInputCountrySelectArrow { display: none; }
+
+@media (max-width: 640px) {
+  /* Force row layout on mobile for outside selector */
+  .pk-phone-outside {
+    flex-direction: row;
+    align-items: center;
+  }
+  .pk-phone-outside .PhoneInputCountry,
+  .pk-phone-outside .PhoneInputCountrySelect {
+    width: auto;
   }
 }

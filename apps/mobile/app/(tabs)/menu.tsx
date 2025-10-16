@@ -12,7 +12,13 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { COLORS, TYPOGRAPHY, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
+import {
+  COLORS,
+  TYPOGRAPHY,
+  SPACING,
+  RADIUS,
+  SHADOWS,
+} from '@/constants/theme';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import { formatPrice } from '@/lib/utils';
@@ -107,7 +113,9 @@ export default function MenuScreen() {
   const filteredPizzas = useMemo(
     () =>
       allPizzas.filter(pizza => {
-        const matchesSearch = pizza.name.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSearch = pizza.name
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase());
         const matchesCategory =
           selectedCategory === 'all' ||
           (selectedCategory === 'popular' && pizza.isPopular) ||
@@ -119,7 +127,10 @@ export default function MenuScreen() {
     [searchQuery, selectedCategory]
   );
 
-  const handleAddToCart = (pizza: typeof allPizzas[0], shouldOpenCart = false) => {
+  const handleAddToCart = (
+    pizza: (typeof allPizzas)[0],
+    shouldOpenCart = false
+  ) => {
     addItemToCart({
       productId: pizza.id,
       name: pizza.name,
@@ -138,7 +149,7 @@ export default function MenuScreen() {
     }
   };
 
-  const renderPizzaCard = ({ item }: { item: typeof allPizzas[0] }) => {
+  const renderPizzaCard = ({ item }: { item: (typeof allPizzas)[0] }) => {
     if (viewMode === 'grid') {
       return (
         <TouchableOpacity style={styles.gridCard} activeOpacity={0.9}>
@@ -146,22 +157,44 @@ export default function MenuScreen() {
             <Image source={{ uri: item.image }} style={styles.gridImage} />
 
             <View style={styles.gridBadges}>
-              {item.isPopular && <Badge variant="error" size="sm">🔥</Badge>}
-              {item.isVegetarian && <Badge variant="success" size="sm">🥬</Badge>}
-              {item.isSpicy && <Badge variant="warning" size="sm">🌶️</Badge>}
+              {item.isPopular && (
+                <Badge variant="error" size="sm">
+                  🔥
+                </Badge>
+              )}
+              {item.isVegetarian && (
+                <Badge variant="success" size="sm">
+                  🥬
+                </Badge>
+              )}
+              {item.isSpicy && (
+                <Badge variant="warning" size="sm">
+                  🌶️
+                </Badge>
+              )}
             </View>
 
             <TouchableOpacity style={styles.gridFavorite}>
-              <Ionicons name="heart-outline" size={20} color={COLORS.textSecondary} />
+              <Ionicons
+                name="heart-outline"
+                size={20}
+                color={COLORS.textSecondary}
+              />
             </TouchableOpacity>
 
             <View style={styles.gridContent}>
-              <Text style={styles.gridName} numberOfLines={1}>{item.name}</Text>
-              <Text style={styles.gridDescription} numberOfLines={2}>{item.description}</Text>
+              <Text style={styles.gridName} numberOfLines={1}>
+                {item.name}
+              </Text>
+              <Text style={styles.gridDescription} numberOfLines={2}>
+                {item.description}
+              </Text>
 
               <View style={styles.gridFooter}>
                 <View>
-                  <Text style={styles.gridPrice}>{formatPrice(item.price)}</Text>
+                  <Text style={styles.gridPrice}>
+                    {formatPrice(item.price)}
+                  </Text>
                   <View style={styles.gridRating}>
                     <Ionicons name="star" size={14} color={COLORS.warning} />
                     <Text style={styles.gridRatingText}>{item.rating}</Text>
@@ -189,7 +222,11 @@ export default function MenuScreen() {
                     activeOpacity={0.85}
                   >
                     <Text style={styles.orderButtonText}>Commander</Text>
-                    <Ionicons name="arrow-forward" size={16} color={COLORS.primary} />
+                    <Ionicons
+                      name="arrow-forward"
+                      size={16}
+                      color={COLORS.primary}
+                    />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -208,11 +245,21 @@ export default function MenuScreen() {
 
             <View style={styles.listDetails}>
               <Text style={styles.listName}>{item.name}</Text>
-              <Text style={styles.listDescription} numberOfLines={2}>{item.description}</Text>
+              <Text style={styles.listDescription} numberOfLines={2}>
+                {item.description}
+              </Text>
 
               <View style={styles.listBadges}>
-                {item.isPopular && <Badge variant="error" size="sm">🔥 Populaire</Badge>}
-                {item.isVegetarian && <Badge variant="success" size="sm">🥬 Végé</Badge>}
+                {item.isPopular && (
+                  <Badge variant="error" size="sm">
+                    🔥 Populaire
+                  </Badge>
+                )}
+                {item.isVegetarian && (
+                  <Badge variant="success" size="sm">
+                    🥬 Végé
+                  </Badge>
+                )}
               </View>
 
               <View style={styles.listFooter}>
@@ -228,7 +275,9 @@ export default function MenuScreen() {
                     />
                     <Text style={styles.listTime}>{item.prepTime} min</Text>
                   </View>
-                  <Text style={styles.listPrice}>{formatPrice(item.price)}</Text>
+                  <Text style={styles.listPrice}>
+                    {formatPrice(item.price)}
+                  </Text>
                 </View>
 
                 <View style={styles.listActions}>
@@ -252,7 +301,11 @@ export default function MenuScreen() {
                     activeOpacity={0.85}
                   >
                     <Text style={styles.orderButtonText}>Commander</Text>
-                    <Ionicons name="arrow-forward" size={16} color={COLORS.primary} />
+                    <Ionicons
+                      name="arrow-forward"
+                      size={16}
+                      color={COLORS.primary}
+                    />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -294,7 +347,11 @@ export default function MenuScreen() {
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <Ionicons name="close-circle" size={20} color={COLORS.textSecondary} />
+            <Ionicons
+              name="close-circle"
+              size={20}
+              color={COLORS.textSecondary}
+            />
           </TouchableOpacity>
         )}
       </View>
@@ -335,7 +392,8 @@ export default function MenuScreen() {
       {/* Results Count */}
       <View style={styles.resultsHeader}>
         <Text style={styles.resultsText}>
-          {filteredPizzas.length} pizza{filteredPizzas.length > 1 ? 's' : ''} disponible{filteredPizzas.length > 1 ? 's' : ''}
+          {filteredPizzas.length} pizza{filteredPizzas.length > 1 ? 's' : ''}{' '}
+          disponible{filteredPizzas.length > 1 ? 's' : ''}
         </Text>
       </View>
 

@@ -1,6 +1,13 @@
 'use client';
 
-import { collection, getDocs, query, orderBy, limit, where } from 'firebase/firestore';
+import {
+  collection,
+  getDocs,
+  query,
+  orderBy,
+  limit,
+  where,
+} from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 export interface Pizza {
@@ -28,7 +35,11 @@ export interface Pizza {
 export async function getPizzas(): Promise<Pizza[]> {
   try {
     const pizzasRef = collection(db, 'pizzas');
-    const q = query(pizzasRef, orderBy('isBestSeller', 'desc'), orderBy('rating', 'desc'));
+    const q = query(
+      pizzasRef,
+      orderBy('isBestSeller', 'desc'),
+      orderBy('rating', 'desc')
+    );
     const snapshot = await getDocs(q);
 
     return snapshot.docs.map(doc => ({
@@ -44,7 +55,9 @@ export async function getPizzas(): Promise<Pizza[]> {
 /**
  * Récupère les pizzas best-sellers (max 12)
  */
-export async function getBestSellerPizzas(maxCount: number = 12): Promise<Pizza[]> {
+export async function getBestSellerPizzas(
+  maxCount: number = 12
+): Promise<Pizza[]> {
   try {
     const pizzasRef = collection(db, 'pizzas');
     const q = query(
@@ -68,7 +81,9 @@ export async function getBestSellerPizzas(maxCount: number = 12): Promise<Pizza[
 /**
  * Récupère les pizzas featured (best-sellers + top rated)
  */
-export async function getFeaturedPizzas(maxCount: number = 12): Promise<Pizza[]> {
+export async function getFeaturedPizzas(
+  maxCount: number = 12
+): Promise<Pizza[]> {
   try {
     const pizzasRef = collection(db, 'pizzas');
     const q = query(

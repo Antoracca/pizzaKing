@@ -45,22 +45,22 @@ export default function MenuFilters({
         animate={{ opacity: 1, y: 0 }}
         className="relative"
       >
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+        <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
         <input
           type="text"
           placeholder="Rechercher une pizza..."
           value={searchQuery}
           onChange={e => onSearchChange(e.target.value)}
-          className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all text-lg"
+          className="w-full rounded-2xl border-2 border-gray-200 py-4 pl-12 pr-4 text-lg outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
         />
       </motion.div>
 
       {/* Categories */}
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-900">Catégories</h3>
           <Button variant="ghost" size="sm">
-            <SlidersHorizontal className="h-4 w-4 mr-2" />
+            <SlidersHorizontal className="mr-2 h-4 w-4" />
             Filtres
           </Button>
         </div>
@@ -73,10 +73,10 @@ export default function MenuFilters({
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.05 }}
               onClick={() => onCategoryChange(category.id)}
-              className={`group relative px-6 py-3 rounded-xl font-medium transition-all ${
+              className={`group relative rounded-xl px-6 py-3 font-medium transition-all ${
                 activeCategory === category.id
                   ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30'
-                  : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-orange-500 hover:text-orange-600'
+                  : 'border-2 border-gray-200 bg-white text-gray-700 hover:border-orange-500 hover:text-orange-600'
               }`}
             >
               <div className="flex items-center gap-2">
@@ -91,10 +91,12 @@ export default function MenuFilters({
                 )}
                 <span>{category.name}</span>
                 <Badge
-                  variant={activeCategory === category.id ? 'secondary' : 'outline'}
+                  variant={
+                    activeCategory === category.id ? 'secondary' : 'outline'
+                  }
                   className={`ml-1 ${
                     activeCategory === category.id
-                      ? 'bg-white/20 text-white border-white/30'
+                      ? 'border-white/30 bg-white/20 text-white'
                       : ''
                   }`}
                 >
@@ -106,7 +108,7 @@ export default function MenuFilters({
               {activeCategory === category.id && (
                 <motion.div
                   layoutId="activeCategory"
-                  className="absolute inset-0 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 -z-10"
+                  className="absolute inset-0 -z-10 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600"
                   transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
                 />
               )}
@@ -117,7 +119,7 @@ export default function MenuFilters({
 
       {/* Quick Filters */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <h3 className="mb-4 text-lg font-semibold text-gray-900">
           Filtres Rapides
         </h3>
         <div className="flex flex-wrap gap-3">
@@ -130,10 +132,10 @@ export default function MenuFilters({
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
                 onClick={() => onFilterToggle(filter.id)}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-medium transition-all ${
+                className={`flex items-center gap-2 rounded-full px-5 py-2.5 font-medium transition-all ${
                   isActive
                     ? 'bg-gray-900 text-white shadow-lg'
-                    : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-gray-900'
+                    : 'border-2 border-gray-200 bg-white text-gray-700 hover:border-gray-900'
                 }`}
               >
                 <filter.icon
@@ -144,7 +146,7 @@ export default function MenuFilters({
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="w-2 h-2 rounded-full bg-white"
+                    className="h-2 w-2 rounded-full bg-white"
                   />
                 )}
               </motion.button>
@@ -158,7 +160,7 @@ export default function MenuFilters({
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
-          className="flex items-center gap-2 p-4 bg-orange-50 rounded-xl border border-orange-100"
+          className="flex items-center gap-2 rounded-xl border border-orange-100 bg-orange-50 p-4"
         >
           <span className="text-sm font-medium text-orange-900">
             Filtres actifs:

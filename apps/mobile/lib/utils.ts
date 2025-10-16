@@ -23,7 +23,10 @@ export function getInitials(firstName: string, lastName: string): string {
 /**
  * Calculate discount percentage
  */
-export function calculateDiscountPercentage(original: number, discounted: number): number {
+export function calculateDiscountPercentage(
+  original: number,
+  discounted: number
+): number {
   return Math.round(((original - discounted) / original) * 100);
 }
 

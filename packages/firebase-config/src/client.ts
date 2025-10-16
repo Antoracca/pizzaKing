@@ -23,7 +23,7 @@ export const initializeFirebase = () => {
     storage = getStorage(app);
 
     // Analytics only in browser environment
-    if (typeof window !== 'undefined') {
+    if (typeof (globalThis as any).window !== 'undefined') {
       analytics = getAnalytics(app);
     }
 
@@ -33,7 +33,7 @@ export const initializeFirebase = () => {
     auth = getAuth(app);
     db = getFirestore(app);
     storage = getStorage(app);
-    if (typeof window !== 'undefined' && !analytics) {
+    if (typeof (globalThis as any).window !== 'undefined' && !analytics) {
       analytics = getAnalytics(app);
     }
   }

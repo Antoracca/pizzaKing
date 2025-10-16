@@ -44,6 +44,7 @@ src/
 ## Functions
 
 ### HTTP Callable Functions
+
 - `getPizzaMenu` - Get pizzas menu
 - `createOrder` - Create new order
 - `processPayment` - Process payment (Stripe, PayPal, Mobile Money)
@@ -51,11 +52,13 @@ src/
 - `sendNotification` - Send notification to user
 
 ### Firestore Triggers
+
 - `onOrderCreated` - When order is created
 - `onOrderUpdated` - When order status changes
 - `onUserCreated` - When new user signs up
 
 ### Scheduled Functions
+
 - `dailyAnalytics` - Generate daily analytics (runs at midnight)
 - `expirePromotions` - Expire old promotions (runs at midnight)
 - `sendDailyReport` - Send daily report to admin

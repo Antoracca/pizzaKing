@@ -40,68 +40,73 @@ const NAV_LINKS = [
 ];
 
 // Type-safe MotionLink component with proper types
-type MotionLinkProps = Omit<ComponentPropsWithoutRef<'a'>, keyof MotionProps | 'href'> &
+type MotionLinkProps = Omit<
+  ComponentPropsWithoutRef<'a'>,
+  keyof MotionProps | 'href'
+> &
   Partial<LinkProps> &
   MotionProps & {
     children?: React.ReactNode;
   };
 
-const MotionLink = forwardRef<HTMLAnchorElement, MotionLinkProps>(function MotionLink(props, ref) {
-  const {
-    whileHover,
-    whileTap,
-    initial,
-    animate,
-    exit,
-    transition,
-    children,
-    href,
-    style,
-    ...rest
-  } = props;
+const MotionLink = forwardRef<HTMLAnchorElement, MotionLinkProps>(
+  function MotionLink(props, ref) {
+    const {
+      whileHover,
+      whileTap,
+      initial,
+      animate,
+      exit,
+      transition,
+      children,
+      href,
+      style,
+      ...rest
+    } = props;
 
-  // Pull out Next Link-specific props so they don't get passed to the <a> element
-  const {
-    replace,
-    scroll,
-    shallow,
-    prefetch,
-    locale,
-    // include any other Link props you use explicitly here
-    ...possibleAnchorProps
-  } = rest as Partial<LinkProps> & Record<string, unknown>;
+    // Pull out Next Link-specific props so they don't get passed to the <a> element
+    const {
+      replace,
+      scroll,
+      shallow,
+      prefetch,
+      locale,
+      // include any other Link props you use explicitly here
+      ...possibleAnchorProps
+    } = rest as Partial<LinkProps> & Record<string, unknown>;
 
-  // Build props for motion wrapper and anchor separately to avoid incompatible event handler types
-  const motionWrapperProps = {
-    whileHover,
-    whileTap,
-    initial,
-    animate,
-    exit,
-    transition,
-    style: { display: 'inline-block', ...style } as React.CSSProperties,
-  };
+    // Build props for motion wrapper and anchor separately to avoid incompatible event handler types
+    const motionWrapperProps = {
+      whileHover,
+      whileTap,
+      initial,
+      animate,
+      exit,
+      transition,
+      style: { display: 'inline-block', ...style } as React.CSSProperties,
+    };
 
-  const anchorProps = possibleAnchorProps as ComponentPropsWithoutRef<'a'>;
+    const anchorProps = possibleAnchorProps as ComponentPropsWithoutRef<'a'>;
 
-  return (
-    <motion.div
-      whileHover={motionWrapperProps.whileHover}
-      whileTap={motionWrapperProps.whileTap}
-      initial={motionWrapperProps.initial}
-      animate={motionWrapperProps.animate}
-      exit={motionWrapperProps.exit}
-      transition={motionWrapperProps.transition}
-      style={motionWrapperProps.style}
-    >
-      <Link {...({ href } as LinkProps)} legacyBehavior>
-        <a ref={ref} {...anchorProps}>
-          {children}
-        </a>
-      </Link>
-    </motion.div>
-  );
-});
+    return (
+      <motion.div
+        whileHover={motionWrapperProps.whileHover}
+        whileTap={motionWrapperProps.whileTap}
+        initial={motionWrapperProps.initial}
+        animate={motionWrapperProps.animate}
+        exit={motionWrapperProps.exit}
+        transition={motionWrapperProps.transition}
+        style={motionWrapperProps.style}
+      >
+        <Link {...({ href } as LinkProps)} legacyBehavior>
+          <a ref={ref} {...anchorProps}>
+            {children}
+          </a>
+        </Link>
+      </motion.div>
+    );
+  }
+);
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -183,7 +188,7 @@ export default function Header() {
           whileHover={{ y: -2 }}
           whileTap={{ scale: 0.97 }}
           className={cn(
-            'group relative isolate inline-flex items-center rounded-full px-4 py-2.5 text-sm font-semibold transition-colors duration-300 focus-visible:outline-none focus-visible:bg-red-50/70 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white xl:px-5 xl:py-3 xl:text-base',
+            'group relative isolate inline-flex items-center rounded-full px-4 py-2.5 text-sm font-semibold transition-colors duration-300 focus-visible:bg-red-50/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white xl:px-5 xl:py-3 xl:text-base',
             isActive ? 'text-red-600' : 'text-gray-700 hover:text-red-600'
           )}
           aria-current={isActive ? 'page' : undefined}
@@ -212,8 +217,12 @@ export default function Header() {
               <div className="flex items-center gap-2 text-xs text-white/90 sm:hidden">
                 <Clock className="h-4 w-4" />
                 <div className="flex flex-col leading-tight">
-                  <span className="font-medium">Livraison express à Bangui</span>
-                  <span className="font-medium">en 30 min ou c&apos;est gratuit</span>
+                  <span className="font-medium">
+                    Livraison express à Bangui
+                  </span>
+                  <span className="font-medium">
+                    en 30 min ou c&apos;est gratuit
+                  </span>
                 </div>
               </div>
 
@@ -224,7 +233,7 @@ export default function Header() {
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white/15 px-3 py-1.5 text-xs font-bold backdrop-blur-sm transition-all hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-red-600 sm:w-auto sm:justify-start sm:px-4 sm:py-2 sm:text-sm"
               >
                 <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                <span className="hidden xs:inline">+236 72 13 48 48</span>
+                <span className="xs:inline hidden">+236 72 13 48 48</span>
                 <span className="xs:hidden">Appeler</span>
               </motion.a>
 
@@ -235,12 +244,16 @@ export default function Header() {
 
               <div className="hidden items-center gap-2 text-xs text-white/90 md:inline-flex lg:text-sm">
                 <Clock className="h-4 w-4" />
-                <span className="font-medium">Livraison à Bangui en 30 min</span>
+                <span className="font-medium">
+                  Livraison à Bangui en 30 min
+                </span>
               </div>
 
               <div className="hidden items-center gap-2 text-xs text-white/90 lg:inline-flex">
                 <MapPin className="h-4 w-4" />
-                <span className="font-medium">Zone de livraison disponible</span>
+                <span className="font-medium">
+                  Zone de livraison disponible
+                </span>
               </div>
             </div>
 
@@ -297,7 +310,7 @@ export default function Header() {
                       ? 'border-red-500 bg-red-50 text-red-600'
                       : 'border-gray-200 bg-white text-gray-700 hover:border-red-300 hover:bg-red-50 hover:text-red-600'
                   )}
-                  onClick={() => setMobileMenuOpen((prev) => !prev)}
+                  onClick={() => setMobileMenuOpen(prev => !prev)}
                   aria-label="Menu"
                   aria-expanded={mobileMenuOpen}
                 >
@@ -344,7 +357,10 @@ export default function Header() {
             {/* Right: Cart + User */}
             <div className="flex items-center gap-2 sm:gap-3">
               {/* Cart Button */}
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 <Button
                   variant="ghost"
                   size="icon"

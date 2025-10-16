@@ -21,7 +21,12 @@ interface AuthContextType {
   user: User | null;
   firebaseUser: FirebaseUser | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (
+    email: string,
+    password: string,
+    options?: { allowUnverifiedEmail?: boolean }
+  ) => Promise<void>;
+  resendEmailVerification: (email: string, password: string) => Promise<void>;
   signUp: (
     email: string,
     password: string,
@@ -135,11 +140,60 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   /**
    * Sign in with email and password
    */
-  const signIn = async (email: string, password: string): Promise<void> => {
+  const signIn = async (
+    email: string,
+    password: string,
+    options?: { allowUnverifiedEmail?: boolean }
+  ): Promise<void> => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
+
+      const current = auth.currentUser;
+      if (current && !current.emailVerified && !options?.allowUnverifiedEmail) {
+        try {
+          await sendEmailVerification(current);
+        } catch (verificationError) {
+          console.error(
+            'Failed to resend verification email:',
+            verificationError
+          );
+        }
+
+        await firebaseSignOut(auth);
+
+        const error: any = new Error(
+          "Votre email n'est pas encore vérifié. Un lien de confirmation vient d'être renvoyé."
+        );
+        error.code = 'auth/email-not-verified';
+        throw error;
+      }
     } catch (error: any) {
-      throw new Error(error.message || 'Erreur lors de la connexion');
+      const err: any = new Error(
+        error?.message || 'Erreur lors de la connexion'
+      );
+      if (error?.code) err.code = error.code;
+      throw err;
+    }
+  };
+
+  const resendEmailVerification = async (
+    email: string,
+    password: string
+  ): Promise<void> => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+
+      if (auth.currentUser) {
+        await sendEmailVerification(auth.currentUser);
+      }
+    } catch (error: any) {
+      const err: any = new Error(
+        error?.message || "Impossible d'envoyer l'email de vérification"
+      );
+      if (error?.code) err.code = error.code;
+      throw err;
+    } finally {
+      await firebaseSignOut(auth);
     }
   };
 
@@ -189,7 +243,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
           await currentUser.delete();
         }
       } catch (cleanupError) {
-        console.error('Failed to cleanup auth user after signup error:', cleanupError);
+        console.error(
+          'Failed to cleanup auth user after signup error:',
+          cleanupError
+        );
       }
 
       throw new Error(error.message || "Erreur lors de l'inscription");
@@ -203,7 +260,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({
-        prompt: 'select_account'
+        prompt: 'select_account',
       });
       await signInWithRedirect(auth, provider);
       // User will be redirected, onAuthStateChanged will handle the rest
@@ -334,6 +391,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     firebaseUser,
     loading,
     signIn,
+    resendEmailVerification,
     signUp,
     signInWithGoogle,
     signOut,

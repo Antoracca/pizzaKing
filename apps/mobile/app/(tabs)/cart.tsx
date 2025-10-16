@@ -11,7 +11,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, TYPOGRAPHY, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
+import {
+  COLORS,
+  TYPOGRAPHY,
+  SPACING,
+  RADIUS,
+  SHADOWS,
+} from '@/constants/theme';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -45,11 +51,20 @@ export default function CartScreen() {
 
         <View style={styles.emptyContainer}>
           <View style={styles.emptyIcon}>
-            <Ionicons name="cart-outline" size={80} color={COLORS.textTertiary} />
+            <Ionicons
+              name="cart-outline"
+              size={80}
+              color={COLORS.textTertiary}
+            />
           </View>
           <Text style={styles.emptyTitle}>Votre panier est vide</Text>
-          <Text style={styles.emptySubtitle}>Ajoutez des pizzas pour commencer</Text>
-          <Button style={{ marginTop: SPACING.xl }} onPress={() => router.push('/(tabs)/menu')}>
+          <Text style={styles.emptySubtitle}>
+            Ajoutez des pizzas pour commencer
+          </Text>
+          <Button
+            style={{ marginTop: SPACING.xl }}
+            onPress={() => router.push('/(tabs)/menu')}
+          >
             <Ionicons name="pizza" size={20} color={COLORS.white} />
             Voir le Menu
           </Button>
@@ -100,14 +115,22 @@ export default function CartScreen() {
                   <View style={styles.itemFooter}>
                     <View style={styles.quantityControls}>
                       <TouchableOpacity
-                        onPress={() => updateQuantity(item.uid, item.quantity - 1)}
+                        onPress={() =>
+                          updateQuantity(item.uid, item.quantity - 1)
+                        }
                         style={styles.quantityButton}
                       >
-                        <Ionicons name="remove" size={16} color={COLORS.primary} />
+                        <Ionicons
+                          name="remove"
+                          size={16}
+                          color={COLORS.primary}
+                        />
                       </TouchableOpacity>
                       <Text style={styles.quantityText}>{item.quantity}</Text>
                       <TouchableOpacity
-                        onPress={() => updateQuantity(item.uid, item.quantity + 1)}
+                        onPress={() =>
+                          updateQuantity(item.uid, item.quantity + 1)
+                        }
                         style={styles.quantityButton}
                       >
                         <Ionicons name="add" size={16} color={COLORS.primary} />
@@ -124,7 +147,11 @@ export default function CartScreen() {
                   onPress={() => removeItem(item.uid)}
                   style={styles.removeButton}
                 >
-                  <Ionicons name="trash-outline" size={20} color={COLORS.error} />
+                  <Ionicons
+                    name="trash-outline"
+                    size={20}
+                    color={COLORS.error}
+                  />
                 </TouchableOpacity>
               </View>
             </Card>
@@ -138,11 +165,17 @@ export default function CartScreen() {
               <View style={styles.deliveryHeader}>
                 <Ionicons name="bicycle" size={24} color={COLORS.primary} />
                 <Text style={styles.deliveryText}>
-                  Ajoutez {formatPrice(10000 - subtotal)} pour la livraison gratuite
+                  Ajoutez {formatPrice(10000 - subtotal)} pour la livraison
+                  gratuite
                 </Text>
               </View>
               <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: `${deliveryProgress}%` }]} />
+                <View
+                  style={[
+                    styles.progressFill,
+                    { width: `${deliveryProgress}%` },
+                  ]}
+                />
               </View>
             </Card>
           </View>
@@ -156,7 +189,11 @@ export default function CartScreen() {
               <Text style={styles.promoTitle}>Code promo</Text>
             </View>
             <View style={styles.promoInput}>
-              <Ionicons name="ticket-outline" size={20} color={COLORS.textSecondary} />
+              <Ionicons
+                name="ticket-outline"
+                size={20}
+                color={COLORS.textSecondary}
+              />
               <Text style={styles.promoInputText}>Entrer un code promo</Text>
               <TouchableOpacity>
                 <Text style={styles.promoApply}>Appliquer</Text>
@@ -178,14 +215,26 @@ export default function CartScreen() {
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Livraison</Text>
               {deliveryFee === 0 ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.xs }}>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: SPACING.xs,
+                  }}
+                >
                   <Badge variant="success" size="sm">
                     Gratuit
                   </Badge>
-                  <Text style={[styles.summaryValue, { color: COLORS.success }]}>0 FCFA</Text>
+                  <Text
+                    style={[styles.summaryValue, { color: COLORS.success }]}
+                  >
+                    0 FCFA
+                  </Text>
                 </View>
               ) : (
-                <Text style={styles.summaryValue}>{formatPrice(deliveryFee)}</Text>
+                <Text style={styles.summaryValue}>
+                  {formatPrice(deliveryFee)}
+                </Text>
               )}
             </View>
 

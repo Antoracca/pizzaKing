@@ -7,9 +7,10 @@ const db = getFirestore();
 // PayPal API configuration
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || '';
 const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || '';
-const PAYPAL_API_BASE = process.env.PAYPAL_MODE === 'live'
-  ? 'https://api-m.paypal.com'
-  : 'https://api-m.sandbox.paypal.com';
+const PAYPAL_API_BASE =
+  process.env.PAYPAL_MODE === 'live'
+    ? 'https://api-m.paypal.com'
+    : 'https://api-m.sandbox.paypal.com';
 
 interface CreatePayPalOrderData {
   orderId: string;
@@ -23,7 +24,9 @@ interface CreatePayPalOrderData {
  * Get PayPal access token
  */
 async function getPayPalAccessToken(): Promise<string> {
-  const auth = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`).toString('base64');
+  const auth = Buffer.from(
+    `${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`
+  ).toString('base64');
 
   const response = await axios.post(
     `${PAYPAL_API_BASE}/v1/oauth2/token`,
@@ -139,14 +142,15 @@ export const createPayPalOrder = functions.https.onCall(
                   },
                 },
               },
-              items: order?.items?.map((item: any) => ({
-                name: item.name,
-                quantity: item.quantity.toString(),
-                unit_amount: {
-                  currency_code: 'USD',
-                  value: (convertFCFAtoUSD(item.price)).toFixed(2),
-                },
-              })) || [],
+              items:
+                order?.items?.map((item: any) => ({
+                  name: item.name,
+                  quantity: item.quantity.toString(),
+                  unit_amount: {
+                    currency_code: 'USD',
+                    value: convertFCFAtoUSD(item.price).toFixed(2),
+                  },
+                })) || [],
             },
           ],
           application_context: {

@@ -104,7 +104,10 @@ export class PromotionService {
       return { valid: false, error: 'Code promo expiré' };
     }
 
-    if (promotion.maxTotalUses && promotion.currentUses >= promotion.maxTotalUses) {
+    if (
+      promotion.maxTotalUses &&
+      promotion.currentUses >= promotion.maxTotalUses
+    ) {
       return { valid: false, error: 'Code promo épuisé' };
     }
 
@@ -121,7 +124,6 @@ export class PromotionService {
         error: 'Code promo réservé aux premières commandes',
       };
     }
-
 
     // Calculate discount
     let discountAmount = 0;
@@ -239,7 +241,8 @@ export class PromotionService {
     }
 
     const maxUses = promotion.maxTotalUses || Infinity;
-    const remainingUses = maxUses === Infinity ? Infinity : maxUses - promotion.currentUses;
+    const remainingUses =
+      maxUses === Infinity ? Infinity : maxUses - promotion.currentUses;
     const usagePercentage =
       maxUses === Infinity ? 0 : (promotion.currentUses / maxUses) * 100;
 
@@ -251,7 +254,8 @@ export class PromotionService {
 
     return {
       usageCount: promotion.currentUses,
-      remainingUses: remainingUses === Infinity ? 999999 : Math.max(0, remainingUses),
+      remainingUses:
+        remainingUses === Infinity ? 999999 : Math.max(0, remainingUses),
       usagePercentage: Math.min(100, usagePercentage),
       isExpired,
       daysRemaining: Math.max(0, daysRemaining),

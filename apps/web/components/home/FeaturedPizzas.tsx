@@ -26,10 +26,12 @@ const mockPizzas: Pizza[] = [
   {
     id: '1',
     name: 'Margherita Classique',
-    description: 'Sauce tomate artisanale, mozzarella di bufala DOP, basilic frais, huile d\'olive extra vierge',
-    shortDesc: 'L\'authentique italienne',
+    description:
+      "Sauce tomate artisanale, mozzarella di bufala DOP, basilic frais, huile d'olive extra vierge",
+    shortDesc: "L'authentique italienne",
     price: 5500,
-    image: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=800&h=800&fit=crop&q=80',
+    image:
+      'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=800&h=800&fit=crop&q=80',
     rating: 4.9,
     reviews: 1245,
     tags: ['Classique', 'Top 3'],
@@ -42,10 +44,12 @@ const mockPizzas: Pizza[] = [
   {
     id: '2',
     name: 'Pepperoni Suprême',
-    description: 'Triple pepperoni premium, mozzarella généreuse, sauce tomate maison, origan',
+    description:
+      'Triple pepperoni premium, mozzarella généreuse, sauce tomate maison, origan',
     shortDesc: 'La préférée des carnivores',
     price: 7500,
-    image: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=800&h=800&fit=crop&q=80',
+    image:
+      'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=800&h=800&fit=crop&q=80',
     rating: 4.9,
     reviews: 2198,
     tags: ['Best Seller', '#1'],
@@ -58,10 +62,12 @@ const mockPizzas: Pizza[] = [
   {
     id: '3',
     name: 'Quatre Fromages',
-    description: 'Mozzarella, gorgonzola doux, parmesan reggiano, emmental, crème fraîche',
+    description:
+      'Mozzarella, gorgonzola doux, parmesan reggiano, emmental, crème fraîche',
     shortDesc: 'Le paradis du fromage',
     price: 8500,
-    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&h=800&fit=crop&q=80',
+    image:
+      'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&h=800&fit=crop&q=80',
     rating: 4.8,
     reviews: 1567,
     tags: ['Fromage', 'Premium'],
@@ -74,10 +80,12 @@ const mockPizzas: Pizza[] = [
   {
     id: '4',
     name: 'BBQ Chicken',
-    description: 'Poulet rôti mariné 24h, oignons rouges, bacon croustillant, sauce BBQ fumée, coriandre',
+    description:
+      'Poulet rôti mariné 24h, oignons rouges, bacon croustillant, sauce BBQ fumée, coriandre',
     shortDesc: 'Saveurs américaines',
     price: 9500,
-    image: 'https://images.unsplash.com/photo-1565299507177-b0ac66763828?w=800&h=800&fit=crop&q=80',
+    image:
+      'https://images.unsplash.com/photo-1565299507177-b0ac66763828?w=800&h=800&fit=crop&q=80',
     rating: 4.9,
     reviews: 2876,
     tags: ['Signature', 'Top 3'],
@@ -90,10 +98,12 @@ const mockPizzas: Pizza[] = [
   {
     id: '5',
     name: 'Végétarienne Deluxe',
-    description: 'Poivrons grillés, champignons frais, oignons, tomates cerises, olives, aubergines',
+    description:
+      'Poivrons grillés, champignons frais, oignons, tomates cerises, olives, aubergines',
     shortDesc: 'Jardin de légumes frais',
     price: 7000,
-    image: 'https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?w=800&h=800&fit=crop&q=80',
+    image:
+      'https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?w=800&h=800&fit=crop&q=80',
     rating: 4.7,
     reviews: 987,
     tags: ['Végé', 'Healthy'],
@@ -106,10 +116,12 @@ const mockPizzas: Pizza[] = [
   {
     id: '6',
     name: 'Diavola Infernale',
-    description: 'Salami piquant, jalapeños, piments calabrais, huile pimentée, mozzarella fumée',
+    description:
+      'Salami piquant, jalapeños, piments calabrais, huile pimentée, mozzarella fumée',
     shortDesc: 'Pour les aventuriers',
     price: 8000,
-    image: 'https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=800&h=800&fit=crop&q=80',
+    image:
+      'https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=800&h=800&fit=crop&q=80',
     rating: 4.8,
     reviews: 1456,
     tags: ['Épicé', 'Intense'],
@@ -194,15 +206,18 @@ export default function FeaturedPizzas() {
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-12">
-          <div className="space-y-6 lg:w-1/3 lg:sticky lg:top-24">
-            <Badge className="w-fit bg-orange-600 text-white lg:text-base lg:px-4 lg:py-2">Best Sellers</Badge>
+          <div className="space-y-6 lg:sticky lg:top-24 lg:w-1/3">
+            <Badge className="w-fit bg-orange-600 text-white lg:px-4 lg:py-2 lg:text-base">
+              Best Sellers
+            </Badge>
             <div className="space-y-4">
               <h2 className="text-3xl font-black leading-tight text-gray-900 sm:text-4xl lg:text-5xl">
                 Les pizzas incontournables
               </h2>
               <p className="text-base text-gray-600 sm:text-lg lg:text-xl lg:leading-relaxed">
-                Recettes signature, ingrédients premium et cuisson minute au four à pierre.
-                Goûtez à l'équilibre parfait entre tradition et créativité.
+                Recettes signature, ingrédients premium et cuisson minute au
+                four à pierre. Goûtez à l'équilibre parfait entre tradition et
+                créativité.
               </p>
             </div>
 
@@ -260,20 +275,26 @@ export default function FeaturedPizzas() {
                         priority={index < 3}
                       />
 
-                      <div className="absolute top-3 left-3 flex flex-wrap gap-2">
+                      <div className="absolute left-3 top-3 flex flex-wrap gap-2">
                         {pizza.isBestSeller && (
                           <Badge className="bg-orange-600/90 text-xs font-semibold text-white">
                             Coup de cœur
                           </Badge>
                         )}
                         {pizza.isVegetarian && (
-                          <Badge variant="outline" className="flex items-center gap-1 border-emerald-200 bg-emerald-50 text-emerald-700">
+                          <Badge
+                            variant="outline"
+                            className="flex items-center gap-1 border-emerald-200 bg-emerald-50 text-emerald-700"
+                          >
                             <Leaf className="h-3.5 w-3.5" />
                             Végé
                           </Badge>
                         )}
                         {pizza.isSpicy && (
-                          <Badge variant="outline" className="flex items-center gap-1 border-red-200 bg-red-50 text-red-600">
+                          <Badge
+                            variant="outline"
+                            className="flex items-center gap-1 border-red-200 bg-red-50 text-red-600"
+                          >
                             <Flame className="h-3.5 w-3.5" />
                             Épicé
                           </Badge>
@@ -284,8 +305,10 @@ export default function FeaturedPizzas() {
                     <CardContent className="flex flex-1 flex-col gap-4 p-5 lg:gap-6 lg:p-7">
                       <div className="space-y-2 lg:space-y-3">
                         <div className="flex items-start justify-between gap-3">
-                          <h3 className="text-lg font-semibold text-gray-900 lg:text-2xl lg:font-bold">{pizza.name}</h3>
-                          <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-600 lg:text-base lg:px-5 lg:py-2">
+                          <h3 className="text-lg font-semibold text-gray-900 lg:text-2xl lg:font-bold">
+                            {pizza.name}
+                          </h3>
+                          <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-600 lg:px-5 lg:py-2 lg:text-base">
                             {formatPrice(pizza.price)}
                           </span>
                         </div>
@@ -335,7 +358,9 @@ export default function FeaturedPizzas() {
             </div>
 
             {isLoading && (
-              <p className="mt-6 text-sm text-gray-400">Chargement des recettes en cours…</p>
+              <p className="mt-6 text-sm text-gray-400">
+                Chargement des recettes en cours…
+              </p>
             )}
           </div>
         </div>

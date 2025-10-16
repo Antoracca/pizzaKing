@@ -26,11 +26,7 @@ export const dailyAnalytics = functions.pubsub
       // Get orders from yesterday
       const ordersSnapshot = await db
         .collection(COLLECTIONS.ORDERS)
-        .where(
-          'createdAt',
-          '>=',
-          admin.firestore.Timestamp.fromDate(yesterday)
-        )
+        .where('createdAt', '>=', admin.firestore.Timestamp.fromDate(yesterday))
         .where('createdAt', '<', admin.firestore.Timestamp.fromDate(today))
         .get();
 
@@ -38,8 +34,12 @@ export const dailyAnalytics = functions.pubsub
 
       // Calculate statistics
       const totalOrders = orders.length;
-      const totalRevenue = orders.reduce((sum, order) => sum + order.pricing.total, 0);
-      const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+      const totalRevenue = orders.reduce(
+        (sum, order) => sum + order.pricing.total,
+        0
+      );
+      const averageOrderValue =
+        totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
       const ordersByStatus = {
         pending: 0,

@@ -99,4 +99,7 @@ export { createPayPalOrder } from './https/payments/createPayPalOrder';
 export { capturePayPalOrder } from './https/payments/capturePayPalOrder';
 export { initiateMobileMoneyPayment } from './https/payments/initiateMobileMoneyPayment';
 export { handleMobileMoneyCallback } from './https/payments/handleMobileMoneyCallback';
-export { markCashOnDelivery, confirmCashPaymentReceived } from './https/payments/markCashOnDelivery';
+export {
+  markCashOnDelivery,
+  confirmCashPaymentReceived,
+} from './https/payments/markCashOnDelivery';

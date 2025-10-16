@@ -9,7 +9,12 @@ interface CardProps {
   noPadding?: boolean;
 }
 
-export default function Card({ children, style, shadow = 'md', noPadding = false }: CardProps) {
+export default function Card({
+  children,
+  style,
+  shadow = 'md',
+  noPadding = false,
+}: CardProps) {
   return (
     <View
       style={[

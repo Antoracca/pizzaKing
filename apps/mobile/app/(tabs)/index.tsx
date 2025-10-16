@@ -11,7 +11,13 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, TYPOGRAPHY, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
+import {
+  COLORS,
+  TYPOGRAPHY,
+  SPACING,
+  RADIUS,
+  SHADOWS,
+} from '@/constants/theme';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
@@ -79,7 +85,11 @@ export default function HomeScreen() {
             <Text style={styles.headerTitle}>Jean Dupont</Text>
           </View>
           <TouchableOpacity style={styles.notificationButton}>
-            <Ionicons name="notifications-outline" size={24} color={COLORS.white} />
+            <Ionicons
+              name="notifications-outline"
+              size={24}
+              color={COLORS.white}
+            />
             <View style={styles.notificationBadge}>
               <Text style={styles.notificationBadgeText}>3</Text>
             </View>
@@ -113,7 +123,12 @@ export default function HomeScreen() {
         </Card>
 
         <Card style={styles.statCard} shadow="lg">
-          <View style={[styles.statIconContainer, { backgroundColor: COLORS.successLight }]}>
+          <View
+            style={[
+              styles.statIconContainer,
+              { backgroundColor: COLORS.successLight },
+            ]}
+          >
             <Ionicons name="time-outline" size={24} color={COLORS.success} />
           </View>
           <Text style={styles.statValue}>25 min</Text>
@@ -121,7 +136,12 @@ export default function HomeScreen() {
         </Card>
 
         <Card style={styles.statCard} shadow="lg">
-          <View style={[styles.statIconContainer, { backgroundColor: COLORS.infoLight }]}>
+          <View
+            style={[
+              styles.statIconContainer,
+              { backgroundColor: COLORS.infoLight },
+            ]}
+          >
             <Ionicons name="pricetag-outline" size={24} color={COLORS.info} />
           </View>
           <Text style={styles.statValue}>-20%</Text>
@@ -132,9 +152,17 @@ export default function HomeScreen() {
       {/* Categories */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Catégories</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScroll}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoriesScroll}
+        >
           {categories.map(category => (
-            <TouchableOpacity key={category.id} style={styles.categoryCard} activeOpacity={0.7}>
+            <TouchableOpacity
+              key={category.id}
+              style={styles.categoryCard}
+              activeOpacity={0.7}
+            >
               <Card style={styles.categoryCardInner} shadow="sm">
                 <Text style={styles.categoryIcon}>{category.icon}</Text>
                 <Text style={styles.categoryName}>{category.name}</Text>
@@ -155,7 +183,9 @@ export default function HomeScreen() {
           >
             <View style={styles.promoContent}>
               <Text style={styles.promoTitle}>Offre Spéciale 🎉</Text>
-              <Text style={styles.promoSubtitle}>-20% sur votre première commande</Text>
+              <Text style={styles.promoSubtitle}>
+                -20% sur votre première commande
+              </Text>
               <View style={styles.promoCodeContainer}>
                 <Text style={styles.promoCode}>WELCOME20</Text>
               </View>
@@ -177,7 +207,11 @@ export default function HomeScreen() {
         </View>
 
         {featuredPizzas.map((pizza, index) => (
-          <TouchableOpacity key={pizza.id} activeOpacity={0.9} style={styles.pizzaCardWrapper}>
+          <TouchableOpacity
+            key={pizza.id}
+            activeOpacity={0.9}
+            style={styles.pizzaCardWrapper}
+          >
             <Card style={styles.pizzaCard} shadow="md">
               <Image source={{ uri: pizza.image }} style={styles.pizzaImage} />
 
@@ -204,7 +238,11 @@ export default function HomeScreen() {
                     </Text>
                   </View>
                   <TouchableOpacity style={styles.favoriteButton}>
-                    <Ionicons name="heart-outline" size={22} color={COLORS.textSecondary} />
+                    <Ionicons
+                      name="heart-outline"
+                      size={22}
+                      color={COLORS.textSecondary}
+                    />
                   </TouchableOpacity>
                 </View>
 
@@ -215,12 +253,18 @@ export default function HomeScreen() {
                       <Text style={styles.pizzaRatingText}>{pizza.rating}</Text>
                     </View>
                     <View style={styles.pizzaTime}>
-                      <Ionicons name="time-outline" size={16} color={COLORS.textSecondary} />
+                      <Ionicons
+                        name="time-outline"
+                        size={16}
+                        color={COLORS.textSecondary}
+                      />
                       <Text style={styles.pizzaTimeText}>{pizza.prepTime}</Text>
                     </View>
                   </View>
                   <View style={styles.pizzaPriceContainer}>
-                    <Text style={styles.pizzaPrice}>{formatPrice(pizza.price)}</Text>
+                    <Text style={styles.pizzaPrice}>
+                      {formatPrice(pizza.price)}
+                    </Text>
                     <TouchableOpacity style={styles.addButton}>
                       <LinearGradient
                         colors={[COLORS.orangeStart, COLORS.orangeEnd]}

@@ -19,11 +19,11 @@ export default function AuthCallbackPage() {
   }, [user, loading, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100">
       <div className="text-center">
         <div className="mb-6">
           <svg
-            className="animate-spin h-16 w-16 text-orange-600 mx-auto"
+            className="mx-auto h-16 w-16 animate-spin text-orange-600"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -43,7 +43,7 @@ export default function AuthCallbackPage() {
             ></path>
           </svg>
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <h2 className="mb-2 text-2xl font-bold text-gray-900">
           Connexion en cours...
         </h2>
         <p className="text-gray-600">

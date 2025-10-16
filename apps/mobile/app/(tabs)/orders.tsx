@@ -10,7 +10,13 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, TYPOGRAPHY, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
+import {
+  COLORS,
+  TYPOGRAPHY,
+  SPACING,
+  RADIUS,
+  SHADOWS,
+} from '@/constants/theme';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -25,8 +31,18 @@ const orders = [
     items: 2,
     total: 25500,
     pizzas: [
-      { name: 'Margherita Royale', quantity: 2, image: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400' },
-      { name: 'BBQ Chicken', quantity: 1, image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400' },
+      {
+        name: 'Margherita Royale',
+        quantity: 2,
+        image:
+          'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400',
+      },
+      {
+        name: 'BBQ Chicken',
+        quantity: 1,
+        image:
+          'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400',
+      },
     ],
     deliveryAddress: '123 Rue de Ouagadougou, Burkina Faso',
     estimatedTime: '25 min',
@@ -44,7 +60,12 @@ const orders = [
     items: 1,
     total: 12000,
     pizzas: [
-      { name: '4 Fromages', quantity: 1, image: 'https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=400' },
+      {
+        name: '4 Fromages',
+        quantity: 1,
+        image:
+          'https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=400',
+      },
     ],
   },
   {
@@ -55,31 +76,61 @@ const orders = [
     items: 3,
     total: 37500,
     pizzas: [
-      { name: 'Pepperoni', quantity: 2, image: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=400' },
-      { name: 'Végétarienne', quantity: 1, image: 'https://images.unsplash.com/photo-1511689660979-10d2b1aada49?w=400' },
+      {
+        name: 'Pepperoni',
+        quantity: 2,
+        image:
+          'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=400',
+      },
+      {
+        name: 'Végétarienne',
+        quantity: 1,
+        image:
+          'https://images.unsplash.com/photo-1511689660979-10d2b1aada49?w=400',
+      },
     ],
   },
 ];
 
 const statusConfig = {
   pending: { label: 'En attente', color: COLORS.warning, icon: 'time-outline' },
-  confirmed: { label: 'Confirmée', color: COLORS.info, icon: 'checkmark-circle' },
-  preparing: { label: 'En préparation', color: COLORS.primary, icon: 'restaurant' },
+  confirmed: {
+    label: 'Confirmée',
+    color: COLORS.info,
+    icon: 'checkmark-circle',
+  },
+  preparing: {
+    label: 'En préparation',
+    color: COLORS.primary,
+    icon: 'restaurant',
+  },
   ready: { label: 'Prête', color: COLORS.success, icon: 'checkmark-done' },
   on_route: { label: 'En route', color: COLORS.info, icon: 'bicycle' },
-  delivered: { label: 'Livrée', color: COLORS.success, icon: 'checkmark-done-circle' },
+  delivered: {
+    label: 'Livrée',
+    color: COLORS.success,
+    icon: 'checkmark-done-circle',
+  },
   cancelled: { label: 'Annulée', color: COLORS.error, icon: 'close-circle' },
 };
 
 export default function OrdersScreen() {
-  const [selectedTab, setSelectedTab] = useState<'active' | 'history'>('active');
+  const [selectedTab, setSelectedTab] = useState<'active' | 'history'>(
+    'active'
+  );
 
-  const activeOrders = orders.filter(o => ['pending', 'confirmed', 'preparing', 'ready', 'on_route'].includes(o.status));
-  const historyOrders = orders.filter(o => ['delivered', 'cancelled'].includes(o.status));
+  const activeOrders = orders.filter(o =>
+    ['pending', 'confirmed', 'preparing', 'ready', 'on_route'].includes(
+      o.status
+    )
+  );
+  const historyOrders = orders.filter(o =>
+    ['delivered', 'cancelled'].includes(o.status)
+  );
 
   const displayOrders = selectedTab === 'active' ? activeOrders : historyOrders;
 
-  const renderOrderCard = (order: typeof orders[0]) => {
+  const renderOrderCard = (order: (typeof orders)[0]) => {
     const config = statusConfig[order.status as keyof typeof statusConfig];
 
     return (
@@ -96,12 +147,16 @@ export default function OrdersScreen() {
                 order.status === 'delivered'
                   ? 'success'
                   : order.status === 'cancelled'
-                  ? 'error'
-                  : 'default'
+                    ? 'error'
+                    : 'default'
               }
             >
-              <Ionicons name={config.icon as any} size={14} color={COLORS.white} />
-              {' '}{config.label}
+              <Ionicons
+                name={config.icon as any}
+                size={14}
+                color={COLORS.white}
+              />{' '}
+              {config.label}
             </Badge>
           </View>
 
@@ -109,7 +164,10 @@ export default function OrdersScreen() {
           <View style={styles.orderPizzas}>
             {order.pizzas.map((pizza, index) => (
               <View key={index} style={styles.pizzaItem}>
-                <Image source={{ uri: pizza.image }} style={styles.pizzaImage} />
+                <Image
+                  source={{ uri: pizza.image }}
+                  style={styles.pizzaImage}
+                />
                 <View style={styles.pizzaInfo}>
                   <Text style={styles.pizzaName}>{pizza.name}</Text>
                   <Text style={styles.pizzaQuantity}>x{pizza.quantity}</Text>
@@ -130,10 +188,14 @@ export default function OrdersScreen() {
                     <Ionicons name="person" size={24} color={COLORS.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.delivererName}>{order.deliverer.name}</Text>
+                    <Text style={styles.delivererName}>
+                      {order.deliverer.name}
+                    </Text>
                     <View style={styles.delivererRating}>
                       <Ionicons name="star" size={14} color={COLORS.warning} />
-                      <Text style={styles.delivererRatingText}>{order.deliverer.rating}</Text>
+                      <Text style={styles.delivererRatingText}>
+                        {order.deliverer.rating}
+                      </Text>
                     </View>
                   </View>
                   <TouchableOpacity style={styles.callButton}>
@@ -142,12 +204,24 @@ export default function OrdersScreen() {
                 </View>
 
                 <View style={styles.etaContainer}>
-                  <Ionicons name="time-outline" size={20} color={COLORS.primary} />
-                  <Text style={styles.etaText}>Arrivée estimée: {order.estimatedTime}</Text>
+                  <Ionicons
+                    name="time-outline"
+                    size={20}
+                    color={COLORS.primary}
+                  />
+                  <Text style={styles.etaText}>
+                    Arrivée estimée: {order.estimatedTime}
+                  </Text>
                 </View>
 
                 <View style={styles.trackingProgress}>
-                  {['confirmed', 'preparing', 'ready', 'on_route', 'delivered'].map((step, index) => (
+                  {[
+                    'confirmed',
+                    'preparing',
+                    'ready',
+                    'on_route',
+                    'delivered',
+                  ].map((step, index) => (
                     <View key={step} style={styles.trackingStep}>
                       <View
                         style={[
@@ -175,7 +249,9 @@ export default function OrdersScreen() {
           {/* Footer */}
           <View style={styles.orderFooter}>
             <View>
-              <Text style={styles.orderItems}>{order.items} article{order.items > 1 ? 's' : ''}</Text>
+              <Text style={styles.orderItems}>
+                {order.items} article{order.items > 1 ? 's' : ''}
+              </Text>
               <Text style={styles.orderTotal}>{formatPrice(order.total)}</Text>
             </View>
 
@@ -214,7 +290,12 @@ export default function OrdersScreen() {
           onPress={() => setSelectedTab('active')}
           style={[styles.tab, selectedTab === 'active' && styles.tabActive]}
         >
-          <Text style={[styles.tabText, selectedTab === 'active' && styles.tabTextActive]}>
+          <Text
+            style={[
+              styles.tabText,
+              selectedTab === 'active' && styles.tabTextActive,
+            ]}
+          >
             En cours ({activeOrders.length})
           </Text>
         </TouchableOpacity>
@@ -222,25 +303,37 @@ export default function OrdersScreen() {
           onPress={() => setSelectedTab('history')}
           style={[styles.tab, selectedTab === 'history' && styles.tabActive]}
         >
-          <Text style={[styles.tabText, selectedTab === 'history' && styles.tabTextActive]}>
+          <Text
+            style={[
+              styles.tabText,
+              selectedTab === 'history' && styles.tabTextActive,
+            ]}
+          >
             Historique ({historyOrders.length})
           </Text>
         </TouchableOpacity>
       </View>
 
       {/* Orders List */}
-      <ScrollView style={styles.ordersList} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.ordersList}
+        showsVerticalScrollIndicator={false}
+      >
         {displayOrders.length === 0 ? (
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIcon}>
               <Ionicons
-                name={selectedTab === 'active' ? 'receipt-outline' : 'time-outline'}
+                name={
+                  selectedTab === 'active' ? 'receipt-outline' : 'time-outline'
+                }
                 size={60}
                 color={COLORS.textTertiary}
               />
             </View>
             <Text style={styles.emptyTitle}>
-              {selectedTab === 'active' ? 'Aucune commande en cours' : 'Aucun historique'}
+              {selectedTab === 'active'
+                ? 'Aucune commande en cours'
+                : 'Aucun historique'}
             </Text>
             <Text style={styles.emptySubtitle}>
               {selectedTab === 'active'

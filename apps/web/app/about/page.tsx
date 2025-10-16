@@ -19,37 +19,49 @@ import {
   Users2,
   Sparkles,
   Warehouse,
-  Truck
+  Truck,
 } from 'lucide-react';
 
 const stats = [
   { label: 'Commandes livrées', value: '320K+', helper: 'Depuis 2021' },
   { label: 'Satisfaction client', value: '4,9/5', helper: 'Notation moyenne' },
-  { label: 'Délai moyen', value: '23 min', helper: 'Livraison Bangui intra-muros' },
-  { label: 'Partenaires actifs', value: '48', helper: 'Livreurs & producteurs locaux' }
+  {
+    label: 'Délai moyen',
+    value: '23 min',
+    helper: 'Livraison Bangui intra-muros',
+  },
+  {
+    label: 'Partenaires actifs',
+    value: '48',
+    helper: 'Livreurs & producteurs locaux',
+  },
 ];
 
 const values = [
   {
     title: 'Qualité feu de bois',
-    description: 'Pâtes maturées 48h, sauces italiennes cuisinées maison et ingrédients sourcés localement.',
-    icon: Flame
+    description:
+      'Pâtes maturées 48h, sauces italiennes cuisinées maison et ingrédients sourcés localement.',
+    icon: Flame,
   },
   {
     title: 'Couverture locale',
-    description: 'Un hub culinaire à Bangui, des dark kitchens mobiles pour assurer la fraîcheur partout en ville.',
-    icon: MapPinned
+    description:
+      'Un hub culinaire à Bangui, des dark kitchens mobiles pour assurer la fraîcheur partout en ville.',
+    icon: MapPinned,
   },
   {
     title: 'Respect & fidélité',
-    description: 'Programme Royals dédié, livraison transparente et compensations immédiates en cas d’incident.',
-    icon: HeartHandshake
+    description:
+      'Programme Royals dédié, livraison transparente et compensations immédiates en cas d’incident.',
+    icon: HeartHandshake,
   },
   {
     title: 'Technologie temps réel',
-    description: 'Tracking GPS, algorithmes prédictifs et support KingBot inspiré des standards Amazon.',
-    icon: Clock9
-  }
+    description:
+      'Tracking GPS, algorithmes prédictifs et support KingBot inspiré des standards Amazon.',
+    icon: Clock9,
+  },
 ];
 
 const leaders = [
@@ -58,68 +70,79 @@ const leaders = [
     role: 'CEO & Fondatrice',
     bio: 'Ancienne consultante foodtech, elle pilote la vision omnicanale de Pizza King.',
     focus: 'Stratégie & expérience client',
-    avatar: 'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?w=320&h=320&fit=crop&q=80'
+    avatar:
+      'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?w=320&h=320&fit=crop&q=80',
   },
   {
     name: 'Abdoulaye Nguemo',
     role: 'COO',
     bio: 'Ex-directeur logistique chez un leader de la livraison, il coordonne hubs et flotte.',
     focus: 'Opérations & supply chain',
-    avatar: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=320&h=320&fit=crop&q=80'
+    avatar:
+      'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=320&h=320&fit=crop&q=80',
   },
   {
     name: 'Sarah Békoulba',
     role: 'Chief Product Officer',
     bio: 'Spécialiste UX, elle orchestre l’app web/mobile, le support KingBot et l’analyse data.',
     focus: 'Produit & innovation',
-    avatar: 'https://images.unsplash.com/photo-1544723795-4325375ed1b3?w=320&h=320&fit=crop&q=80'
-  }
+    avatar:
+      'https://images.unsplash.com/photo-1544723795-4325375ed1b3?w=320&h=320&fit=crop&q=80',
+  },
 ];
 
 const timeline = [
   {
     year: '2021',
     title: 'Ouverture du laboratoire Pizza King',
-    description: 'Première dark kitchen à Bangui, 6 pizzas signature et un canal WhatsApp pour commander.'
+    description:
+      'Première dark kitchen à Bangui, 6 pizzas signature et un canal WhatsApp pour commander.',
   },
   {
     year: '2022',
     title: 'Lancement de l’application mobile',
-    description: 'Partenariat avec Expo & Firebase pour offrir tracking en direct et paiements multiples.'
+    description:
+      'Partenariat avec Expo & Firebase pour offrir tracking en direct et paiements multiples.',
   },
   {
     year: '2023',
     title: 'Programme Royals & dashboards',
-    description: 'Arrivée des paliers fidélité, suivi en temps réel et cockpit analytics pour les franchisés.'
+    description:
+      'Arrivée des paliers fidélité, suivi en temps réel et cockpit analytics pour les franchisés.',
   },
   {
     year: '2024',
     title: 'Extension nationale',
-    description: 'Dark kitchens itinérantes, intégration de Stripe/PayPal et support KingBot 24/7.'
+    description:
+      'Dark kitchens itinérantes, intégration de Stripe/PayPal et support KingBot 24/7.',
   },
   {
     year: '2025',
     title: 'Vers l’Afrique centrale',
-    description: 'Feuille de route pour Douala et Brazzaville, avec un modèle franchise clé en main.'
-  }
+    description:
+      'Feuille de route pour Douala et Brazzaville, avec un modèle franchise clé en main.',
+  },
 ];
 
 const sustainability = [
   {
     title: 'Chaîne du froid maîtrisée',
-    description: 'Fleet de scooters électriques avec caissons isolés connectés au hub IoT.',
-    icon: ShieldCheck
+    description:
+      'Fleet de scooters électriques avec caissons isolés connectés au hub IoT.',
+    icon: ShieldCheck,
   },
   {
     title: 'Packaging responsable',
-    description: 'Boîtes recyclées, couverts en amidon et programme de reprise pour les entreprises.',
-    icon: Leaf
+    description:
+      'Boîtes recyclées, couverts en amidon et programme de reprise pour les entreprises.',
+    icon: Leaf,
   },
   {
     title: 'Formation inclusive',
-    description: 'Academy interne offrant certifications barista, hygiène HACCP et support client.',
-    icon: Users2
-  }
+    description:
+      'Academy interne offrant certifications barista, hygiène HACCP et support client.',
+    icon: Users2,
+  },
 ];
 
 export default function AboutPage() {
@@ -137,17 +160,23 @@ export default function AboutPage() {
                   À propos de Pizza King
                 </Badge>
                 <h1 className="text-4xl font-black tracking-tight text-gray-900 md:text-5xl">
-                  L’expérience pizza la plus rapide et la plus fiable d’Afrique centrale.
+                  L’expérience pizza la plus rapide et la plus fiable d’Afrique
+                  centrale.
                 </h1>
                 <p className="text-lg text-gray-600 md:text-xl">
-                  Nous associons la tradition des pizzaiolos napolitains à une organisation logistique digne des leaders mondiaux.
-                  Chaque fonctionnalité de notre plateforme est pensée pour livrer une émotion gourmande, dans les meilleures conditions.
+                  Nous associons la tradition des pizzaiolos napolitains à une
+                  organisation logistique digne des leaders mondiaux. Chaque
+                  fonctionnalité de notre plateforme est pensée pour livrer une
+                  émotion gourmande, dans les meilleures conditions.
                 </p>
                 <div className="flex flex-wrap gap-4">
                   <Button className="bg-gradient-to-r from-red-600 to-orange-600 text-white shadow-lg hover:from-red-700 hover:to-orange-700">
                     Explorer notre vision 2025
                   </Button>
-                  <Button variant="outline" className="border-red-200 text-red-600 hover:bg-red-50">
+                  <Button
+                    variant="outline"
+                    className="border-red-200 text-red-600 hover:bg-red-50"
+                  >
                     Rejoindre l’aventure
                   </Button>
                 </div>
@@ -202,16 +231,28 @@ export default function AboutPage() {
           <div className="grid gap-8 lg:grid-cols-[1fr,1fr] lg:items-start">
             <Card className="border-red-100 shadow-md">
               <CardHeader>
-                <Badge variant="secondary" className="border border-red-100 bg-red-50 text-red-600">
+                <Badge
+                  variant="secondary"
+                  className="border border-red-100 bg-red-50 text-red-600"
+                >
                   Quelques chiffres
                 </Badge>
-                <CardTitle className="text-2xl text-gray-900">Ce qui nous anime chaque jour</CardTitle>
+                <CardTitle className="text-2xl text-gray-900">
+                  Ce qui nous anime chaque jour
+                </CardTitle>
               </CardHeader>
               <CardContent className="grid gap-6 sm:grid-cols-2">
-                {stats.map((item) => (
-                  <div key={item.label} className="rounded-2xl border border-red-100 bg-white px-6 py-5">
-                    <p className="text-sm uppercase tracking-wide text-gray-500">{item.label}</p>
-                    <p className="mt-2 text-3xl font-black text-gray-900">{item.value}</p>
+                {stats.map(item => (
+                  <div
+                    key={item.label}
+                    className="rounded-2xl border border-red-100 bg-white px-6 py-5"
+                  >
+                    <p className="text-sm uppercase tracking-wide text-gray-500">
+                      {item.label}
+                    </p>
+                    <p className="mt-2 text-3xl font-black text-gray-900">
+                      {item.value}
+                    </p>
                     <p className="mt-1 text-xs text-gray-500">{item.helper}</p>
                   </div>
                 ))}
@@ -219,7 +260,7 @@ export default function AboutPage() {
             </Card>
 
             <div className="grid gap-6">
-              {values.map((value) => {
+              {values.map(value => {
                 const Icon = value.icon;
 
                 return (
@@ -229,8 +270,12 @@ export default function AboutPage() {
                         <Icon className="h-6 w-6" />
                       </div>
                       <div>
-                        <p className="text-lg font-semibold text-gray-900">{value.title}</p>
-                        <p className="text-sm text-gray-600">{value.description}</p>
+                        <p className="text-lg font-semibold text-gray-900">
+                          {value.title}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {value.description}
+                        </p>
                       </div>
                     </CardContent>
                   </Card>
@@ -244,21 +289,31 @@ export default function AboutPage() {
         <section className="border-y border-red-100 bg-white py-16">
           <div className="container mx-auto px-4">
             <div className="mx-auto max-w-2xl text-center">
-              <h2 className="text-3xl font-bold text-gray-900 md:text-4xl">Notre histoire</h2>
+              <h2 className="text-3xl font-bold text-gray-900 md:text-4xl">
+                Notre histoire
+              </h2>
               <p className="mt-3 text-gray-600">
-                Pizza King est née du désir d’offrir une qualité artisanale avec la réactivité d’un leader e-commerce.
+                Pizza King est née du désir d’offrir une qualité artisanale avec
+                la réactivité d’un leader e-commerce.
               </p>
             </div>
 
             <div className="mt-12 space-y-8">
               {timeline.map((step, index) => (
-                <div key={step.year} className="relative flex flex-col gap-6 rounded-3xl border border-red-100 bg-white px-6 py-6 shadow-sm lg:flex-row lg:items-center">
+                <div
+                  key={step.year}
+                  className="relative flex flex-col gap-6 rounded-3xl border border-red-100 bg-white px-6 py-6 shadow-sm lg:flex-row lg:items-center"
+                >
                   <div className="flex h-16 w-16 flex-none items-center justify-center rounded-full bg-gradient-to-r from-red-600 to-orange-600 text-2xl font-bold text-white">
                     {step.year}
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-xl font-semibold text-gray-900">{step.title}</h3>
-                    <p className="mt-2 text-sm text-gray-600">{step.description}</p>
+                    <h3 className="text-xl font-semibold text-gray-900">
+                      {step.title}
+                    </h3>
+                    <p className="mt-2 text-sm text-gray-600">
+                      {step.description}
+                    </p>
                   </div>
                   <div className="flex-none text-sm text-gray-400">
                     Étape {index + 1}
@@ -272,14 +327,17 @@ export default function AboutPage() {
         {/* Leadership */}
         <section className="container mx-auto px-4 py-16">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold text-gray-900 md:text-4xl">L’équipe dirigeante</h2>
+            <h2 className="text-3xl font-bold text-gray-900 md:text-4xl">
+              L’équipe dirigeante
+            </h2>
             <p className="mt-3 text-gray-600">
-              Des profils complémentaires, entre gastronomie, supply chain et innovation produit.
+              Des profils complémentaires, entre gastronomie, supply chain et
+              innovation produit.
             </p>
           </div>
 
           <div className="mt-12 grid gap-6 lg:grid-cols-3">
-            {leaders.map((leader) => (
+            {leaders.map(leader => (
               <Card key={leader.name} className="border-red-100 shadow-sm">
                 <CardContent className="space-y-4 px-6 py-6">
                   <div className="overflow-hidden rounded-2xl border border-red-100">
@@ -290,15 +348,22 @@ export default function AboutPage() {
                     />
                   </div>
                   <div>
-                    <p className="text-xl font-semibold text-gray-900">{leader.name}</p>
-                    <p className="text-sm font-medium uppercase tracking-wide text-red-500">{leader.role}</p>
+                    <p className="text-xl font-semibold text-gray-900">
+                      {leader.name}
+                    </p>
+                    <p className="text-sm font-medium uppercase tracking-wide text-red-500">
+                      {leader.role}
+                    </p>
                   </div>
                   <p className="text-sm text-gray-600">{leader.bio}</p>
                   <div className="flex items-center gap-2 text-sm text-gray-500">
                     <Award className="h-4 w-4 text-orange-500" />
                     <span>{leader.focus}</span>
                   </div>
-                  <Button variant="outline" className="w-full border-red-200 text-red-600 hover:bg-red-50">
+                  <Button
+                    variant="outline"
+                    className="w-full border-red-200 text-red-600 hover:bg-red-50"
+                  >
                     Contacter {leader.name.split(' ')[0]}
                   </Button>
                 </CardContent>
@@ -312,23 +377,34 @@ export default function AboutPage() {
           <div className="container mx-auto px-4">
             <div className="grid gap-10 lg:grid-cols-[1.1fr,0.9fr] lg:items-center">
               <div className="space-y-6">
-                <h2 className="text-3xl font-bold text-gray-900 md:text-4xl">Impact & responsabilité</h2>
+                <h2 className="text-3xl font-bold text-gray-900 md:text-4xl">
+                  Impact & responsabilité
+                </h2>
                 <p className="text-lg text-gray-600">
-                  Pizza King s’engage à accélérer l’économie locale tout en réduisant son empreinte carbone.
-                  Nous accompagnons nos livreurs avec des programmes de propriété de scooter et des formations continues.
+                  Pizza King s’engage à accélérer l’économie locale tout en
+                  réduisant son empreinte carbone. Nous accompagnons nos
+                  livreurs avec des programmes de propriété de scooter et des
+                  formations continues.
                 </p>
                 <div className="grid gap-4">
-                  {sustainability.map((item) => {
+                  {sustainability.map(item => {
                     const Icon = item.icon;
 
                     return (
-                      <div key={item.title} className="flex gap-4 rounded-2xl border border-red-100 bg-white px-5 py-4">
+                      <div
+                        key={item.title}
+                        className="flex gap-4 rounded-2xl border border-red-100 bg-white px-5 py-4"
+                      >
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-500">
                           <Icon className="h-6 w-6" />
                         </div>
                         <div>
-                          <p className="text-base font-semibold text-gray-900">{item.title}</p>
-                          <p className="text-sm text-gray-600">{item.description}</p>
+                          <p className="text-base font-semibold text-gray-900">
+                            {item.title}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {item.description}
+                          </p>
                         </div>
                       </div>
                     );
@@ -338,28 +414,42 @@ export default function AboutPage() {
 
               <Card className="border-red-100 bg-white/80 shadow-md">
                 <CardHeader className="space-y-3">
-                  <Badge className="bg-white text-red-600">Opérations terrain</Badge>
-                  <CardTitle className="text-2xl text-gray-900">Dark kitchens & flotte</CardTitle>
+                  <Badge className="bg-white text-red-600">
+                    Opérations terrain
+                  </Badge>
+                  <CardTitle className="text-2xl text-gray-900">
+                    Dark kitchens & flotte
+                  </CardTitle>
                   <p className="text-sm text-gray-600">
-                    Une infrastructure pensée pour servir 24/7, même lors des pics de commande sport & nocturnes.
+                    Une infrastructure pensée pour servir 24/7, même lors des
+                    pics de commande sport & nocturnes.
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-4 text-sm text-gray-600">
                   <div className="flex items-center justify-between rounded-xl bg-red-50 px-4 py-3">
-                    <span className="font-semibold text-gray-900">Fleet électrique</span>
+                    <span className="font-semibold text-gray-900">
+                      Fleet électrique
+                    </span>
                     <span>70 % en 2025</span>
                   </div>
                   <div className="flex items-center justify-between rounded-xl bg-orange-50 px-4 py-3">
-                    <span className="font-semibold text-gray-900">Capteurs IoT par véhicule</span>
+                    <span className="font-semibold text-gray-900">
+                      Capteurs IoT par véhicule
+                    </span>
                     <span>5 points de contrôle</span>
                   </div>
                   <div className="flex items-center justify-between rounded-xl bg-emerald-50 px-4 py-3">
-                    <span className="font-semibold text-gray-900">Temps de charge en hub</span>
+                    <span className="font-semibold text-gray-900">
+                      Temps de charge en hub
+                    </span>
                     <span>20 min moyenne</span>
                   </div>
                   <div className="flex items-center gap-3 rounded-xl border border-red-100 bg-white px-4 py-3">
                     <Truck className="h-5 w-5 text-red-500" />
-                    <span>Partenariats logistiques avec URBI, ScootX et coursiers indépendants certifiés.</span>
+                    <span>
+                      Partenariats logistiques avec URBI, ScootX et coursiers
+                      indépendants certifiés.
+                    </span>
                   </div>
                 </CardContent>
               </Card>

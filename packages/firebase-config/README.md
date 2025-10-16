@@ -15,7 +15,12 @@ pnpm add @pizza-king/firebase-config --filter <app-name>
 ### Client (Web & Mobile)
 
 ```typescript
-import { initializeFirebase, auth, db, storage } from '@pizza-king/firebase-config';
+import {
+  initializeFirebase,
+  auth,
+  db,
+  storage,
+} from '@pizza-king/firebase-config';
 
 // Initialize Firebase (call once at app startup)
 initializeFirebase();
@@ -58,6 +63,7 @@ const ordersRef = collection(db, COLLECTIONS.ORDERS);
 Set environment variables in your app:
 
 ### Web (.env.local)
+
 ```env
 NEXT_PUBLIC_FIREBASE_API_KEY=xxx
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=xxx
@@ -68,6 +74,7 @@ NEXT_PUBLIC_FIREBASE_APP_ID=xxx
 ```
 
 ### Mobile (.env)
+
 ```env
 EXPO_PUBLIC_FIREBASE_API_KEY=xxx
 EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=xxx
@@ -75,4 +82,5 @@ EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=xxx
 ```
 
 ### Functions
+
 Admin SDK uses Application Default Credentials automatically in Cloud Functions.

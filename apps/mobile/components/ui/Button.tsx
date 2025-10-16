@@ -9,7 +9,13 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { COLORS, TYPOGRAPHY, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
+import {
+  COLORS,
+  TYPOGRAPHY,
+  SPACING,
+  RADIUS,
+  SHADOWS,
+} from '@/constants/theme';
 
 interface ButtonProps {
   children: React.ReactNode;
@@ -80,7 +86,15 @@ export default function Button({
 
   const renderContent = () => (
     <>
-      {loading && <ActivityIndicator color={variant === 'outline' || variant === 'ghost' ? COLORS.primary : COLORS.white} />}
+      {loading && (
+        <ActivityIndicator
+          color={
+            variant === 'outline' || variant === 'ghost'
+              ? COLORS.primary
+              : COLORS.white
+          }
+        />
+      )}
       {!loading && icon && icon}
       {typeof children === 'string' ? (
         <Text style={getTextStyle()}>{children}</Text>
@@ -118,7 +132,13 @@ export default function Button({
         activeOpacity={0.8}
         style={style}
       >
-        <View style={[getButtonStyle(), { backgroundColor: COLORS.textPrimary }, SHADOWS.md]}>
+        <View
+          style={[
+            getButtonStyle(),
+            { backgroundColor: COLORS.textPrimary },
+            SHADOWS.md,
+          ]}
+        >
           {renderContent()}
         </View>
       </TouchableOpacity>
@@ -131,7 +151,15 @@ export default function Button({
         onPress={onPress}
         disabled={disabled || loading}
         activeOpacity={0.8}
-        style={[getButtonStyle(), { borderWidth: 2, borderColor: COLORS.primary, backgroundColor: COLORS.white }, style]}
+        style={[
+          getButtonStyle(),
+          {
+            borderWidth: 2,
+            borderColor: COLORS.primary,
+            backgroundColor: COLORS.white,
+          },
+          style,
+        ]}
       >
         {renderContent()}
       </TouchableOpacity>

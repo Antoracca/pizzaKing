@@ -1,7 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -152,9 +159,13 @@ export default function AccountPage() {
 
     if (!recaptchaVerifier.current) {
       try {
-        recaptchaVerifier.current = new RecaptchaVerifier(auth, 'phone-recaptcha', {
-          size: 'invisible',
-        });
+        recaptchaVerifier.current = new RecaptchaVerifier(
+          auth,
+          'phone-recaptcha',
+          {
+            size: 'invisible',
+          }
+        );
       } catch (error) {
         // ignored
       }
@@ -201,18 +212,27 @@ export default function AccountPage() {
     ];
   }, [user]);
 
-  const showFeedback = (message: string, type: Feedback['type'] = 'success') => {
+  const showFeedback = (
+    message: string,
+    type: Feedback['type'] = 'success'
+  ) => {
     setFeedback({ type, message });
     setTimeout(() => setFeedback(null), 6000);
   };
 
   const isGoogleProvider = useMemo(
-    () => firebaseUser?.providerData?.some(provider => provider.providerId === 'google.com') ?? false,
+    () =>
+      firebaseUser?.providerData?.some(
+        provider => provider.providerId === 'google.com'
+      ) ?? false,
     [firebaseUser?.providerData]
   );
 
   const isPasswordProvider = useMemo(
-    () => firebaseUser?.providerData?.some(provider => provider.providerId === 'password') ?? false,
+    () =>
+      firebaseUser?.providerData?.some(
+        provider => provider.providerId === 'password'
+      ) ?? false,
     [firebaseUser?.providerData]
   );
 
@@ -244,7 +264,10 @@ export default function AccountPage() {
       showFeedback('Photo de profil mise à jour avec succès');
     } catch (error: any) {
       console.error(error);
-      showFeedback(error?.message ?? 'Impossible de mettre à jour la photo', 'error');
+      showFeedback(
+        error?.message ?? 'Impossible de mettre à jour la photo',
+        'error'
+      );
     } finally {
       setPhotoLoading(false);
     }
@@ -255,7 +278,9 @@ export default function AccountPage() {
 
     setProfileSaving(true);
     try {
-      const displayName = `${profileForm.firstName} ${profileForm.lastName}`.trim() || user.displayName;
+      const displayName =
+        `${profileForm.firstName} ${profileForm.lastName}`.trim() ||
+        user.displayName;
       await updateFirebaseProfile(firebaseUser, { displayName });
 
       await updateUserProfile({
@@ -278,7 +303,10 @@ export default function AccountPage() {
       showFeedback('Profil mis à jour.');
     } catch (error: any) {
       console.error(error);
-      showFeedback(error?.message ?? 'Erreur lors de la mise à jour du profil', 'error');
+      showFeedback(
+        error?.message ?? 'Erreur lors de la mise à jour du profil',
+        'error'
+      );
     } finally {
       setProfileSaving(false);
     }
@@ -318,7 +346,10 @@ export default function AccountPage() {
       showFeedback('Email de vérification envoyé.');
     } catch (error: any) {
       console.error(error);
-      showFeedback(error?.message ?? 'Erreur lors de l’envoi de l’email', 'error');
+      showFeedback(
+        error?.message ?? 'Erreur lors de l’envoi de l’email',
+        'error'
+      );
     }
   };
 
@@ -376,7 +407,7 @@ export default function AccountPage() {
     try {
       await signOut();
       router.push('/');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error(error);
       showFeedback(error?.message ?? 'Erreur lors de la déconnexion', 'error');
@@ -403,7 +434,7 @@ export default function AccountPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      <div className="container mx-auto px-4 py-12 max-w-6xl">
+      <div className="container mx-auto max-w-6xl px-4 py-12">
         {feedback && (
           <div
             className={`mb-6 rounded-2xl border px-4 py-3 text-sm ${
@@ -427,7 +458,7 @@ export default function AccountPage() {
               <div className="relative -mt-16">
                 <div className="flex flex-col gap-6 rounded-3xl bg-white px-6 py-6 shadow-xl sm:flex-row sm:items-center sm:gap-10 sm:px-10 sm:py-8">
                   <div className="relative mx-auto h-28 w-28 flex-shrink-0 sm:mx-0">
-                    <div className="h-full w-full overflow-hidden rounded-3xl border-4 border-white bg-gray-100 shadow-md flex items-center justify-center text-3xl font-bold text-orange-500">
+                    <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-3xl border-4 border-white bg-gray-100 text-3xl font-bold text-orange-500 shadow-md">
                       {user.photoURL ? (
                         <img
                           src={user.photoURL}
@@ -467,12 +498,12 @@ export default function AccountPage() {
                         <h1 className="text-3xl font-bold text-gray-900">
                           {user.firstName || user.lastName
                             ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim()
-                            : user.displayName ?? 'Compte Pizza King'}
+                            : (user.displayName ?? 'Compte Pizza King')}
                         </h1>
-                        <p className="text-sm text-gray-600 flex flex-wrap items-center gap-2">
+                        <p className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
                           <span>{user.email}</span>
                           {emailVerified ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-emerald-700 text-xs font-semibold">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
                               <CheckCircle className="h-3 w-3" />
                               Email vérifié
                             </span>
@@ -480,16 +511,16 @@ export default function AccountPage() {
                             <button
                               type="button"
                               onClick={handleSendVerificationEmail}
-                              className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-red-600 text-xs font-semibold hover:bg-red-200"
+                              className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-600 hover:bg-red-200"
                             >
                               Vérifier l’email
                             </button>
                           )}
                         </p>
-                        <p className="text-sm text-gray-600 flex flex-wrap items-center gap-2">
+                        <p className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
                           <span>{formatPhone(user.phoneNumber)}</span>
                           {isPasswordProvider ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-orange-600 text-xs font-semibold">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-600">
                               Vérification recommandée
                             </span>
                           ) : null}
@@ -506,14 +537,20 @@ export default function AccountPage() {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge className="gap-1 rounded-full bg-orange-50 text-orange-600 border border-orange-200">
+                      <Badge className="gap-1 rounded-full border border-orange-200 bg-orange-50 text-orange-600">
                         <Award className="h-3 w-3" />
-                        {user.loyaltyPoints ?? 0} points • {user.loyaltyTier?.toUpperCase?.() ?? 'BRONZE'}
+                        {user.loyaltyPoints ?? 0} points •{' '}
+                        {user.loyaltyTier?.toUpperCase?.() ?? 'BRONZE'}
                       </Badge>
                       {user.createdAt && (
                         <Badge variant="outline" className="gap-1 rounded-full">
                           <CalendarClock className="h-3 w-3" />
-                          Membre depuis {formatDate(new Date(user.createdAt?.toDate?.() ?? user.createdAt))}
+                          Membre depuis{' '}
+                          {formatDate(
+                            new Date(
+                              user.createdAt?.toDate?.() ?? user.createdAt
+                            )
+                          )}
                         </Badge>
                       )}
                     </div>
@@ -523,7 +560,7 @@ export default function AccountPage() {
             </CardContent>
           </Card>
         </motion.div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-10">
+        <div className="mb-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat, index) => (
             <motion.div
               key={stat.label}
@@ -531,14 +568,18 @@ export default function AccountPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.08 }}
             >
-              <Card className="h-full border-0 shadow-sm hover:shadow-md transition-shadow">
+              <Card className="h-full border-0 shadow-sm transition-shadow hover:shadow-md">
                 <CardContent className="flex items-center gap-4 p-5">
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${stat.background}`}>
+                  <div
+                    className={`flex h-12 w-12 items-center justify-center rounded-2xl ${stat.background}`}
+                  >
                     <stat.icon className={`h-6 w-6 ${stat.color}`} />
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">{stat.label}</p>
-                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {stat.value}
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -555,7 +596,7 @@ export default function AccountPage() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold transition ${
+                      className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold transition ${
                         activeTab === tab.id
                           ? 'bg-orange-500 text-white shadow-lg'
                           : 'text-gray-700 hover:bg-gray-100'
@@ -568,7 +609,7 @@ export default function AccountPage() {
                   <button
                     onClick={handleSignOut}
                     disabled={signingOut}
-                    className="w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold text-red-600 hover:bg-red-50 transition"
+                    className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold text-red-600 transition hover:bg-red-50"
                   >
                     {signingOut ? (
                       <Loader2 className="h-5 w-5 animate-spin" />
@@ -589,26 +630,33 @@ export default function AccountPage() {
                 className="space-y-6"
               >
                 <Card className="border-0 shadow-md">
-                  <CardContent className="p-6 space-y-4">
+                  <CardContent className="space-y-4 p-6">
                     <div>
-                      <h2 className="text-xl font-bold text-gray-900">Activité récente</h2>
+                      <h2 className="text-xl font-bold text-gray-900">
+                        Activité récente
+                      </h2>
                       <p className="text-sm text-gray-600">
-                        Suivez vos commandes récentes et votre progression fidélité.
+                        Suivez vos commandes récentes et votre progression
+                        fidélité.
                       </p>
                     </div>
                     <div className="rounded-2xl border border-dashed border-gray-200 p-6 text-center text-sm text-gray-500">
-                      Aucune commande récente. Commencez une nouvelle commande pour alimenter votre historique.
+                      Aucune commande récente. Commencez une nouvelle commande
+                      pour alimenter votre historique.
                     </div>
                   </CardContent>
                 </Card>
 
                 <Card className="border-0 shadow-md">
-                  <CardContent className="p-6 space-y-4">
+                  <CardContent className="space-y-4 p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900">Préférences de notification</h3>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Préférences de notification
+                        </h3>
                         <p className="text-sm text-gray-600">
-                          Personnalisez les canaux par lesquels vous souhaitez recevoir nos alertes.
+                          Personnalisez les canaux par lesquels vous souhaitez
+                          recevoir nos alertes.
                         </p>
                       </div>
                     </div>
@@ -617,35 +665,40 @@ export default function AccountPage() {
                         {
                           label: 'Email',
                           value: preferencesForm.newsletter,
-                          description: 'Promotions, reçus et nouveautés.'
+                          description: 'Promotions, reçus et nouveautés.',
                         },
                         {
                           label: 'Push',
                           value: preferencesForm.push,
-                          description: 'Suivi de commande en temps réel.'
+                          description: 'Suivi de commande en temps réel.',
                         },
                         {
                           label: 'SMS',
                           value: preferencesForm.sms,
-                          description: 'Alertes de livraison urgentes.'
+                          description: 'Alertes de livraison urgentes.',
                         },
                         {
                           label: 'WhatsApp',
                           value: preferencesForm.whatsapp,
-                          description: 'Support client et confirmations rapides.'
+                          description:
+                            'Support client et confirmations rapides.',
                         },
                       ].map(pref => (
                         <div
                           key={pref.label}
                           className="rounded-2xl border border-gray-200 bg-white px-4 py-3"
                         >
-                          <p className="font-semibold text-gray-900 flex items-center gap-2">
+                          <p className="flex items-center gap-2 font-semibold text-gray-900">
                             <Bell className="h-4 w-4 text-orange-500" />
                             {pref.label}
                           </p>
-                          <p className="text-xs text-gray-500">{pref.description}</p>
+                          <p className="text-xs text-gray-500">
+                            {pref.description}
+                          </p>
                           <p className="mt-2 text-xs font-semibold text-gray-600">
-                            {pref.value ? 'Activé' : 'Désactivé (modifiable dans Paramètres)'}
+                            {pref.value
+                              ? 'Activé'
+                              : 'Désactivé (modifiable dans Paramètres)'}
                           </p>
                         </div>
                       ))}
@@ -662,15 +715,20 @@ export default function AccountPage() {
               >
                 <Card className="border-0 shadow-md">
                   <CardContent className="p-6">
-                    <h2 className="text-xl font-bold text-gray-900 mb-1">Informations personnelles</h2>
-                    <p className="text-sm text-gray-600 mb-6">
-                      Mettez à jour vos informations de contact et vos préférences.
+                    <h2 className="mb-1 text-xl font-bold text-gray-900">
+                      Informations personnelles
+                    </h2>
+                    <p className="mb-6 text-sm text-gray-600">
+                      Mettez à jour vos informations de contact et vos
+                      préférences.
                     </p>
 
                     <form className="space-y-6" onSubmit={handleProfileSubmit}>
                       <div className="grid gap-4 sm:grid-cols-2">
                         <div>
-                          <label className="mb-2 block text-sm font-medium text-gray-700">Prénom</label>
+                          <label className="mb-2 block text-sm font-medium text-gray-700">
+                            Prénom
+                          </label>
                           <input
                             type="text"
                             value={profileForm.firstName}
@@ -685,7 +743,9 @@ export default function AccountPage() {
                           />
                         </div>
                         <div>
-                          <label className="mb-2 block text-sm font-medium text-gray-700">Nom</label>
+                          <label className="mb-2 block text-sm font-medium text-gray-700">
+                            Nom
+                          </label>
                           <input
                             type="text"
                             value={profileForm.lastName}
@@ -702,7 +762,9 @@ export default function AccountPage() {
                       </div>
 
                       <div>
-                        <label className="mb-2 block text-sm font-medium text-gray-700">Numéro de téléphone</label>
+                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                          Numéro de téléphone
+                        </label>
                         <input
                           type="tel"
                           value={profileForm.phoneNumber}
@@ -716,7 +778,8 @@ export default function AccountPage() {
                           placeholder="+236 70 00 00 00"
                         />
                         <p className="mt-2 text-xs text-gray-500">
-                          Ajoutez votre numéro ici puis validez-le dans la section Sécurité.
+                          Ajoutez votre numéro ici puis validez-le dans la
+                          section Sécurité.
                         </p>
                       </div>
 
@@ -740,7 +803,8 @@ export default function AccountPage() {
                           {
                             key: 'whatsapp' as const,
                             label: 'WhatsApp',
-                            description: 'Support client et notifications rapides',
+                            description:
+                              'Support client et notifications rapides',
                           },
                         ].map(pref => (
                           <label
@@ -748,8 +812,12 @@ export default function AccountPage() {
                             className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm hover:border-orange-300"
                           >
                             <div>
-                              <p className="font-semibold text-gray-900">{pref.label}</p>
-                              <p className="text-xs text-gray-500">{pref.description}</p>
+                              <p className="font-semibold text-gray-900">
+                                {pref.label}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {pref.description}
+                              </p>
                             </div>
                             <input
                               type="checkbox"
@@ -792,23 +860,30 @@ export default function AccountPage() {
                 className="space-y-6"
               >
                 <Card className="border-0 shadow-md">
-                  <CardContent className="p-6 space-y-5">
+                  <CardContent className="space-y-5 p-6">
                     <div>
-                      <h2 className="text-xl font-bold text-gray-900">Email & vérification</h2>
+                      <h2 className="text-xl font-bold text-gray-900">
+                        Email & vérification
+                      </h2>
                       <p className="text-sm text-gray-600">
-                        Mettez à jour votre adresse email et assurez-vous qu’elle est vérifiée.
+                        Mettez à jour votre adresse email et assurez-vous
+                        qu’elle est vérifiée.
                       </p>
                     </div>
                     <form className="space-y-4" onSubmit={handleEmailUpdate}>
                       <div>
-                        <label className="mb-2 block text-sm font-medium text-gray-700">Adresse email actuelle</label>
+                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                          Adresse email actuelle
+                        </label>
                         <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-700">
                           <Mail className="h-4 w-4 text-gray-400" />
                           <span>{emailForm.value}</span>
                         </div>
                       </div>
                       <div>
-                        <label className="mb-2 block text-sm font-medium text-gray-700">Nouvelle adresse email</label>
+                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                          Nouvelle adresse email
+                        </label>
                         <input
                           type="email"
                           value={emailForm.newEmail}
@@ -823,7 +898,8 @@ export default function AccountPage() {
                           required
                         />
                         <p className="mt-2 text-xs text-gray-500">
-                          Vous recevrez un email pour confirmer votre nouvelle adresse.
+                          Vous recevrez un email pour confirmer votre nouvelle
+                          adresse.
                         </p>
                       </div>
                       <Button
@@ -845,25 +921,39 @@ export default function AccountPage() {
                 </Card>
 
                 <Card className="border-0 shadow-md">
-                  <CardContent className="p-6 space-y-5">
+                  <CardContent className="space-y-5 p-6">
                     <div>
-                      <h2 className="text-xl font-bold text-gray-900">Vérification du téléphone</h2>
+                      <h2 className="text-xl font-bold text-gray-900">
+                        Vérification du téléphone
+                      </h2>
                       <p className="text-sm text-gray-600">
-                        Activez la validation par SMS pour sécuriser votre compte.
+                        Activez la validation par SMS pour sécuriser votre
+                        compte.
                       </p>
                       {isPasswordProvider && !user.phoneNumber && (
                         <p className="mt-3 rounded-2xl bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-700">
-                          Ajoutez un numéro pour faciliter vos futures commandes et récupérer votre compte en cas d’oubli de mot de passe.
+                          Ajoutez un numéro pour faciliter vos futures commandes
+                          et récupérer votre compte en cas d’oubli de mot de
+                          passe.
                         </p>
                       )}
                     </div>
 
                     <form
                       className="space-y-4"
-                      onSubmit={phoneForm.step === 'verify' ? handleVerifyOtp : event => { event.preventDefault(); handleSendOtp(); }}
+                      onSubmit={
+                        phoneForm.step === 'verify'
+                          ? handleVerifyOtp
+                          : event => {
+                              event.preventDefault();
+                              handleSendOtp();
+                            }
+                      }
                     >
                       <div>
-                        <label className="mb-2 block text-sm font-medium text-gray-700">Numéro de téléphone</label>
+                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                          Numéro de téléphone
+                        </label>
                         <div className="flex items-center gap-2">
                           <input
                             type="tel"
@@ -882,7 +972,9 @@ export default function AccountPage() {
                             type="button"
                             variant="outline"
                             onClick={handleSendOtp}
-                            disabled={phoneSaving || phoneForm.step === 'verify'}
+                            disabled={
+                              phoneSaving || phoneForm.step === 'verify'
+                            }
                           >
                             {phoneSaving && phoneForm.step === 'idle' ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
@@ -895,7 +987,9 @@ export default function AccountPage() {
 
                       {phoneForm.step === 'verify' && (
                         <div>
-                          <label className="mb-2 block text-sm font-medium text-gray-700">Code SMS</label>
+                          <label className="mb-2 block text-sm font-medium text-gray-700">
+                            Code SMS
+                          </label>
                           <input
                             type="text"
                             value={phoneForm.code}
@@ -905,11 +999,12 @@ export default function AccountPage() {
                                 code: event.target.value,
                               }))
                             }
-                            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 tracking-widest uppercase"
+                            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm uppercase tracking-widest focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
                             placeholder="123456"
                           />
                           <p className="mt-2 text-xs text-gray-500">
-                            Entrez le code reçu par SMS pour confirmer votre numéro.
+                            Entrez le code reçu par SMS pour confirmer votre
+                            numéro.
                           </p>
                         </div>
                       )}

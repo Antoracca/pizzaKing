@@ -34,7 +34,11 @@ const legalLinks = [
 
 const socialLinks = [
   { label: 'Facebook', href: 'https://facebook.com/pizzaking', icon: Facebook },
-  { label: 'Instagram', href: 'https://instagram.com/pizzaking', icon: Instagram },
+  {
+    label: 'Instagram',
+    href: 'https://instagram.com/pizzaking',
+    icon: Instagram,
+  },
   { label: 'Twitter', href: 'https://twitter.com/pizzaking', icon: Twitter },
 ] as const;
 
@@ -48,8 +52,9 @@ export default function Footer() {
             <div className="flex flex-col gap-4 sm:max-w-lg">
               <Logo variant="white" />
               <p className="text-sm text-slate-300 sm:text-base">
-                Pizza King prépare vos recettes favorites avec des ingrédients sourcés localement,
-                cuits au four à pierre et livrés chauds en moins de 30 minutes dans tout Bangui.
+                Pizza King prépare vos recettes favorites avec des ingrédients
+                sourcés localement, cuits au four à pierre et livrés chauds en
+                moins de 30 minutes dans tout Bangui.
               </p>
               <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 sm:text-sm">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1">
@@ -90,22 +95,24 @@ export default function Footer() {
                 Accès rapide
               </h3>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                {[menuLinks.slice(0, 3), menuLinks.slice(3, 6), menuLinks.slice(6)].map(
-                  (group, index) => (
-                    <ul key={index} className="space-y-3 text-sm">
-                      {group.map(link => (
-                        <li key={link.href}>
-                          <Link
-                            href={link.href}
-                            className="text-slate-400 transition-colors hover:text-orange-400"
-                          >
-                            {link.label}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )
-                )}
+                {[
+                  menuLinks.slice(0, 3),
+                  menuLinks.slice(3, 6),
+                  menuLinks.slice(6),
+                ].map((group, index) => (
+                  <ul key={index} className="space-y-3 text-sm">
+                    {group.map(link => (
+                      <li key={link.href}>
+                        <Link
+                          href={link.href}
+                          className="text-slate-400 transition-colors hover:text-orange-400"
+                        >
+                          {link.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ))}
               </div>
             </div>
 

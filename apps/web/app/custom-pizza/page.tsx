@@ -19,24 +19,70 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
-  Pizza as PizzaIcon
+  Pizza as PizzaIcon,
 } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 
 // Tailles de pizza avec prix de base
 const pizzaSizes = [
-  { id: 'small', name: 'Petite', size: '25cm', price: 4000, servings: '1-2 personnes' },
-  { id: 'medium', name: 'Moyenne', size: '30cm', price: 6000, servings: '2-3 personnes', popular: true },
-  { id: 'large', name: 'Grande', size: '35cm', price: 8000, servings: '3-4 personnes' },
-  { id: 'xlarge', name: 'XL', size: '40cm', price: 10000, servings: '4-5 personnes' },
+  {
+    id: 'small',
+    name: 'Petite',
+    size: '25cm',
+    price: 4000,
+    servings: '1-2 personnes',
+  },
+  {
+    id: 'medium',
+    name: 'Moyenne',
+    size: '30cm',
+    price: 6000,
+    servings: '2-3 personnes',
+    popular: true,
+  },
+  {
+    id: 'large',
+    name: 'Grande',
+    size: '35cm',
+    price: 8000,
+    servings: '3-4 personnes',
+  },
+  {
+    id: 'xlarge',
+    name: 'XL',
+    size: '40cm',
+    price: 10000,
+    servings: '4-5 personnes',
+  },
 ];
 
 // Types de pâte
 const crustTypes = [
-  { id: 'classic', name: 'Classique', price: 0, description: 'Pâte traditionnelle moelleuse' },
-  { id: 'thin', name: 'Fine', price: 0, description: 'Pâte fine et croustillante' },
-  { id: 'thick', name: 'Épaisse', price: 500, description: 'Pâte épaisse et moelleuse' },
-  { id: 'stuffed', name: 'Farcie', price: 1500, description: 'Bordure farcie au fromage', premium: true },
+  {
+    id: 'classic',
+    name: 'Classique',
+    price: 0,
+    description: 'Pâte traditionnelle moelleuse',
+  },
+  {
+    id: 'thin',
+    name: 'Fine',
+    price: 0,
+    description: 'Pâte fine et croustillante',
+  },
+  {
+    id: 'thick',
+    name: 'Épaisse',
+    price: 500,
+    description: 'Pâte épaisse et moelleuse',
+  },
+  {
+    id: 'stuffed',
+    name: 'Farcie',
+    price: 1500,
+    description: 'Bordure farcie au fromage',
+    premium: true,
+  },
 ];
 
 // Sauces de base
@@ -58,27 +104,84 @@ const cheeses = [
 // Garnitures (groupées par catégorie)
 const toppings = {
   meats: [
-    { id: 'pepperoni', name: 'Pepperoni', price: 800, icon: '🍕', color: '#DC143C' },
+    {
+      id: 'pepperoni',
+      name: 'Pepperoni',
+      price: 800,
+      icon: '🍕',
+      color: '#DC143C',
+    },
     { id: 'ham', name: 'Jambon', price: 700, icon: '🥓', color: '#FFB6C1' },
     { id: 'bacon', name: 'Bacon', price: 800, icon: '🥓', color: '#CD853F' },
     { id: 'chicken', name: 'Poulet', price: 900, icon: '🍗', color: '#F4A460' },
-    { id: 'beef', name: 'Bœuf haché', price: 900, icon: '🥩', color: '#8B4513' },
-    { id: 'sausage', name: 'Saucisse', price: 800, icon: '🌭', color: '#A0522D' },
+    {
+      id: 'beef',
+      name: 'Bœuf haché',
+      price: 900,
+      icon: '🥩',
+      color: '#8B4513',
+    },
+    {
+      id: 'sausage',
+      name: 'Saucisse',
+      price: 800,
+      icon: '🌭',
+      color: '#A0522D',
+    },
   ],
   veggies: [
-    { id: 'mushroom', name: 'Champignons', price: 400, icon: '🍄', color: '#D2B48C' },
+    {
+      id: 'mushroom',
+      name: 'Champignons',
+      price: 400,
+      icon: '🍄',
+      color: '#D2B48C',
+    },
     { id: 'onion', name: 'Oignons', price: 300, icon: '🧅', color: '#DDA0DD' },
-    { id: 'pepper', name: 'Poivrons', price: 400, icon: '🫑', color: '#32CD32' },
+    {
+      id: 'pepper',
+      name: 'Poivrons',
+      price: 400,
+      icon: '🫑',
+      color: '#32CD32',
+    },
     { id: 'tomato', name: 'Tomates', price: 300, icon: '🍅', color: '#FF6347' },
     { id: 'olive', name: 'Olives', price: 500, icon: '🫒', color: '#556B2F' },
     { id: 'corn', name: 'Maïs', price: 400, icon: '🌽', color: '#FFD700' },
-    { id: 'spinach', name: 'Épinards', price: 500, icon: '🥬', color: '#228B22' },
+    {
+      id: 'spinach',
+      name: 'Épinards',
+      price: 500,
+      icon: '🥬',
+      color: '#228B22',
+    },
   ],
   premium: [
-    { id: 'shrimp', name: 'Crevettes', price: 1500, icon: '🦐', color: '#FFA07A', premium: true },
-    { id: 'truffle', name: 'Truffe', price: 2000, icon: '🍄', color: '#2F4F4F', premium: true },
-    { id: 'salmon', name: 'Saumon', price: 1800, icon: '🐟', color: '#FA8072', premium: true },
-  ]
+    {
+      id: 'shrimp',
+      name: 'Crevettes',
+      price: 1500,
+      icon: '🦐',
+      color: '#FFA07A',
+      premium: true,
+    },
+    {
+      id: 'truffle',
+      name: 'Truffe',
+      price: 2000,
+      icon: '🍄',
+      color: '#2F4F4F',
+      premium: true,
+    },
+    {
+      id: 'salmon',
+      name: 'Saumon',
+      price: 1800,
+      icon: '🐟',
+      color: '#FA8072',
+      premium: true,
+    },
+  ],
 };
 
 export default function CustomPizzaPage() {
@@ -106,7 +209,11 @@ export default function CustomPizzaPage() {
     selectedSauce.price +
     selectedCheese.price +
     selectedToppings.reduce((sum, id) => {
-      const topping = [...toppings.meats, ...toppings.veggies, ...toppings.premium].find(t => t.id === id);
+      const topping = [
+        ...toppings.meats,
+        ...toppings.veggies,
+        ...toppings.premium,
+      ].find(t => t.id === id);
       return sum + (topping?.price || 0);
     }, 0);
 
@@ -115,7 +222,8 @@ export default function CustomPizzaPage() {
     if (selectedToppings.includes(id)) {
       setSelectedToppings(selectedToppings.filter(t => t !== id));
     } else {
-      if (selectedToppings.length < 8) { // Maximum 8 garnitures
+      if (selectedToppings.length < 8) {
+        // Maximum 8 garnitures
         setSelectedToppings([...selectedToppings, id]);
       }
     }
@@ -143,26 +251,31 @@ export default function CustomPizzaPage() {
       <Header />
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white py-12 lg:py-16">
+      <section className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-12 text-white lg:py-16">
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'radial-gradient(circle, #f97316 1px, transparent 1px)',
-            backgroundSize: '40px 40px'
-          }} />
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage:
+                'radial-gradient(circle, #f97316 1px, transparent 1px)',
+              backgroundSize: '40px 40px',
+            }}
+          />
         </div>
 
-        <div className="container mx-auto px-4 lg:px-6 relative z-10">
+        <div className="container relative z-10 mx-auto px-4 lg:px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center max-w-4xl mx-auto"
+            className="mx-auto max-w-4xl text-center"
           >
-            <div className="text-6xl mb-6">🍕</div>
-            <h1 className="text-4xl lg:text-6xl font-black mb-4">
+            <div className="mb-6 text-6xl">🍕</div>
+            <h1 className="mb-4 text-4xl font-black lg:text-6xl">
               Créez Votre Pizza Parfaite
             </h1>
-            <p className="text-lg lg:text-xl text-gray-300">
-              Personnalisez chaque détail et regardez votre création prendre vie en 3D
+            <p className="text-lg text-gray-300 lg:text-xl">
+              Personnalisez chaque détail et regardez votre création prendre vie
+              en 3D
             </p>
           </motion.div>
         </div>
@@ -171,16 +284,15 @@ export default function CustomPizzaPage() {
       {/* Main Builder */}
       <section className="py-8 lg:py-12">
         <div className="container mx-auto px-4 lg:px-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-
+          <div className="mx-auto max-w-7xl">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8">
               {/* Colonne Gauche - Visualisation 3D */}
               <div className="order-2 lg:order-1">
                 <div className="sticky top-24">
-                  <Card className="border-2 overflow-hidden">
+                  <Card className="overflow-hidden border-2">
                     <CardContent className="p-6">
                       {/* Aperçu 3D de la pizza */}
-                      <div className="relative aspect-square bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl overflow-hidden mb-6">
+                      <div className="relative mb-6 aspect-square overflow-hidden rounded-2xl bg-gradient-to-br from-orange-50 to-red-50">
                         {/* Pizza 3D simulée */}
                         <motion.div
                           className="absolute inset-0 flex items-center justify-center"
@@ -188,7 +300,7 @@ export default function CustomPizzaPage() {
                           style={{ scale: zoom }}
                         >
                           {/* Base de la pizza */}
-                          <div className="relative w-64 h-64 lg:w-80 lg:h-80">
+                          <div className="relative h-64 w-64 lg:h-80 lg:w-80">
                             {/* Croûte */}
                             <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-200 to-amber-400 shadow-2xl" />
 
@@ -206,22 +318,27 @@ export default function CustomPizzaPage() {
                               initial={{ scale: 0 }}
                               animate={{ scale: 1 }}
                               transition={{ delay: 0.3 }}
-                              className="absolute inset-8 rounded-full shadow-inner opacity-90"
+                              className="absolute inset-8 rounded-full opacity-90 shadow-inner"
                               style={{ backgroundColor: selectedCheese.color }}
                             />
 
                             {/* Garnitures */}
                             <AnimatePresence>
                               {selectedToppings.map((toppingId, index) => {
-                                const topping = [...toppings.meats, ...toppings.veggies, ...toppings.premium]
-                                  .find(t => t.id === toppingId);
+                                const topping = [
+                                  ...toppings.meats,
+                                  ...toppings.veggies,
+                                  ...toppings.premium,
+                                ].find(t => t.id === toppingId);
                                 if (!topping) return null;
 
                                 // Position aléatoire mais fixe pour chaque garniture
                                 const angle = (index * 137.5) % 360; // Golden angle
                                 const distance = 30 + (index % 3) * 20;
-                                const x = Math.cos(angle * Math.PI / 180) * distance;
-                                const y = Math.sin(angle * Math.PI / 180) * distance;
+                                const x =
+                                  Math.cos((angle * Math.PI) / 180) * distance;
+                                const y =
+                                  Math.sin((angle * Math.PI) / 180) * distance;
 
                                 return (
                                   <motion.div
@@ -229,14 +346,17 @@ export default function CustomPizzaPage() {
                                     initial={{ scale: 0, rotate: -180 }}
                                     animate={{ scale: 1, rotate: 0 }}
                                     exit={{ scale: 0, rotate: 180 }}
-                                    transition={{ type: 'spring', stiffness: 200 }}
-                                    className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                                    transition={{
+                                      type: 'spring',
+                                      stiffness: 200,
+                                    }}
+                                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transform"
                                     style={{
                                       marginLeft: x,
                                       marginTop: y,
                                     }}
                                   >
-                                    <div className="text-4xl lg:text-5xl filter drop-shadow-lg">
+                                    <div className="text-4xl drop-shadow-lg filter lg:text-5xl">
                                       {topping.icon}
                                     </div>
                                   </motion.div>
@@ -247,24 +367,24 @@ export default function CustomPizzaPage() {
                         </motion.div>
 
                         {/* Contrôles de vue */}
-                        <div className="absolute top-4 right-4 flex flex-col space-y-2">
+                        <div className="absolute right-4 top-4 flex flex-col space-y-2">
                           <button
                             onClick={() => setZoom(Math.min(zoom + 0.1, 1.5))}
-                            className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-white shadow-lg transition-all"
+                            className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/90 shadow-lg backdrop-blur-sm transition-all hover:bg-white"
                           >
-                            <ZoomIn className="w-5 h-5 text-gray-700" />
+                            <ZoomIn className="h-5 w-5 text-gray-700" />
                           </button>
                           <button
                             onClick={() => setZoom(Math.max(zoom - 0.1, 0.8))}
-                            className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-white shadow-lg transition-all"
+                            className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/90 shadow-lg backdrop-blur-sm transition-all hover:bg-white"
                           >
-                            <ZoomOut className="w-5 h-5 text-gray-700" />
+                            <ZoomOut className="h-5 w-5 text-gray-700" />
                           </button>
                         </div>
 
                         {/* Badge de taille */}
                         <div className="absolute bottom-4 left-4">
-                          <Badge className="bg-white/90 backdrop-blur-sm text-gray-900 font-bold text-sm">
+                          <Badge className="bg-white/90 text-sm font-bold text-gray-900 backdrop-blur-sm">
                             {selectedSize.name} - {selectedSize.size}
                           </Badge>
                         </div>
@@ -273,9 +393,13 @@ export default function CustomPizzaPage() {
                       {/* Informations sur la pizza */}
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <h3 className="text-lg font-black text-gray-900">Votre Création</h3>
+                          <h3 className="text-lg font-black text-gray-900">
+                            Votre Création
+                          </h3>
                           <button
-                            onClick={() => setShowPriceBreakdown(!showPriceBreakdown)}
+                            onClick={() =>
+                              setShowPriceBreakdown(!showPriceBreakdown)
+                            }
                             className="text-sm font-semibold text-orange-600 hover:text-orange-700"
                           >
                             Détails
@@ -283,22 +407,30 @@ export default function CustomPizzaPage() {
                         </div>
 
                         {/* Résumé */}
-                        <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+                        <div className="space-y-2 rounded-xl bg-gray-50 p-4">
                           <div className="flex items-center justify-between text-sm">
                             <span className="text-gray-600">Taille:</span>
-                            <span className="font-bold text-gray-900">{selectedSize.name}</span>
+                            <span className="font-bold text-gray-900">
+                              {selectedSize.name}
+                            </span>
                           </div>
                           <div className="flex items-center justify-between text-sm">
                             <span className="text-gray-600">Pâte:</span>
-                            <span className="font-bold text-gray-900">{selectedCrust.name}</span>
+                            <span className="font-bold text-gray-900">
+                              {selectedCrust.name}
+                            </span>
                           </div>
                           <div className="flex items-center justify-between text-sm">
                             <span className="text-gray-600">Base:</span>
-                            <span className="font-bold text-gray-900">{selectedSauce.name} + {selectedCheese.name}</span>
+                            <span className="font-bold text-gray-900">
+                              {selectedSauce.name} + {selectedCheese.name}
+                            </span>
                           </div>
                           <div className="flex items-center justify-between text-sm">
                             <span className="text-gray-600">Garnitures:</span>
-                            <span className="font-bold text-gray-900">{selectedToppings.length}/8</span>
+                            <span className="font-bold text-gray-900">
+                              {selectedToppings.length}/8
+                            </span>
                           </div>
                         </div>
 
@@ -309,39 +441,59 @@ export default function CustomPizzaPage() {
                               initial={{ opacity: 0, height: 0 }}
                               animate={{ opacity: 1, height: 'auto' }}
                               exit={{ opacity: 0, height: 0 }}
-                              className="bg-orange-50 rounded-xl p-4 space-y-2 border border-orange-200"
+                              className="space-y-2 rounded-xl border border-orange-200 bg-orange-50 p-4"
                             >
-                              <p className="font-bold text-sm text-gray-900 mb-2">Détail du prix:</p>
+                              <p className="mb-2 text-sm font-bold text-gray-900">
+                                Détail du prix:
+                              </p>
                               <div className="space-y-1 text-xs">
                                 <div className="flex justify-between">
                                   <span>Taille {selectedSize.name}</span>
-                                  <span className="font-semibold">{formatPrice(selectedSize.price)}</span>
+                                  <span className="font-semibold">
+                                    {formatPrice(selectedSize.price)}
+                                  </span>
                                 </div>
                                 {selectedCrust.price > 0 && (
                                   <div className="flex justify-between">
                                     <span>Pâte {selectedCrust.name}</span>
-                                    <span className="font-semibold">{formatPrice(selectedCrust.price)}</span>
+                                    <span className="font-semibold">
+                                      {formatPrice(selectedCrust.price)}
+                                    </span>
                                   </div>
                                 )}
                                 {selectedSauce.price > 0 && (
                                   <div className="flex justify-between">
                                     <span>Sauce {selectedSauce.name}</span>
-                                    <span className="font-semibold">{formatPrice(selectedSauce.price)}</span>
+                                    <span className="font-semibold">
+                                      {formatPrice(selectedSauce.price)}
+                                    </span>
                                   </div>
                                 )}
                                 {selectedCheese.price > 0 && (
                                   <div className="flex justify-between">
                                     <span>Fromage {selectedCheese.name}</span>
-                                    <span className="font-semibold">{formatPrice(selectedCheese.price)}</span>
+                                    <span className="font-semibold">
+                                      {formatPrice(selectedCheese.price)}
+                                    </span>
                                   </div>
                                 )}
                                 {selectedToppings.map(id => {
-                                  const topping = [...toppings.meats, ...toppings.veggies, ...toppings.premium]
-                                    .find(t => t.id === id);
+                                  const topping = [
+                                    ...toppings.meats,
+                                    ...toppings.veggies,
+                                    ...toppings.premium,
+                                  ].find(t => t.id === id);
                                   return topping ? (
-                                    <div key={id} className="flex justify-between">
-                                      <span>{topping.icon} {topping.name}</span>
-                                      <span className="font-semibold">{formatPrice(topping.price)}</span>
+                                    <div
+                                      key={id}
+                                      className="flex justify-between"
+                                    >
+                                      <span>
+                                        {topping.icon} {topping.name}
+                                      </span>
+                                      <span className="font-semibold">
+                                        {formatPrice(topping.price)}
+                                      </span>
                                     </div>
                                   ) : null;
                                 })}
@@ -352,22 +504,24 @@ export default function CustomPizzaPage() {
 
                         {/* Prix total et bouton */}
                         <div className="border-t-2 border-gray-200 pt-4">
-                          <div className="flex items-center justify-between mb-4">
+                          <div className="mb-4 flex items-center justify-between">
                             <div>
-                              <p className="text-sm text-gray-500 font-semibold">Prix Total</p>
+                              <p className="text-sm font-semibold text-gray-500">
+                                Prix Total
+                              </p>
                               <motion.p
                                 key={totalPrice}
                                 initial={{ scale: 1.2 }}
                                 animate={{ scale: 1 }}
-                                className="text-4xl font-black bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent"
+                                className="bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-4xl font-black text-transparent"
                               >
                                 {formatPrice(totalPrice)}
                               </motion.p>
                             </div>
                           </div>
 
-                          <Button className="w-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-black py-6 rounded-xl text-lg shadow-xl">
-                            <ShoppingCart className="w-5 h-5 mr-2" />
+                          <Button className="w-full rounded-xl bg-gradient-to-r from-red-600 to-orange-600 py-6 text-lg font-black text-white shadow-xl hover:from-red-700 hover:to-orange-700">
+                            <ShoppingCart className="mr-2 h-5 w-5" />
                             Ajouter au Panier
                           </Button>
                         </div>
@@ -380,25 +534,27 @@ export default function CustomPizzaPage() {
               {/* Colonne Droite - Options de personnalisation */}
               <div className="order-1 lg:order-2">
                 {/* Stepper */}
-                <div className="flex items-center justify-between mb-6">
-                  {[1, 2, 3, 4].map((s) => (
-                    <div key={s} className="flex-1 flex items-center">
+                <div className="mb-6 flex items-center justify-between">
+                  {[1, 2, 3, 4].map(s => (
+                    <div key={s} className="flex flex-1 items-center">
                       <button
                         onClick={() => setStep(s)}
-                        className={`w-10 h-10 rounded-full flex items-center justify-center font-black transition-all ${
+                        className={`flex h-10 w-10 items-center justify-center rounded-full font-black transition-all ${
                           step === s
-                            ? 'bg-gradient-to-r from-red-600 to-orange-600 text-white shadow-lg scale-110'
+                            ? 'scale-110 bg-gradient-to-r from-red-600 to-orange-600 text-white shadow-lg'
                             : step > s
-                            ? 'bg-green-500 text-white'
-                            : 'bg-gray-200 text-gray-500'
+                              ? 'bg-green-500 text-white'
+                              : 'bg-gray-200 text-gray-500'
                         }`}
                       >
-                        {step > s ? <Check className="w-5 h-5" /> : s}
+                        {step > s ? <Check className="h-5 w-5" /> : s}
                       </button>
                       {s < 4 && (
-                        <div className={`flex-1 h-1 mx-2 rounded ${
-                          step > s ? 'bg-green-500' : 'bg-gray-200'
-                        }`} />
+                        <div
+                          className={`mx-2 h-1 flex-1 rounded ${
+                            step > s ? 'bg-green-500' : 'bg-gray-200'
+                          }`}
+                        />
                       )}
                     </div>
                   ))}
@@ -415,34 +571,34 @@ export default function CustomPizzaPage() {
                     >
                       <Card className="border-2">
                         <CardContent className="p-6">
-                          <h2 className="text-2xl font-black text-gray-900 mb-2">
+                          <h2 className="mb-2 text-2xl font-black text-gray-900">
                             1. Choisissez la Taille
                           </h2>
-                          <p className="text-gray-600 mb-6">
+                          <p className="mb-6 text-gray-600">
                             Sélectionnez la taille de votre pizza
                           </p>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {pizzaSizes.map((size) => (
+                          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            {pizzaSizes.map(size => (
                               <button
                                 key={size.id}
                                 onClick={() => setSelectedSize(size)}
-                                className={`relative p-5 rounded-xl border-2 transition-all text-left ${
+                                className={`relative rounded-xl border-2 p-5 text-left transition-all ${
                                   selectedSize.id === size.id
                                     ? 'border-orange-500 bg-orange-50 shadow-lg'
                                     : 'border-gray-200 hover:border-orange-300'
                                 }`}
                               >
                                 {size.popular && (
-                                  <Badge className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 font-black">
+                                  <Badge className="absolute -right-2 -top-2 bg-gradient-to-r from-yellow-400 to-orange-500 font-black text-gray-900">
                                     Populaire
                                   </Badge>
                                 )}
-                                <div className="text-3xl mb-2">🍕</div>
-                                <h3 className="font-black text-gray-900 text-lg mb-1">
+                                <div className="mb-2 text-3xl">🍕</div>
+                                <h3 className="mb-1 text-lg font-black text-gray-900">
                                   {size.name}
                                 </h3>
-                                <p className="text-sm text-gray-600 mb-2">
+                                <p className="mb-2 text-sm text-gray-600">
                                   {size.size} • {size.servings}
                                 </p>
                                 <p className="text-xl font-black text-orange-600">
@@ -455,10 +611,10 @@ export default function CustomPizzaPage() {
                           <div className="mt-6 flex justify-end">
                             <Button
                               onClick={nextStep}
-                              className="bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-bold px-8 py-3 rounded-lg"
+                              className="rounded-lg bg-gradient-to-r from-red-600 to-orange-600 px-8 py-3 font-bold text-white hover:from-red-700 hover:to-orange-700"
                             >
                               Continuer
-                              <ChevronRight className="w-4 h-4 ml-2" />
+                              <ChevronRight className="ml-2 h-4 w-4" />
                             </Button>
                           </div>
                         </CardContent>
@@ -476,44 +632,52 @@ export default function CustomPizzaPage() {
                     >
                       <Card className="border-2">
                         <CardContent className="p-6">
-                          <h2 className="text-2xl font-black text-gray-900 mb-2">
+                          <h2 className="mb-2 text-2xl font-black text-gray-900">
                             2. Type de Pâte
                           </h2>
-                          <p className="text-gray-600 mb-6">
+                          <p className="mb-6 text-gray-600">
                             Choisissez votre pâte préférée
                           </p>
 
                           <div className="space-y-3">
-                            {crustTypes.map((crust) => (
+                            {crustTypes.map(crust => (
                               <button
                                 key={crust.id}
                                 onClick={() => setSelectedCrust(crust)}
-                                className={`w-full p-4 rounded-xl border-2 transition-all text-left flex items-start space-x-4 ${
+                                className={`flex w-full items-start space-x-4 rounded-xl border-2 p-4 text-left transition-all ${
                                   selectedCrust.id === crust.id
                                     ? 'border-orange-500 bg-orange-50'
                                     : 'border-gray-200 hover:border-orange-300'
                                 }`}
                               >
-                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1 ${
-                                  selectedCrust.id === crust.id
-                                    ? 'border-orange-500 bg-orange-500'
-                                    : 'border-gray-300'
-                                }`}>
+                                <div
+                                  className={`mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border-2 ${
+                                    selectedCrust.id === crust.id
+                                      ? 'border-orange-500 bg-orange-500'
+                                      : 'border-gray-300'
+                                  }`}
+                                >
                                   {selectedCrust.id === crust.id && (
-                                    <Check className="w-4 h-4 text-white" />
+                                    <Check className="h-4 w-4 text-white" />
                                   )}
                                 </div>
                                 <div className="flex-1">
                                   <div className="flex items-center space-x-2">
-                                    <h3 className="font-black text-gray-900">{crust.name}</h3>
+                                    <h3 className="font-black text-gray-900">
+                                      {crust.name}
+                                    </h3>
                                     {crust.premium && (
-                                      <Sparkles className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                                      <Sparkles className="h-4 w-4 fill-yellow-500 text-yellow-500" />
                                     )}
                                   </div>
-                                  <p className="text-sm text-gray-600">{crust.description}</p>
+                                  <p className="text-sm text-gray-600">
+                                    {crust.description}
+                                  </p>
                                 </div>
                                 <p className="font-black text-orange-600">
-                                  {crust.price > 0 ? `+${formatPrice(crust.price)}` : 'Inclus'}
+                                  {crust.price > 0
+                                    ? `+${formatPrice(crust.price)}`
+                                    : 'Inclus'}
                                 </p>
                               </button>
                             ))}
@@ -523,17 +687,17 @@ export default function CustomPizzaPage() {
                             <Button
                               onClick={prevStep}
                               variant="outline"
-                              className="border-2 font-bold px-8 py-3 rounded-lg"
+                              className="rounded-lg border-2 px-8 py-3 font-bold"
                             >
-                              <ChevronLeft className="w-4 h-4 mr-2" />
+                              <ChevronLeft className="mr-2 h-4 w-4" />
                               Retour
                             </Button>
                             <Button
                               onClick={nextStep}
-                              className="bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-bold px-8 py-3 rounded-lg"
+                              className="rounded-lg bg-gradient-to-r from-red-600 to-orange-600 px-8 py-3 font-bold text-white hover:from-red-700 hover:to-orange-700"
                             >
                               Continuer
-                              <ChevronRight className="w-4 h-4 ml-2" />
+                              <ChevronRight className="ml-2 h-4 w-4" />
                             </Button>
                           </div>
                         </CardContent>
@@ -551,33 +715,37 @@ export default function CustomPizzaPage() {
                     >
                       <Card className="border-2">
                         <CardContent className="p-6">
-                          <h2 className="text-2xl font-black text-gray-900 mb-2">
+                          <h2 className="mb-2 text-2xl font-black text-gray-900">
                             3. Base de la Pizza
                           </h2>
-                          <p className="text-gray-600 mb-6">
-                            Sauce et fromage
-                          </p>
+                          <p className="mb-6 text-gray-600">Sauce et fromage</p>
 
                           {/* Sauces */}
                           <div className="mb-6">
-                            <h3 className="font-bold text-gray-900 mb-3">Sauce</h3>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                              {sauces.map((sauce) => (
+                            <h3 className="mb-3 font-bold text-gray-900">
+                              Sauce
+                            </h3>
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                              {sauces.map(sauce => (
                                 <button
                                   key={sauce.id}
                                   onClick={() => setSelectedSauce(sauce)}
-                                  className={`p-4 rounded-xl border-2 transition-all ${
+                                  className={`rounded-xl border-2 p-4 transition-all ${
                                     selectedSauce.id === sauce.id
                                       ? 'border-orange-500 bg-orange-50 shadow-lg'
                                       : 'border-gray-200 hover:border-orange-300'
                                   }`}
                                 >
-                                  <div className="text-3xl mb-2">{sauce.icon}</div>
-                                  <p className="font-bold text-sm text-gray-900 mb-1">
+                                  <div className="mb-2 text-3xl">
+                                    {sauce.icon}
+                                  </div>
+                                  <p className="mb-1 text-sm font-bold text-gray-900">
                                     {sauce.name}
                                   </p>
                                   <p className="text-xs font-semibold text-orange-600">
-                                    {sauce.price > 0 ? `+${formatPrice(sauce.price)}` : 'Inclus'}
+                                    {sauce.price > 0
+                                      ? `+${formatPrice(sauce.price)}`
+                                      : 'Inclus'}
                                   </p>
                                 </button>
                               ))}
@@ -586,30 +754,34 @@ export default function CustomPizzaPage() {
 
                           {/* Fromages */}
                           <div>
-                            <h3 className="font-bold text-gray-900 mb-3">Fromage</h3>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                              {cheeses.map((cheese) => (
+                            <h3 className="mb-3 font-bold text-gray-900">
+                              Fromage
+                            </h3>
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                              {cheeses.map(cheese => (
                                 <button
                                   key={cheese.id}
                                   onClick={() => setSelectedCheese(cheese)}
-                                  className={`p-4 rounded-xl border-2 transition-all ${
+                                  className={`rounded-xl border-2 p-4 transition-all ${
                                     selectedCheese.id === cheese.id
                                       ? 'border-orange-500 bg-orange-50 shadow-lg'
                                       : 'border-gray-200 hover:border-orange-300'
                                   }`}
                                 >
                                   <div
-                                    className="w-12 h-12 rounded-full mx-auto mb-2"
+                                    className="mx-auto mb-2 h-12 w-12 rounded-full"
                                     style={{ backgroundColor: cheese.color }}
                                   />
-                                  <p className="font-bold text-sm text-gray-900 mb-1">
+                                  <p className="mb-1 text-sm font-bold text-gray-900">
                                     {cheese.name}
                                   </p>
                                   {cheese.premium && (
-                                    <Sparkles className="w-3 h-3 text-yellow-500 fill-yellow-500 mx-auto mb-1" />
+                                    <Sparkles className="mx-auto mb-1 h-3 w-3 fill-yellow-500 text-yellow-500" />
                                   )}
                                   <p className="text-xs font-semibold text-orange-600">
-                                    {cheese.price > 0 ? `+${formatPrice(cheese.price)}` : 'Inclus'}
+                                    {cheese.price > 0
+                                      ? `+${formatPrice(cheese.price)}`
+                                      : 'Inclus'}
                                   </p>
                                 </button>
                               ))}
@@ -620,17 +792,17 @@ export default function CustomPizzaPage() {
                             <Button
                               onClick={prevStep}
                               variant="outline"
-                              className="border-2 font-bold px-8 py-3 rounded-lg"
+                              className="rounded-lg border-2 px-8 py-3 font-bold"
                             >
-                              <ChevronLeft className="w-4 h-4 mr-2" />
+                              <ChevronLeft className="mr-2 h-4 w-4" />
                               Retour
                             </Button>
                             <Button
                               onClick={nextStep}
-                              className="bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-bold px-8 py-3 rounded-lg"
+                              className="rounded-lg bg-gradient-to-r from-red-600 to-orange-600 px-8 py-3 font-bold text-white hover:from-red-700 hover:to-orange-700"
                             >
                               Continuer
-                              <ChevronRight className="w-4 h-4 ml-2" />
+                              <ChevronRight className="ml-2 h-4 w-4" />
                             </Button>
                           </div>
                         </CardContent>
@@ -648,38 +820,43 @@ export default function CustomPizzaPage() {
                     >
                       <Card className="border-2">
                         <CardContent className="p-6">
-                          <div className="flex items-center justify-between mb-2">
+                          <div className="mb-2 flex items-center justify-between">
                             <h2 className="text-2xl font-black text-gray-900">
                               4. Garnitures
                             </h2>
-                            <Badge className="bg-orange-100 text-orange-700 font-bold">
+                            <Badge className="bg-orange-100 font-bold text-orange-700">
                               {selectedToppings.length}/8
                             </Badge>
                           </div>
-                          <p className="text-gray-600 mb-6">
+                          <p className="mb-6 text-gray-600">
                             Maximum 8 garnitures
                           </p>
 
                           {/* Viandes */}
                           <div className="mb-6">
-                            <h3 className="font-bold text-gray-900 mb-3 flex items-center">
+                            <h3 className="mb-3 flex items-center font-bold text-gray-900">
                               <span className="mr-2">🍖</span>
                               Viandes
                             </h3>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                              {toppings.meats.map((topping) => (
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                              {toppings.meats.map(topping => (
                                 <button
                                   key={topping.id}
                                   onClick={() => toggleTopping(topping.id)}
-                                  disabled={!selectedToppings.includes(topping.id) && selectedToppings.length >= 8}
-                                  className={`p-3 rounded-xl border-2 transition-all ${
+                                  disabled={
+                                    !selectedToppings.includes(topping.id) &&
+                                    selectedToppings.length >= 8
+                                  }
+                                  className={`rounded-xl border-2 p-3 transition-all ${
                                     selectedToppings.includes(topping.id)
                                       ? 'border-orange-500 bg-orange-50 shadow-lg'
                                       : 'border-gray-200 hover:border-orange-300'
-                                  } ${!selectedToppings.includes(topping.id) && selectedToppings.length >= 8 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                  } ${!selectedToppings.includes(topping.id) && selectedToppings.length >= 8 ? 'cursor-not-allowed opacity-50' : ''}`}
                                 >
-                                  <div className="text-2xl mb-1">{topping.icon}</div>
-                                  <p className="font-bold text-xs text-gray-900 mb-1">
+                                  <div className="mb-1 text-2xl">
+                                    {topping.icon}
+                                  </div>
+                                  <p className="mb-1 text-xs font-bold text-gray-900">
                                     {topping.name}
                                   </p>
                                   <p className="text-xs font-semibold text-orange-600">
@@ -692,24 +869,29 @@ export default function CustomPizzaPage() {
 
                           {/* Légumes */}
                           <div className="mb-6">
-                            <h3 className="font-bold text-gray-900 mb-3 flex items-center">
+                            <h3 className="mb-3 flex items-center font-bold text-gray-900">
                               <span className="mr-2">🥗</span>
                               Légumes
                             </h3>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                              {toppings.veggies.map((topping) => (
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                              {toppings.veggies.map(topping => (
                                 <button
                                   key={topping.id}
                                   onClick={() => toggleTopping(topping.id)}
-                                  disabled={!selectedToppings.includes(topping.id) && selectedToppings.length >= 8}
-                                  className={`p-3 rounded-xl border-2 transition-all ${
+                                  disabled={
+                                    !selectedToppings.includes(topping.id) &&
+                                    selectedToppings.length >= 8
+                                  }
+                                  className={`rounded-xl border-2 p-3 transition-all ${
                                     selectedToppings.includes(topping.id)
                                       ? 'border-orange-500 bg-orange-50 shadow-lg'
                                       : 'border-gray-200 hover:border-orange-300'
-                                  } ${!selectedToppings.includes(topping.id) && selectedToppings.length >= 8 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                  } ${!selectedToppings.includes(topping.id) && selectedToppings.length >= 8 ? 'cursor-not-allowed opacity-50' : ''}`}
                                 >
-                                  <div className="text-2xl mb-1">{topping.icon}</div>
-                                  <p className="font-bold text-xs text-gray-900 mb-1">
+                                  <div className="mb-1 text-2xl">
+                                    {topping.icon}
+                                  </div>
+                                  <p className="mb-1 text-xs font-bold text-gray-900">
                                     {topping.name}
                                   </p>
                                   <p className="text-xs font-semibold text-orange-600">
@@ -722,24 +904,29 @@ export default function CustomPizzaPage() {
 
                           {/* Premium */}
                           <div className="mb-6">
-                            <h3 className="font-bold text-gray-900 mb-3 flex items-center">
-                              <Sparkles className="w-4 h-4 text-yellow-500 fill-yellow-500 mr-2" />
+                            <h3 className="mb-3 flex items-center font-bold text-gray-900">
+                              <Sparkles className="mr-2 h-4 w-4 fill-yellow-500 text-yellow-500" />
                               Premium
                             </h3>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                              {toppings.premium.map((topping) => (
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                              {toppings.premium.map(topping => (
                                 <button
                                   key={topping.id}
                                   onClick={() => toggleTopping(topping.id)}
-                                  disabled={!selectedToppings.includes(topping.id) && selectedToppings.length >= 8}
-                                  className={`p-3 rounded-xl border-2 transition-all ${
+                                  disabled={
+                                    !selectedToppings.includes(topping.id) &&
+                                    selectedToppings.length >= 8
+                                  }
+                                  className={`rounded-xl border-2 p-3 transition-all ${
                                     selectedToppings.includes(topping.id)
                                       ? 'border-orange-500 bg-orange-50 shadow-lg'
                                       : 'border-gray-200 hover:border-orange-300'
-                                  } ${!selectedToppings.includes(topping.id) && selectedToppings.length >= 8 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                  } ${!selectedToppings.includes(topping.id) && selectedToppings.length >= 8 ? 'cursor-not-allowed opacity-50' : ''}`}
                                 >
-                                  <div className="text-2xl mb-1">{topping.icon}</div>
-                                  <p className="font-bold text-xs text-gray-900 mb-1">
+                                  <div className="mb-1 text-2xl">
+                                    {topping.icon}
+                                  </div>
+                                  <p className="mb-1 text-xs font-bold text-gray-900">
                                     {topping.name}
                                   </p>
                                   <p className="text-xs font-semibold text-orange-600">
@@ -754,9 +941,9 @@ export default function CustomPizzaPage() {
                             <Button
                               onClick={prevStep}
                               variant="outline"
-                              className="border-2 font-bold px-8 py-3 rounded-lg"
+                              className="rounded-lg border-2 px-8 py-3 font-bold"
                             >
-                              <ChevronLeft className="w-4 h-4 mr-2" />
+                              <ChevronLeft className="mr-2 h-4 w-4" />
                               Retour
                             </Button>
                           </div>

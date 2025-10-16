@@ -20,7 +20,10 @@ import { MEAL_BUNDLES } from '@/data/mealBundles';
 export default function MealBundles() {
   const { addItem } = useCart();
 
-  const handleAddToCart = (bundleId: typeof MEAL_BUNDLES[number]['id'], shouldOpenCart: boolean) => {
+  const handleAddToCart = (
+    bundleId: (typeof MEAL_BUNDLES)[number]['id'],
+    shouldOpenCart: boolean
+  ) => {
     const bundle = MEAL_BUNDLES.find(item => item.id === bundleId);
     if (!bundle) {
       return;
@@ -33,7 +36,9 @@ export default function MealBundles() {
         description: bundle.subtitle,
         price: bundle.price,
         category: 'bundle',
-        extras: bundle.items.filter(item => item.highlight).map(item => item.text),
+        extras: bundle.items
+          .filter(item => item.highlight)
+          .map(item => item.text),
         metadata: {
           Économies: `-${formatPrice(bundle.savings)}`,
         },
@@ -51,8 +56,8 @@ export default function MealBundles() {
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-8">
           {/* Left Section - Info */}
-          <div className="space-y-6 lg:w-[300px] lg:flex-shrink-0 lg:sticky lg:top-24">
-            <Badge className="w-fit bg-purple-600 text-white lg:text-base lg:px-4 lg:py-2">
+          <div className="space-y-6 lg:sticky lg:top-24 lg:w-[300px] lg:flex-shrink-0">
+            <Badge className="w-fit bg-purple-600 text-white lg:px-4 lg:py-2 lg:text-base">
               <Tag className="mr-2 h-3.5 w-3.5 lg:h-4 lg:w-4" />
               Menus Économiques
             </Badge>
@@ -62,8 +67,9 @@ export default function MealBundles() {
                 Nos Formules Complètes
               </h2>
               <p className="text-base text-gray-600 sm:text-lg lg:text-xl lg:leading-relaxed">
-                Pizza + Boisson + Dessert. Des formules pensées pour vous faire économiser tout en vous régalant.
-                Parfait pour tous les moments de la journée.
+                Pizza + Boisson + Dessert. Des formules pensées pour vous faire
+                économiser tout en vous régalant. Parfait pour tous les moments
+                de la journée.
               </p>
             </div>
 
@@ -90,7 +96,8 @@ export default function MealBundles() {
                 Points fidélité doublés
               </div>
               <p className="text-purple-800">
-                Chaque menu vous rapporte des points bonus. Cumulez-les pour obtenir des réductions exclusives.
+                Chaque menu vous rapporte des points bonus. Cumulez-les pour
+                obtenir des réductions exclusives.
               </p>
             </div>
           </div>
@@ -119,10 +126,14 @@ export default function MealBundles() {
                   >
                     <Card className="group flex h-full flex-col overflow-hidden border border-purple-100 bg-white shadow-sm transition-shadow hover:shadow-lg lg:shadow-md lg:hover:shadow-xl">
                       {/* Header avec gradient */}
-                      <div className={`relative overflow-hidden bg-gradient-to-br ${bundle.color} px-5 py-6 text-white lg:px-6 lg:py-8`}>
+                      <div
+                        className={`relative overflow-hidden bg-gradient-to-br ${bundle.color} px-5 py-6 text-white lg:px-6 lg:py-8`}
+                      >
                         {/* Badge */}
                         <div className="absolute right-3 top-3 lg:right-4 lg:top-4">
-                          <Badge className={`${bundle.badgeColor} border-0 text-xs font-semibold text-white lg:text-sm`}>
+                          <Badge
+                            className={`${bundle.badgeColor} border-0 text-xs font-semibold text-white lg:text-sm`}
+                          >
                             {bundle.badge}
                           </Badge>
                         </div>
@@ -133,8 +144,12 @@ export default function MealBundles() {
                             <Icon className="h-6 w-6 lg:h-7 lg:w-7" />
                           </div>
                           <div>
-                            <h3 className="text-xl font-bold lg:text-2xl">{bundle.name}</h3>
-                            <p className="text-xs text-white/90 lg:text-sm">{bundle.subtitle}</p>
+                            <h3 className="text-xl font-bold lg:text-2xl">
+                              {bundle.name}
+                            </h3>
+                            <p className="text-xs text-white/90 lg:text-sm">
+                              {bundle.subtitle}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -149,20 +164,26 @@ export default function MealBundles() {
                                 key={idx}
                                 className={`flex items-start gap-2.5 rounded-lg p-2.5 transition-colors lg:gap-4 lg:p-4 ${
                                   item.highlight
-                                    ? 'bg-purple-50 border border-purple-100'
+                                    ? 'border border-purple-100 bg-purple-50'
                                     : 'bg-gray-50'
                                 }`}
                               >
-                                <div className={`mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg lg:h-10 lg:w-10 ${
-                                  item.highlight
-                                    ? 'bg-purple-100 text-purple-600'
-                                    : 'bg-white text-gray-500'
-                                }`}>
+                                <div
+                                  className={`mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg lg:h-10 lg:w-10 ${
+                                    item.highlight
+                                      ? 'bg-purple-100 text-purple-600'
+                                      : 'bg-white text-gray-500'
+                                  }`}
+                                >
                                   <ItemIcon className="h-4 w-4 lg:h-6 lg:w-6" />
                                 </div>
-                                <p className={`flex-1 text-sm font-medium lg:text-lg ${
-                                  item.highlight ? 'text-gray-900' : 'text-gray-600'
-                                }`}>
+                                <p
+                                  className={`flex-1 text-sm font-medium lg:text-lg ${
+                                    item.highlight
+                                      ? 'text-gray-900'
+                                      : 'text-gray-600'
+                                  }`}
+                                >
                                   {item.text}
                                 </p>
                                 {item.highlight && (
@@ -189,7 +210,9 @@ export default function MealBundles() {
                           <p className="text-xs text-gray-500 line-through lg:text-sm">
                             {formatPrice(bundle.originalPrice)}
                           </p>
-                          <p className={`text-2xl font-bold bg-gradient-to-r ${bundle.color} bg-clip-text text-transparent lg:text-2xl`}>
+                          <p
+                            className={`bg-gradient-to-r text-2xl font-bold ${bundle.color} bg-clip-text text-transparent lg:text-2xl`}
+                          >
                             {formatPrice(bundle.price)}
                           </p>
                           <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 lg:text-xs">

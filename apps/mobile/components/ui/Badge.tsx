@@ -9,13 +9,22 @@ interface BadgeProps {
   style?: ViewStyle;
 }
 
-export default function Badge({ children, variant = 'default', size = 'md', style }: BadgeProps) {
+export default function Badge({
+  children,
+  variant = 'default',
+  size = 'md',
+  style,
+}: BadgeProps) {
   const variantStyles: Record<string, ViewStyle> = {
     default: { backgroundColor: COLORS.primary },
     success: { backgroundColor: COLORS.success },
     error: { backgroundColor: COLORS.error },
     warning: { backgroundColor: COLORS.warning },
-    outline: { backgroundColor: 'transparent', borderWidth: 1, borderColor: COLORS.border },
+    outline: {
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: COLORS.border,
+    },
   };
 
   const textVariantStyles = {
@@ -37,8 +46,12 @@ export default function Badge({ children, variant = 'default', size = 'md', styl
   };
 
   return (
-    <View style={[styles.badge, variantStyles[variant], sizeStyles[size], style]}>
-      <Text style={[styles.text, textVariantStyles[variant], textSizeStyles[size]]}>
+    <View
+      style={[styles.badge, variantStyles[variant], sizeStyles[size], style]}
+    >
+      <Text
+        style={[styles.text, textVariantStyles[variant], textSizeStyles[size]]}
+      >
         {children}
       </Text>
     </View>

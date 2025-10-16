@@ -32,7 +32,7 @@ const highlights = [
 
 export default function HeroSection() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-white via-red-50/40 to-orange-50/40 py-16 sm:py-18 lg:py-24">
+    <section className="sm:py-18 relative overflow-hidden bg-gradient-to-br from-white via-red-50/40 to-orange-50/40 py-16 lg:py-24">
       <BackgroundAccent />
 
       <div className="container relative z-10">
@@ -63,7 +63,7 @@ const MobileLaunchOffer = () => {
           fill
           priority
           sizes="100vw"
-          className="scale-[1.12] object-cover object-center brightness-95 saturate-110"
+          className="saturate-110 scale-[1.12] object-cover object-center brightness-95"
         />
       </div>
       <div className="absolute inset-0 bg-gradient-to-br from-red-900/70 via-red-700/60 to-orange-600/60" />
@@ -139,8 +139,9 @@ const HeroContent = () => {
           transition={{ delay: 0.2 }}
           className="max-w-xl text-sm text-slate-600 sm:text-base"
         >
-          Pâte maturée 48h, sélection d’ingrédients premium, cuisson haute flamme et livraison suivie à la minute. Une
-          qualité constante, de l’appli jusqu’à votre porte.
+          Pâte maturée 48h, sélection d’ingrédients premium, cuisson haute
+          flamme et livraison suivie à la minute. Une qualité constante, de
+          l’appli jusqu’à votre porte.
         </motion.p>
       </div>
 
@@ -161,10 +162,14 @@ const StatsAndVisual = () => {
     >
       <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="grid grow grid-cols-2 gap-x-6 gap-y-4">
-          {stats.map((stat) => (
+          {stats.map(stat => (
             <div key={stat.label} className="text-left">
-              <p className="text-xl font-black text-slate-900 sm:text-2xl">{stat.value}</p>
-              <p className="text-[11px] uppercase tracking-wide text-slate-500 sm:text-xs">{stat.label}</p>
+              <p className="text-xl font-black text-slate-900 sm:text-2xl">
+                {stat.value}
+              </p>
+              <p className="text-[11px] uppercase tracking-wide text-slate-500 sm:text-xs">
+                {stat.label}
+              </p>
             </div>
           ))}
         </div>
@@ -197,14 +202,18 @@ const Highlights = () => {
       transition={{ delay: 0.3 }}
       className="grid grid-cols-1 gap-4 sm:grid-cols-2"
     >
-      {highlights.map((highlight) => (
+      {highlights.map(highlight => (
         <div
           key={highlight.title}
           className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white/90 px-4 py-3 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.6)] backdrop-blur"
         >
-          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100/80">{highlight.icon}</span>
+          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100/80">
+            {highlight.icon}
+          </span>
           <div>
-            <p className="text-sm font-semibold text-slate-900">{highlight.title}</p>
+            <p className="text-sm font-semibold text-slate-900">
+              {highlight.title}
+            </p>
             <p className="text-xs text-slate-500">{highlight.subtitle}</p>
           </div>
         </div>
@@ -221,7 +230,7 @@ const HeroCta = () => {
       transition={{ delay: 0.35 }}
       className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4"
     >
-      <Link href="/menu" className="relative group flex w-full sm:w-auto">
+      <Link href="/menu" className="group relative flex w-full sm:w-auto">
         <motion.span
           aria-hidden
           animate={{ scale: [1, 1.06, 1], opacity: [0.55, 0.8, 0.55] }}
@@ -283,7 +292,9 @@ const DesktopVisual = () => {
           className="absolute -left-6 top-10 w-48 rounded-3xl border border-red-100 bg-white/95 p-4 text-sm shadow-[0_25px_80px_-45px_rgba(248,113,113,0.55)] backdrop-blur"
         >
           <p className="text-xs font-semibold text-red-500">Offre lancement</p>
-          <p className="mt-1 text-lg font-black text-slate-900">-20% 1ère commande</p>
+          <p className="mt-1 text-lg font-black text-slate-900">
+            -20% 1ère commande
+          </p>
           <p className="text-xs text-slate-500">Code: PIZZA20</p>
         </motion.div>
 

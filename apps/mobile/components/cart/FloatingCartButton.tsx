@@ -1,9 +1,21 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, StyleSheet, TouchableOpacity, View, Text } from 'react-native';
+import {
+  Animated,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+  Text,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { COLORS, SPACING, TYPOGRAPHY, RADIUS, SHADOWS } from '@/constants/theme';
+import {
+  COLORS,
+  SPACING,
+  TYPOGRAPHY,
+  RADIUS,
+  SHADOWS,
+} from '@/constants/theme';
 import { formatPrice } from '@/lib/utils';
 import useCartStore, {
   selectCartSubtotal,

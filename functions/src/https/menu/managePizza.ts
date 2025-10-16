@@ -130,18 +130,18 @@ export const managePizza = functions.https.onCall(
             .get();
 
           if (!pizzaDoc.exists) {
-            throw new functions.https.HttpsError('not-found', 'Pizza not found');
+            throw new functions.https.HttpsError(
+              'not-found',
+              'Pizza not found'
+            );
           }
 
           const currentAvailability = pizzaDoc.data()?.isAvailable;
 
-          await db
-            .collection(COLLECTIONS.PIZZAS)
-            .doc(pizzaId)
-            .update({
-              isAvailable: !currentAvailability,
-              updatedAt: admin.firestore.Timestamp.now(),
-            });
+          await db.collection(COLLECTIONS.PIZZAS).doc(pizzaId).update({
+            isAvailable: !currentAvailability,
+            updatedAt: admin.firestore.Timestamp.now(),
+          });
 
           functions.logger.info(
             `Pizza availability toggled: ${pizzaId} to ${!currentAvailability} by ${userId}`

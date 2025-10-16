@@ -37,7 +37,20 @@ export const LOYALTY_TIER_THRESHOLDS: Record<LoyaltyTier, number> = {
 
 export const LOYALTY_TIER_BENEFITS: Record<LoyaltyTier, string[]> = {
   bronze: ['1 point = 1€ dépensé', 'Promotions exclusives'],
-  silver: ['1.2 points par €', 'Livraison gratuite à partir de 20€', 'Promotions exclusives'],
-  gold: ['1.5 points par €', 'Livraison toujours gratuite', 'Accès anticipé aux nouvelles pizzas'],
-  platinum: ['2 points par €', 'Livraison prioritaire', 'Pizza anniversaire offerte', 'Support VIP'],
+  silver: [
+    '1.2 points par €',
+    'Livraison gratuite à partir de 20€',
+    'Promotions exclusives',
+  ],
+  gold: [
+    '1.5 points par €',
+    'Livraison toujours gratuite',
+    'Accès anticipé aux nouvelles pizzas',
+  ],
+  platinum: [
+    '2 points par €',
+    'Livraison prioritaire',
+    'Pizza anniversaire offerte',
+    'Support VIP',
+  ],
 };

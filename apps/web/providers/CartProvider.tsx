@@ -1,6 +1,12 @@
 'use client';
 
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from 'react';
 
 type CartItemVariant = {
   id: string;
@@ -101,7 +107,8 @@ const buildKey = ({
   ].join('::');
 };
 
-const generateUid = () => `cart_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+const generateUid = () =>
+  `cart_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
@@ -111,63 +118,68 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const closeCart = useCallback(() => setIsOpen(false), []);
   const toggleCart = useCallback(() => setIsOpen(prev => !prev), []);
 
-  const addItem = useCallback((payload: CartItemPayload, options?: CartAddOptions) => {
-    const quantityToAdd = Math.max(1, payload.quantity ?? 1);
-    const priceVariants = payload.priceVariants
-      ? payload.priceVariants.map(variant => ({ ...variant }))
-      : undefined;
-    const resolvedVariant = priceVariants?.find(variant => variant.id === payload.sizeId)
-      ?? priceVariants?.find(variant => variant.id === 'M')
-      ?? priceVariants?.[0];
-    const key = buildKey({
-      productId: payload.productId,
-      sizeId: resolvedVariant?.id ?? payload.sizeId,
-      sizeLabel: resolvedVariant?.label ?? payload.sizeLabel,
-      crustLabel: payload.crustLabel,
-      extras: payload.extras,
-      metadata: payload.metadata,
-      bundleId: payload.bundleId,
-    });
-
-    setItems(prevItems => {
-      const existingIndex = prevItems.findIndex(item => item.key === key);
-
-      if (existingIndex !== -1) {
-        const updated = [...prevItems];
-        updated[existingIndex] = {
-          ...updated[existingIndex],
-          quantity: updated[existingIndex].quantity + quantityToAdd,
-          priceVariants: updated[existingIndex].priceVariants ?? priceVariants,
-        };
-        return updated;
-      }
-
-      const newItem: CartItem = {
-        uid: generateUid(),
-        key,
+  const addItem = useCallback(
+    (payload: CartItemPayload, options?: CartAddOptions) => {
+      const quantityToAdd = Math.max(1, payload.quantity ?? 1);
+      const priceVariants = payload.priceVariants
+        ? payload.priceVariants.map(variant => ({ ...variant }))
+        : undefined;
+      const resolvedVariant =
+        priceVariants?.find(variant => variant.id === payload.sizeId) ??
+        priceVariants?.find(variant => variant.id === 'M') ??
+        priceVariants?.[0];
+      const key = buildKey({
         productId: payload.productId,
-        name: payload.name,
-        image: payload.image,
-        description: payload.description,
         sizeId: resolvedVariant?.id ?? payload.sizeId,
         sizeLabel: resolvedVariant?.label ?? payload.sizeLabel,
         crustLabel: payload.crustLabel,
-        extras: payload.extras ? [...payload.extras] : [],
-        category: payload.category,
+        extras: payload.extras,
         metadata: payload.metadata,
-        quantity: quantityToAdd,
-        unitPrice: resolvedVariant?.price ?? payload.price,
         bundleId: payload.bundleId,
-        priceVariants,
-      };
+      });
 
-      return [...prevItems, newItem];
-    });
+      setItems(prevItems => {
+        const existingIndex = prevItems.findIndex(item => item.key === key);
 
-    if (options?.openCart ?? true) {
-      setIsOpen(true);
-    }
-  }, []);
+        if (existingIndex !== -1) {
+          const updated = [...prevItems];
+          updated[existingIndex] = {
+            ...updated[existingIndex],
+            quantity: updated[existingIndex].quantity + quantityToAdd,
+            priceVariants:
+              updated[existingIndex].priceVariants ?? priceVariants,
+          };
+          return updated;
+        }
+
+        const newItem: CartItem = {
+          uid: generateUid(),
+          key,
+          productId: payload.productId,
+          name: payload.name,
+          image: payload.image,
+          description: payload.description,
+          sizeId: resolvedVariant?.id ?? payload.sizeId,
+          sizeLabel: resolvedVariant?.label ?? payload.sizeLabel,
+          crustLabel: payload.crustLabel,
+          extras: payload.extras ? [...payload.extras] : [],
+          category: payload.category,
+          metadata: payload.metadata,
+          quantity: quantityToAdd,
+          unitPrice: resolvedVariant?.price ?? payload.price,
+          bundleId: payload.bundleId,
+          priceVariants,
+        };
+
+        return [...prevItems, newItem];
+      });
+
+      if (options?.openCart ?? true) {
+        setIsOpen(true);
+      }
+    },
+    []
+  );
 
   const removeItem = useCallback((uid: string) => {
     setItems(prev => prev.filter(item => item.uid !== uid));
@@ -176,9 +188,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const updateQuantity = useCallback((uid: string, quantity: number) => {
     setItems(prev =>
       prev.map(item =>
-        item.uid === uid
-          ? { ...item, quantity: Math.max(1, quantity) }
-          : item
+        item.uid === uid ? { ...item, quantity: Math.max(1, quantity) } : item
       )
     );
   }, []);
@@ -195,7 +205,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         return prevItems;
       }
 
-      const variant = currentItem.priceVariants.find(entry => entry.id === sizeId);
+      const variant = currentItem.priceVariants.find(
+        entry => entry.id === sizeId
+      );
       if (!variant || currentItem.sizeId === variant.id) {
         return prevItems;
       }
@@ -265,7 +277,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       updateItemSize,
       clearCart,
     }),
-    [items, itemCount, isOpen, subtotal, openCart, closeCart, toggleCart, addItem, removeItem, updateQuantity, updateItemSize, clearCart]
+    [
+      items,
+      itemCount,
+      isOpen,
+      subtotal,
+      openCart,
+      closeCart,
+      toggleCart,
+      addItem,
+      removeItem,
+      updateQuantity,
+      updateItemSize,
+      clearCart,
+    ]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

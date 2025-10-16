@@ -7,9 +7,10 @@ const db = getFirestore();
 // Mobile Money API configuration (Cinetpay API for Burkina Faso)
 const CINETPAY_API_KEY = process.env.CINETPAY_API_KEY || '';
 const CINETPAY_SITE_ID = process.env.CINETPAY_SITE_ID || '';
-const CINETPAY_API_BASE = process.env.CINETPAY_MODE === 'live'
-  ? 'https://api.cinetpay.com/v2'
-  : 'https://api-checkout.cinetpay.com/v2';
+const CINETPAY_API_BASE =
+  process.env.CINETPAY_MODE === 'live'
+    ? 'https://api.cinetpay.com/v2'
+    : 'https://api-checkout.cinetpay.com/v2';
 
 interface InitiateMobileMoneyData {
   orderId: string;
@@ -144,11 +145,12 @@ export const initiateMobileMoneyPayment = functions.https.onCall(
         }),
         lang: 'fr',
         invoice_data: JSON.stringify({
-          items: order?.items?.map((item: any) => ({
-            name: item.name,
-            quantity: item.quantity,
-            unit_price: item.price,
-          })) || [],
+          items:
+            order?.items?.map((item: any) => ({
+              name: item.name,
+              quantity: item.quantity,
+              unit_price: item.price,
+            })) || [],
         }),
       };
 
@@ -200,7 +202,8 @@ export const initiateMobileMoneyPayment = functions.https.onCall(
         paymentUrl: paymentResponse.data.payment_url,
         provider,
         amount,
-        message: 'Veuillez composer le code USSD affiché pour confirmer le paiement',
+        message:
+          'Veuillez composer le code USSD affiché pour confirmer le paiement',
       };
     } catch (error: any) {
       functions.logger.error('Error initiating mobile money payment', {

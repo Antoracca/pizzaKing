@@ -51,7 +51,9 @@ export function useLockBodyScroll(shouldLock: boolean) {
       e.preventDefault();
     };
 
-    document.addEventListener('touchmove', preventTouchMove, { passive: false });
+    document.addEventListener('touchmove', preventTouchMove, {
+      passive: false,
+    });
 
     return () => {
       document.removeEventListener('touchmove', preventTouchMove);

@@ -142,10 +142,7 @@ export const shuffleArray = <T>(array: T[]): T[] => {
 /**
  * Group array by key
  */
-export const groupBy = <T>(
-  array: T[],
-  key: keyof T
-): Record<string, T[]> => {
+export const groupBy = <T>(array: T[], key: keyof T): Record<string, T[]> => {
   return array.reduce(
     (result, item) => {
       const groupKey = String(item[key]);

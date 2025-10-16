@@ -4,23 +4,30 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Crown } from 'lucide-react';
 
-export default function Logo({ variant = 'default' }: { variant?: 'default' | 'white' }) {
+export default function Logo({
+  variant = 'default',
+}: {
+  variant?: 'default' | 'white';
+}) {
   const textColor = variant === 'white' ? 'text-white' : 'text-gray-900';
-  const accentColor = variant === 'white' ? 'from-white to-gray-100' : 'from-red-600 to-orange-600';
+  const accentColor =
+    variant === 'white'
+      ? 'from-white to-gray-100'
+      : 'from-red-600 to-orange-600';
 
   return (
-    <Link href="/" className="flex items-center space-x-3 group">
+    <Link href="/" className="group flex items-center space-x-3">
       {/* Pizza Icon - Design Ultra Propre */}
       <div className="relative">
         <motion.div
           whileHover={{ rotate: 360, scale: 1.05 }}
-          transition={{ duration: 0.6, ease: "easeInOut" }}
-          className="relative w-12 h-12 sm:w-14 sm:h-14"
+          transition={{ duration: 0.6, ease: 'easeInOut' }}
+          className="relative h-12 w-12 sm:h-14 sm:w-14"
         >
           {/* Pizza complète avec design moderne */}
           <svg
             viewBox="0 0 100 100"
-            className="w-full h-full drop-shadow-lg"
+            className="h-full w-full drop-shadow-lg"
             fill="none"
           >
             {/* Cercle principal (pizza) */}
@@ -74,7 +81,13 @@ export default function Logo({ variant = 'default' }: { variant?: 'default' | 'w
 
             {/* Gradient definitions */}
             <defs>
-              <linearGradient id="pizzaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <linearGradient
+                id="pizzaGradient"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="100%"
+              >
                 <stop offset="0%" stopColor="#DC2626" />
                 <stop offset="50%" stopColor="#EA580C" />
                 <stop offset="100%" stopColor="#F59E0B" />
@@ -87,18 +100,22 @@ export default function Logo({ variant = 'default' }: { variant?: 'default' | 'w
       {/* Text Logo - Design Amélioré */}
       <div className="flex flex-col -space-y-1">
         <div className="flex items-center space-x-1.5">
-          <span className={`text-xl sm:text-2xl font-black tracking-tight ${textColor} group-hover:scale-105 transition-transform`}>
+          <span
+            className={`text-xl font-black tracking-tight sm:text-2xl ${textColor} transition-transform group-hover:scale-105`}
+          >
             PIZZA
           </span>
           <div className="flex items-center">
-            <span className={`text-xl sm:text-2xl font-black tracking-tight bg-gradient-to-r ${accentColor} bg-clip-text text-transparent`}>
+            <span
+              className={`bg-gradient-to-r text-xl font-black tracking-tight sm:text-2xl ${accentColor} bg-clip-text text-transparent`}
+            >
               KING
             </span>
             {/* Petite couronne à côté de KING */}
-            <Crown className="w-4 h-4 sm:w-5 sm:h-5 text-orange-500 fill-orange-500 ml-1 -mt-1" />
+            <Crown className="-mt-1 ml-1 h-4 w-4 fill-orange-500 text-orange-500 sm:h-5 sm:w-5" />
           </div>
         </div>
-        <span className="text-[10px] sm:text-xs text-gray-500 font-semibold tracking-wide">
+        <span className="text-[10px] font-semibold tracking-wide text-gray-500 sm:text-xs">
           Bangui • Livraison 30min
         </span>
       </div>

@@ -23,7 +23,7 @@ import {
   Beef,
   Milk,
   X,
-  ShoppingCart
+  ShoppingCart,
 } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 import { getPizzaSizeVariants, resolvePizzaVariant } from '@/lib/pizzaPricing';
@@ -34,9 +34,11 @@ const allPizzas = [
   {
     id: 's1',
     name: 'BBQ Chicken Supreme',
-    description: 'Poulet mariné BBQ, oignons rouges, bacon, coriandre fraîche, sauce BBQ fumée maison',
+    description:
+      'Poulet mariné BBQ, oignons rouges, bacon, coriandre fraîche, sauce BBQ fumée maison',
     basePrice: 9500,
-    image: 'https://images.unsplash.com/photo-1565299507177-b0ac66763828?w=800&h=800&fit=crop&q=80',
+    image:
+      'https://images.unsplash.com/photo-1565299507177-b0ac66763828?w=800&h=800&fit=crop&q=80',
     rating: 4.9,
     reviewCount: 298,
     preparationTime: 18,
@@ -49,9 +51,11 @@ const allPizzas = [
   {
     id: 's2',
     name: 'Fruits de Mer Premium',
-    description: 'Crevettes roses, calamars, moules, ail, persil, citron, huile d\'olive',
+    description:
+      "Crevettes roses, calamars, moules, ail, persil, citron, huile d'olive",
     basePrice: 11500,
-    image: 'https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?w=800&h=800&fit=crop&q=80',
+    image:
+      'https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?w=800&h=800&fit=crop&q=80',
     rating: 4.8,
     reviewCount: 156,
     preparationTime: 20,
@@ -64,9 +68,11 @@ const allPizzas = [
   {
     id: 's3',
     name: 'Truffe Noire Prestige',
-    description: 'Crème de truffe, champignons sauvages, parmesan 36 mois, roquette, copeaux de truffe',
+    description:
+      'Crème de truffe, champignons sauvages, parmesan 36 mois, roquette, copeaux de truffe',
     basePrice: 14500,
-    image: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=800&h=800&fit=crop&q=80',
+    image:
+      'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=800&h=800&fit=crop&q=80',
     rating: 5.0,
     reviewCount: 89,
     preparationTime: 20,
@@ -81,9 +87,11 @@ const allPizzas = [
   {
     id: 'c1',
     name: 'Margherita Royale',
-    description: 'Tomate San Marzano, mozzarella di bufala DOP, basilic frais, huile d\'olive extra vierge',
+    description:
+      "Tomate San Marzano, mozzarella di bufala DOP, basilic frais, huile d'olive extra vierge",
     basePrice: 5500,
-    image: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=800&h=800&fit=crop&q=80',
+    image:
+      'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=800&h=800&fit=crop&q=80',
     rating: 4.9,
     reviewCount: 445,
     preparationTime: 12,
@@ -96,9 +104,11 @@ const allPizzas = [
   {
     id: 'c2',
     name: 'Reine Royale',
-    description: 'Jambon blanc premium, champignons de Paris frais, mozzarella, sauce béchamel',
+    description:
+      'Jambon blanc premium, champignons de Paris frais, mozzarella, sauce béchamel',
     basePrice: 7500,
-    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800&h=800&fit=crop&q=80',
+    image:
+      'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800&h=800&fit=crop&q=80',
     rating: 4.8,
     reviewCount: 389,
     preparationTime: 15,
@@ -113,9 +123,11 @@ const allPizzas = [
   {
     id: 'v1',
     name: 'Végétarienne Deluxe',
-    description: 'Poivrons grillés, champignons, oignons, tomates cerises, olives, aubergines, mozzarella',
+    description:
+      'Poivrons grillés, champignons, oignons, tomates cerises, olives, aubergines, mozzarella',
     basePrice: 7000,
-    image: 'https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?w=800&h=800&fit=crop&q=80',
+    image:
+      'https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?w=800&h=800&fit=crop&q=80',
     rating: 4.7,
     reviewCount: 267,
     preparationTime: 16,
@@ -128,9 +140,11 @@ const allPizzas = [
   {
     id: 'v2',
     name: 'Caprese Fraîcheur',
-    description: 'Tomates fraîches, mozzarella burrata, basilic, roquette, vinaigre balsamique',
+    description:
+      'Tomates fraîches, mozzarella burrata, basilic, roquette, vinaigre balsamique',
     basePrice: 8000,
-    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&h=800&fit=crop&q=80',
+    image:
+      'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&h=800&fit=crop&q=80',
     rating: 4.6,
     reviewCount: 178,
     preparationTime: 14,
@@ -145,9 +159,11 @@ const allPizzas = [
   {
     id: 'vp1',
     name: 'Pepperoni Suprême',
-    description: 'Triple pepperoni premium, mozzarella généreuse, sauce tomate maison, origan',
+    description:
+      'Triple pepperoni premium, mozzarella généreuse, sauce tomate maison, origan',
     basePrice: 7500,
-    image: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=800&h=800&fit=crop&q=80',
+    image:
+      'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=800&h=800&fit=crop&q=80',
     rating: 4.9,
     reviewCount: 512,
     preparationTime: 15,
@@ -160,9 +176,11 @@ const allPizzas = [
   {
     id: 'vp2',
     name: 'Diavola Infernale',
-    description: 'Salami piquant, jalapeños, piments calabrais, huile pimentée, mozzarella fumée',
+    description:
+      'Salami piquant, jalapeños, piments calabrais, huile pimentée, mozzarella fumée',
     basePrice: 8000,
-    image: 'https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=800&h=800&fit=crop&q=80',
+    image:
+      'https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=800&h=800&fit=crop&q=80',
     rating: 4.8,
     reviewCount: 234,
     preparationTime: 16,
@@ -175,9 +193,11 @@ const allPizzas = [
   {
     id: 'vp3',
     name: 'Mexicaine Explosive',
-    description: 'Bœuf haché épicé, haricots rouges, jalapeños, cheddar, crème aigre, nachos',
+    description:
+      'Bœuf haché épicé, haricots rouges, jalapeños, cheddar, crème aigre, nachos',
     basePrice: 8500,
-    image: 'https://images.unsplash.com/photo-1595708684082-a173bb3a06c5?w=800&h=800&fit=crop&q=80',
+    image:
+      'https://images.unsplash.com/photo-1595708684082-a173bb3a06c5?w=800&h=800&fit=crop&q=80',
     rating: 4.7,
     reviewCount: 198,
     preparationTime: 18,
@@ -192,9 +212,11 @@ const allPizzas = [
   {
     id: 'f1',
     name: 'Quatre Fromages',
-    description: 'Mozzarella, gorgonzola doux, parmesan reggiano, emmental, crème fraîche',
+    description:
+      'Mozzarella, gorgonzola doux, parmesan reggiano, emmental, crème fraîche',
     basePrice: 8500,
-    image: 'https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=800&h=800&fit=crop&q=80',
+    image:
+      'https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=800&h=800&fit=crop&q=80',
     rating: 4.9,
     reviewCount: 367,
     preparationTime: 16,
@@ -207,9 +229,11 @@ const allPizzas = [
   {
     id: 'f2',
     name: 'Chèvre Miel',
-    description: 'Fromage de chèvre, miel, noix, roquette, mozzarella, huile de truffe',
+    description:
+      'Fromage de chèvre, miel, noix, roquette, mozzarella, huile de truffe',
     basePrice: 9000,
-    image: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=800&h=800&fit=crop&q=80',
+    image:
+      'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=800&h=800&fit=crop&q=80',
     rating: 4.8,
     reviewCount: 245,
     preparationTime: 17,
@@ -261,9 +285,10 @@ function MenuContent() {
 
     // Filtre par recherche
     if (searchQuery) {
-      result = result.filter(p =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.description.toLowerCase().includes(searchQuery.toLowerCase())
+      result = result.filter(
+        p =>
+          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.description.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
@@ -306,7 +331,10 @@ function MenuContent() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleAddToCart = (pizzaId: string, shouldOpenCart: boolean = false) => {
+  const handleAddToCart = (
+    pizzaId: string,
+    shouldOpenCart: boolean = false
+  ) => {
     const pizza = allPizzas.find(p => p.id === pizzaId);
     if (!pizza) {
       return;
@@ -344,40 +372,46 @@ function MenuContent() {
       <Header />
 
       {/* Hero Section - Compact et Élégant */}
-      <section className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white py-8 sm:py-12 lg:py-16">
+      <section className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-8 text-white sm:py-12 lg:py-16">
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'radial-gradient(circle, #f97316 1px, transparent 1px)',
-            backgroundSize: '40px 40px'
-          }} />
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage:
+                'radial-gradient(circle, #f97316 1px, transparent 1px)',
+              backgroundSize: '40px 40px',
+            }}
+          />
         </div>
 
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="max-w-7xl mx-auto">
+        <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="flex flex-col lg:flex-row items-center justify-between gap-4 sm:gap-6"
+              className="flex flex-col items-center justify-between gap-4 sm:gap-6 lg:flex-row"
             >
               <div className="text-center lg:text-left">
-                <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black mb-2">Notre Menu</h1>
-                <p className="text-gray-300 text-xs sm:text-sm lg:text-base">
-                  {allPizzas.length} pizzas artisanales • Préparation en {' '}
-                  <span className="text-orange-400 font-bold">12-20 min</span>
+                <h1 className="mb-2 text-2xl font-black sm:text-3xl lg:text-5xl">
+                  Notre Menu
+                </h1>
+                <p className="text-xs text-gray-300 sm:text-sm lg:text-base">
+                  {allPizzas.length} pizzas artisanales • Préparation en{' '}
+                  <span className="font-bold text-orange-400">12-20 min</span>
                 </p>
               </div>
 
               {/* Search Bar Intégré */}
               <div className="w-full lg:w-96">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"
                     placeholder="Rechercher une pizza..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-lg bg-white/10 border border-white/20 text-white placeholder:text-gray-400 focus:bg-white/20 focus:border-orange-500 outline-none transition-all"
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="w-full rounded-lg border border-white/20 bg-white/10 py-2.5 pl-10 pr-4 text-sm text-white outline-none transition-all placeholder:text-gray-400 focus:border-orange-500 focus:bg-white/20"
                   />
                 </div>
               </div>
@@ -389,30 +423,38 @@ function MenuContent() {
       {/* Main Content - Layout 2 colonnes */}
       <section className="py-4 sm:py-6 lg:py-10">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
+          <div className="mx-auto max-w-7xl">
+            <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row">
               {/* Sidebar Fixe - Gauche */}
-              <aside className="w-full lg:w-64 flex-shrink-0">
-                <div className="lg:sticky lg:top-24 space-y-3 sm:space-y-4">
+              <aside className="w-full flex-shrink-0 lg:w-64">
+                <div className="space-y-3 sm:space-y-4 lg:sticky lg:top-24">
                   {/* Mobile Filter Toggle */}
                   <button
                     onClick={() => setSidebarOpen(!sidebarOpen)}
-                    className="lg:hidden w-full flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg font-bold text-sm shadow-md active:scale-95 transition-transform"
+                    className="flex w-full items-center justify-between rounded-lg bg-gradient-to-r from-orange-500 to-red-500 px-4 py-2.5 text-sm font-bold text-white shadow-md transition-transform active:scale-95 lg:hidden"
                   >
                     <span className="flex items-center gap-2">
-                      <SlidersHorizontal className="w-4 h-4" />
+                      <SlidersHorizontal className="h-4 w-4" />
                       Filtres & Catégories
                     </span>
-                    {sidebarOpen ? <X className="w-4 h-4" /> : <SlidersHorizontal className="w-4 h-4" />}
+                    {sidebarOpen ? (
+                      <X className="h-4 w-4" />
+                    ) : (
+                      <SlidersHorizontal className="h-4 w-4" />
+                    )}
                   </button>
 
                   {/* Filters Container */}
-                  <div className={`space-y-3 sm:space-y-4 ${sidebarOpen ? 'block' : 'hidden lg:block'}`}>
+                  <div
+                    className={`space-y-3 sm:space-y-4 ${sidebarOpen ? 'block' : 'hidden lg:block'}`}
+                  >
                     {/* Categories */}
-                    <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4">
-                      <h3 className="font-black text-xs sm:text-sm uppercase tracking-wide text-gray-900 mb-2 sm:mb-3">Catégories</h3>
+                    <div className="rounded-xl border border-gray-200 bg-white p-3 sm:p-4">
+                      <h3 className="mb-2 text-xs font-black uppercase tracking-wide text-gray-900 sm:mb-3 sm:text-sm">
+                        Catégories
+                      </h3>
                       <div className="space-y-1.5">
-                        {categories.map((cat) => {
+                        {categories.map(cat => {
                           const Icon = cat.icon;
                           const isActive = activeCategory === cat.id;
                           return (
@@ -422,14 +464,18 @@ function MenuContent() {
                                 setActiveCategory(cat.id);
                                 setSidebarOpen(false);
                               }}
-                              className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all ${
+                              className={`flex w-full items-center space-x-3 rounded-lg px-3 py-2.5 transition-all ${
                                 isActive
                                   ? 'bg-gradient-to-r from-red-600 to-orange-600 text-white shadow-md'
-                                  : 'hover:bg-gray-50 text-gray-700'
+                                  : 'text-gray-700 hover:bg-gray-50'
                               }`}
                             >
-                              <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-white' : 'text-gray-400'}`} />
-                              <span className="text-sm font-semibold">{cat.label}</span>
+                              <Icon
+                                className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-white' : 'text-gray-400'}`}
+                              />
+                              <span className="text-sm font-semibold">
+                                {cat.label}
+                              </span>
                             </button>
                           );
                         })}
@@ -437,41 +483,45 @@ function MenuContent() {
                     </div>
 
                     {/* Quick Filters */}
-                    <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4">
-                      <h3 className="font-black text-xs sm:text-sm uppercase tracking-wide text-gray-900 mb-2 sm:mb-3">Filtres</h3>
+                    <div className="rounded-xl border border-gray-200 bg-white p-3 sm:p-4">
+                      <h3 className="mb-2 text-xs font-black uppercase tracking-wide text-gray-900 sm:mb-3 sm:text-sm">
+                        Filtres
+                      </h3>
                       <div className="space-y-2">
                         <button
                           onClick={() => setFilterSpicy(!filterSpicy)}
-                          className={`w-full flex items-center space-x-2 px-3 py-2.5 rounded-lg font-semibold text-sm transition-all ${
+                          className={`flex w-full items-center space-x-2 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all ${
                             filterSpicy
                               ? 'bg-red-600 text-white'
                               : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
                           }`}
                         >
-                          <Flame className="w-4 h-4" />
+                          <Flame className="h-4 w-4" />
                           <span>Épicées</span>
                         </button>
                         <button
                           onClick={() => setFilterVegetarian(!filterVegetarian)}
-                          className={`w-full flex items-center space-x-2 px-3 py-2.5 rounded-lg font-semibold text-sm transition-all ${
+                          className={`flex w-full items-center space-x-2 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all ${
                             filterVegetarian
                               ? 'bg-green-600 text-white'
                               : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
                           }`}
                         >
-                          <Leaf className="w-4 h-4" />
+                          <Leaf className="h-4 w-4" />
                           <span>Végétariennes</span>
                         </button>
                       </div>
                     </div>
 
                     {/* Sort */}
-                    <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4">
-                      <h3 className="font-black text-xs sm:text-sm uppercase tracking-wide text-gray-900 mb-2 sm:mb-3">Trier par</h3>
+                    <div className="rounded-xl border border-gray-200 bg-white p-3 sm:p-4">
+                      <h3 className="mb-2 text-xs font-black uppercase tracking-wide text-gray-900 sm:mb-3 sm:text-sm">
+                        Trier par
+                      </h3>
                       <select
                         value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 font-medium focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 outline-none"
+                        onChange={e => setSortBy(e.target.value)}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10"
                       >
                         <option value="popular">Popularité</option>
                         <option value="price-asc">Prix croissant</option>
@@ -481,7 +531,10 @@ function MenuContent() {
                     </div>
 
                     {/* Reset Filters */}
-                    {(activeCategory !== 'all' || filterSpicy || filterVegetarian || searchQuery) && (
+                    {(activeCategory !== 'all' ||
+                      filterSpicy ||
+                      filterVegetarian ||
+                      searchQuery) && (
                       <button
                         onClick={() => {
                           setActiveCategory('all');
@@ -489,7 +542,7 @@ function MenuContent() {
                           setFilterVegetarian(false);
                           setSearchQuery('');
                         }}
-                        className="w-full px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-900 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="w-full rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
                       >
                         Réinitialiser
                       </button>
@@ -499,21 +552,24 @@ function MenuContent() {
               </aside>
 
               {/* Main Content - Droite */}
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0 flex-1">
                 {/* Results Header */}
-                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <div className="mb-4 flex items-center justify-between sm:mb-6">
                   <div>
-                    <h2 className="text-lg sm:text-xl lg:text-2xl font-black text-gray-900">
-                      {filteredPizzas.length} résultat{filteredPizzas.length > 1 ? 's' : ''}
+                    <h2 className="text-lg font-black text-gray-900 sm:text-xl lg:text-2xl">
+                      {filteredPizzas.length} résultat
+                      {filteredPizzas.length > 1 ? 's' : ''}
                     </h2>
-                    <p className="text-xs sm:text-sm text-gray-500">
-                      {activeCategory === 'all' ? 'Toutes les pizzas' : categories.find(c => c.id === activeCategory)?.label}
+                    <p className="text-xs text-gray-500 sm:text-sm">
+                      {activeCategory === 'all'
+                        ? 'Toutes les pizzas'
+                        : categories.find(c => c.id === activeCategory)?.label}
                     </p>
                   </div>
                 </div>
 
                 {/* Pizza Grid - Compact et Responsive */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:gap-5 xl:grid-cols-3">
                   {filteredPizzas.map((pizza, index) => (
                     <motion.div
                       key={pizza.id}
@@ -522,75 +578,85 @@ function MenuContent() {
                       transition={{ delay: index * 0.03, duration: 0.4 }}
                       className="h-full"
                     >
-                      <Card className={`group relative overflow-hidden border h-full transition-all duration-300 flex flex-col ${
-                        pizza.available
-                          ? 'border-gray-200 hover:border-orange-300 hover:shadow-lg bg-white'
-                          : 'border-red-200 bg-white opacity-90'
-                      }`}>
+                      <Card
+                        className={`group relative flex h-full flex-col overflow-hidden border transition-all duration-300 ${
+                          pizza.available
+                            ? 'border-gray-200 bg-white hover:border-orange-300 hover:shadow-lg'
+                            : 'border-red-200 bg-white opacity-90'
+                        }`}
+                      >
                         {/* Unavailable Badge - Top overlay sans masquer le contenu */}
                         {!pizza.available && (
-                          <div className="absolute top-0 left-0 right-0 z-20 bg-red-600 py-1.5 px-3">
-                            <p className="text-white font-bold text-xs text-center">
+                          <div className="absolute left-0 right-0 top-0 z-20 bg-red-600 px-3 py-1.5">
+                            <p className="text-center text-xs font-bold text-white">
                               ⚠️ Temporairement Indisponible
                             </p>
                           </div>
                         )}
 
                         {/* Image - Plus compact */}
-                        <div className="relative aspect-[4/3] sm:aspect-[5/4] overflow-hidden bg-gray-100">
+                        <div className="relative aspect-[4/3] overflow-hidden bg-gray-100 sm:aspect-[5/4]">
                           <motion.img
                             whileHover={pizza.available ? { scale: 1.05 } : {}}
                             transition={{ duration: 0.4 }}
                             src={pizza.image}
                             alt={pizza.name}
-                            className="w-full h-full object-cover"
+                            className="h-full w-full object-cover"
                           />
 
                           {/* Badges Compact */}
-                          <div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 flex gap-1.5 z-10">
+                          <div className="absolute left-1.5 top-1.5 z-10 flex gap-1.5 sm:left-2 sm:top-2">
                             {pizza.isSpicy && (
-                              <Badge className="bg-red-600 text-white gap-1 text-[10px] font-bold px-2 py-0.5">
-                                <Flame className="w-3 h-3" />
+                              <Badge className="gap-1 bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                                <Flame className="h-3 w-3" />
                               </Badge>
                             )}
                             {pizza.isVegetarian && (
-                              <Badge className="bg-green-600 text-white gap-1 text-[10px] font-bold px-2 py-0.5">
-                                <Leaf className="w-3 h-3" />
+                              <Badge className="gap-1 bg-green-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                                <Leaf className="h-3 w-3" />
                               </Badge>
                             )}
                           </div>
 
                           {/* Rating */}
-                          <div className="absolute bottom-1.5 right-1.5 sm:bottom-2 sm:right-2 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-md flex items-center space-x-1 shadow-md z-10">
-                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                            <span className="font-bold text-xs">{pizza.rating}</span>
+                          <div className="absolute bottom-1.5 right-1.5 z-10 flex items-center space-x-1 rounded-md bg-white/95 px-2 py-1 shadow-md backdrop-blur-sm sm:bottom-2 sm:right-2">
+                            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                            <span className="text-xs font-bold">
+                              {pizza.rating}
+                            </span>
                           </div>
                         </div>
 
-                        <CardContent className="p-3 sm:p-4 flex-1 flex flex-col">
+                        <CardContent className="flex flex-1 flex-col p-3 sm:p-4">
                           {/* Name */}
-                          <h3 className="text-sm sm:text-base font-black text-gray-900 mb-1 sm:mb-1.5 line-clamp-1">
+                          <h3 className="mb-1 line-clamp-1 text-sm font-black text-gray-900 sm:mb-1.5 sm:text-base">
                             {pizza.name}
                           </h3>
 
                           {/* Description */}
-                          <p className="text-[11px] sm:text-xs text-gray-600 mb-2 sm:mb-3 line-clamp-2 leading-relaxed">
+                          <p className="mb-2 line-clamp-2 text-[11px] leading-relaxed text-gray-600 sm:mb-3 sm:text-xs">
                             {pizza.description}
                           </p>
 
                           {/* Meta */}
-                          <div className="flex items-center text-[10px] text-gray-500 mb-2 sm:mb-3 pb-2 sm:pb-3 border-b border-gray-100">
-                            <Clock className="w-3 h-3 mr-1" />
-                            <span className="font-semibold">{pizza.preparationTime}min</span>
+                          <div className="mb-2 flex items-center border-b border-gray-100 pb-2 text-[10px] text-gray-500 sm:mb-3 sm:pb-3">
+                            <Clock className="mr-1 h-3 w-3" />
+                            <span className="font-semibold">
+                              {pizza.preparationTime}min
+                            </span>
                             <span className="mx-1.5 sm:mx-2">•</span>
-                            <span className="font-semibold">{pizza.reviewCount} avis</span>
+                            <span className="font-semibold">
+                              {pizza.reviewCount} avis
+                            </span>
                           </div>
 
                           {/* Price & Buttons */}
                           <div className="mt-auto">
                             <div className="mb-2 sm:mb-3">
-                              <p className="text-[9px] text-gray-500 font-semibold uppercase mb-0.5">À partir de</p>
-                              <p className="text-lg sm:text-xl font-black text-gray-900">
+                              <p className="mb-0.5 text-[9px] font-semibold uppercase text-gray-500">
+                                À partir de
+                              </p>
+                              <p className="text-lg font-black text-gray-900 sm:text-xl">
                                 {formatPrice(pizza.basePrice)}
                               </p>
                             </div>
@@ -599,24 +665,35 @@ function MenuContent() {
                                 <motion.button
                                   whileHover={{ scale: 1.02 }}
                                   whileTap={{ scale: 0.98 }}
-                                  onClick={() => handleAddToCart(pizza.id, false)}
-                                  className="flex-1 bg-white border-2 border-orange-600 text-orange-600 hover:bg-orange-50 font-bold rounded-lg px-2 sm:px-3 py-2 sm:py-2.5 transition-all flex items-center justify-center gap-1 sm:gap-1.5 active:scale-95"
+                                  onClick={() =>
+                                    handleAddToCart(pizza.id, false)
+                                  }
+                                  className="flex flex-1 items-center justify-center gap-1 rounded-lg border-2 border-orange-600 bg-white px-2 py-2 font-bold text-orange-600 transition-all hover:bg-orange-50 active:scale-95 sm:gap-1.5 sm:px-3 sm:py-2.5"
                                 >
-                                  <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                  <span className="text-[11px] sm:text-xs">Ajouter</span>
+                                  <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                  <span className="text-[11px] sm:text-xs">
+                                    Ajouter
+                                  </span>
                                 </motion.button>
                                 <motion.button
                                   whileHover={{ scale: 1.02 }}
                                   whileTap={{ scale: 0.98 }}
-                                  onClick={() => handleAddToCart(pizza.id, true)}
-                                  className="flex-1 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-bold rounded-lg px-2 sm:px-3 py-2 sm:py-2.5 shadow-md transition-all flex items-center justify-center gap-1 sm:gap-1.5 active:scale-95"
+                                  onClick={() =>
+                                    handleAddToCart(pizza.id, true)
+                                  }
+                                  className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-gradient-to-r from-red-600 to-orange-600 px-2 py-2 font-bold text-white shadow-md transition-all hover:from-red-700 hover:to-orange-700 active:scale-95 sm:gap-1.5 sm:px-3 sm:py-2.5"
                                 >
-                                  <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                  <span className="text-[11px] sm:text-xs">Commander</span>
+                                  <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                  <span className="text-[11px] sm:text-xs">
+                                    Commander
+                                  </span>
                                 </motion.button>
                               </div>
                             ) : (
-                              <button disabled className="w-full bg-gray-200 text-gray-400 font-bold rounded-lg px-3 py-2 sm:py-2.5 text-[11px] sm:text-xs cursor-not-allowed">
+                              <button
+                                disabled
+                                className="w-full cursor-not-allowed rounded-lg bg-gray-200 px-3 py-2 text-[11px] font-bold text-gray-400 sm:py-2.5 sm:text-xs"
+                              >
                                 Indisponible
                               </button>
                             )}
@@ -632,11 +709,15 @@ function MenuContent() {
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="text-center py-16 bg-white rounded-xl border border-gray-200"
+                    className="rounded-xl border border-gray-200 bg-white py-16 text-center"
                   >
-                    <div className="text-5xl mb-4">🔍</div>
-                    <h3 className="text-xl font-black text-gray-900 mb-2">Aucun résultat</h3>
-                    <p className="text-gray-600 text-sm mb-6">Essayez de modifier vos critères de recherche</p>
+                    <div className="mb-4 text-5xl">🔍</div>
+                    <h3 className="mb-2 text-xl font-black text-gray-900">
+                      Aucun résultat
+                    </h3>
+                    <p className="mb-6 text-sm text-gray-600">
+                      Essayez de modifier vos critères de recherche
+                    </p>
                     <Button
                       onClick={() => {
                         setSearchQuery('');
@@ -644,7 +725,7 @@ function MenuContent() {
                         setFilterSpicy(false);
                         setFilterVegetarian(false);
                       }}
-                      className="bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-bold px-6 py-2 rounded-lg text-sm"
+                      className="rounded-lg bg-gradient-to-r from-red-600 to-orange-600 px-6 py-2 text-sm font-bold text-white hover:from-red-700 hover:to-orange-700"
                     >
                       Réinitialiser les filtres
                     </Button>
@@ -657,26 +738,34 @@ function MenuContent() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
-                    className="mt-8 sm:mt-12 bg-gradient-to-br from-orange-50 to-red-50 rounded-xl sm:rounded-2xl p-6 sm:p-8 lg:p-12 text-center border border-orange-100"
+                    className="mt-8 rounded-xl border border-orange-100 bg-gradient-to-br from-orange-50 to-red-50 p-6 text-center sm:mt-12 sm:rounded-2xl sm:p-8 lg:p-12"
                   >
-                    <div className="max-w-2xl mx-auto">
-                      <div className="text-3xl sm:text-4xl lg:text-5xl mb-3 sm:mb-4">🍕</div>
-                      <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-gray-900 mb-2 sm:mb-3">
+                    <div className="mx-auto max-w-2xl">
+                      <div className="mb-3 text-3xl sm:mb-4 sm:text-4xl lg:text-5xl">
+                        🍕
+                      </div>
+                      <h2 className="mb-2 text-xl font-black text-gray-900 sm:mb-3 sm:text-2xl lg:text-3xl">
                         Vous n'avez pas trouvé votre bonheur ?
                       </h2>
-                      <p className="text-gray-600 mb-4 sm:mb-6 text-xs sm:text-sm lg:text-base">
+                      <p className="mb-4 text-xs text-gray-600 sm:mb-6 sm:text-sm lg:text-base">
                         Découvrez nos offres spéciales et menus personnalisés.
-                        Profitez de -20% sur votre première commande avec le code{' '}
-                        <span className="font-black text-orange-600">PIZZA20</span>
+                        Profitez de -20% sur votre première commande avec le
+                        code{' '}
+                        <span className="font-black text-orange-600">
+                          PIZZA20
+                        </span>
                       </p>
-                      <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
+                      <div className="flex flex-col items-center justify-center gap-2 sm:flex-row sm:gap-3">
                         <a href="/offres" className="w-full sm:w-auto">
-                          <Button className="w-full sm:w-auto bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-bold px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg shadow-lg text-sm">
+                          <Button className="w-full rounded-lg bg-gradient-to-r from-red-600 to-orange-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg hover:from-red-700 hover:to-orange-700 sm:w-auto sm:px-8 sm:py-3">
                             Voir les offres spéciales
                           </Button>
                         </a>
                         <a href="/custom-pizza" className="w-full sm:w-auto">
-                          <Button variant="outline" className="w-full sm:w-auto border-2 border-gray-300 hover:border-orange-500 font-bold px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg text-sm">
+                          <Button
+                            variant="outline"
+                            className="w-full rounded-lg border-2 border-gray-300 px-6 py-2.5 text-sm font-bold hover:border-orange-500 sm:w-auto sm:px-8 sm:py-3"
+                          >
                             Créer ma pizza
                           </Button>
                         </a>
@@ -698,9 +787,9 @@ function MenuContent() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0 }}
             onClick={scrollToTop}
-            className="fixed bottom-6 right-6 w-12 h-12 rounded-full bg-gradient-to-r from-red-600 to-orange-600 text-white shadow-xl flex items-center justify-center hover:scale-110 transition-transform z-50"
+            className="fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-red-600 to-orange-600 text-white shadow-xl transition-transform hover:scale-110"
           >
-            <ArrowUp className="w-5 h-5" />
+            <ArrowUp className="h-5 w-5" />
           </motion.button>
         )}
       </AnimatePresence>
@@ -712,14 +801,16 @@ function MenuContent() {
 
 export default function MenuPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4 animate-bounce">🍕</div>
-          <p className="text-gray-600 font-semibold">Chargement du menu...</p>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-white">
+          <div className="text-center">
+            <div className="mb-4 animate-bounce text-6xl">🍕</div>
+            <p className="font-semibold text-gray-600">Chargement du menu...</p>
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <MenuContent />
     </Suspense>
   );

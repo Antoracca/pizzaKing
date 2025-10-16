@@ -39,7 +39,13 @@ export const createStripePaymentIntent = functions.https.onCall(
       );
     }
 
-    const { orderId, amount, currency = 'xof', paymentMethodTypes = ['card'], metadata = {} } = data;
+    const {
+      orderId,
+      amount,
+      currency = 'xof',
+      paymentMethodTypes = ['card'],
+      metadata = {},
+    } = data;
 
     // Validate input
     if (!orderId || !amount || amount <= 0) {
@@ -189,7 +195,10 @@ export const createStripePaymentIntent = functions.https.onCall(
         );
       }
 
-      throw new functions.https.HttpsError('internal', 'Failed to create payment intent');
+      throw new functions.https.HttpsError(
+        'internal',
+        'Failed to create payment intent'
+      );
     }
   }
 );

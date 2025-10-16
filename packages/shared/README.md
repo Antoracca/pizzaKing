@@ -15,6 +15,7 @@ pnpm add @pizza-king/shared --filter <app-name>
 ### Types
 
 Types TypeScript partagés pour :
+
 - User (utilisateurs, livreurs, admins)
 - Pizza (menu, personnalisation)
 - Order (commandes, livraison, retrait)
@@ -27,6 +28,7 @@ Types TypeScript partagés pour :
 ### Constants
 
 Constantes de l'application :
+
 - Statuts de commande
 - Tailles de pizzas
 - Rôles utilisateurs
@@ -36,6 +38,7 @@ Constantes de l'application :
 ### Utilities
 
 Fonctions utilitaires :
+
 - **Formatters** : formatPrice, formatDate, formatPhoneNumber, etc.
 - **Validators** : isValidEmail, isValidPhoneNumber, isStrongPassword, etc.
 - **Calculators** : calculateSubtotal, calculateTax, calculateDistance, etc.
@@ -61,7 +64,7 @@ import {
 } from '@pizza-king/shared';
 
 // Example
-const price = formatPrice(12.50); // "12.50€"
+const price = formatPrice(12.5); // "12.50€"
 const orderNumber = generateOrderNumber(); // "PK-2024-00123"
 ```
 

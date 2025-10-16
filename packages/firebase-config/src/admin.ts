@@ -24,7 +24,13 @@ export const initializeFirebaseAdmin = () => {
 /**
  * Get Firebase Admin instances
  */
-export const getAdminInstances = () => {
+export const getAdminInstances = (): {
+  app: admin.app.App;
+  auth: admin.auth.Auth;
+  db: admin.firestore.Firestore;
+  storage: admin.storage.Storage;
+  messaging: admin.messaging.Messaging;
+} => {
   if (!app) {
     initializeFirebaseAdmin();
   }

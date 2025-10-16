@@ -24,8 +24,12 @@ const steps = [
 
 export default function CheckoutPage() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [deliveryType, setDeliveryType] = useState<'delivery' | 'pickup'>('delivery');
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash' | 'mobile'>('card');
+  const [deliveryType, setDeliveryType] = useState<'delivery' | 'pickup'>(
+    'delivery'
+  );
+  const [paymentMethod, setPaymentMethod] = useState<
+    'card' | 'cash' | 'mobile'
+  >('card');
 
   // Mock cart data
   const cartItems = [
@@ -56,40 +60,42 @@ export default function CheckoutPage() {
 
       <div className="container mx-auto px-4 py-12">
         {/* Progress Steps */}
-        <div className="max-w-3xl mx-auto mb-12">
+        <div className="mx-auto mb-12 max-w-3xl">
           <div className="flex items-center justify-between">
             {steps.map((step, index) => (
-              <div key={step.id} className="flex items-center flex-1">
-                <div className="flex flex-col items-center relative z-10">
+              <div key={step.id} className="flex flex-1 items-center">
+                <div className="relative z-10 flex flex-col items-center">
                   <motion.div
                     initial={false}
                     animate={{
                       scale: currentStep === step.id ? 1.1 : 1,
                     }}
-                    className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${
+                    className={`flex h-16 w-16 items-center justify-center rounded-full transition-all ${
                       currentStep >= step.id
                         ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30'
-                        : 'bg-white border-2 border-gray-300 text-gray-400'
+                        : 'border-2 border-gray-300 bg-white text-gray-400'
                     }`}
                   >
-                    <step.icon className="w-7 h-7" />
+                    <step.icon className="h-7 w-7" />
                   </motion.div>
                   <p
                     className={`mt-2 text-sm font-medium ${
-                      currentStep >= step.id ? 'text-orange-600' : 'text-gray-500'
+                      currentStep >= step.id
+                        ? 'text-orange-600'
+                        : 'text-gray-500'
                     }`}
                   >
                     {step.name}
                   </p>
                 </div>
                 {index < steps.length - 1 && (
-                  <div className="flex-1 h-1 mx-4 bg-gray-200 rounded relative">
+                  <div className="relative mx-4 h-1 flex-1 rounded bg-gray-200">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{
                         width: currentStep > step.id ? '100%' : '0%',
                       }}
-                      className="h-full bg-gradient-to-r from-orange-500 to-orange-600 rounded"
+                      className="h-full rounded bg-gradient-to-r from-orange-500 to-orange-600"
                     />
                   </div>
                 )}
@@ -98,7 +104,7 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid gap-8 lg:grid-cols-3">
           {/* Left - Forms */}
           <div className="lg:col-span-2">
             {/* Step 1: Delivery */}
@@ -110,40 +116,40 @@ export default function CheckoutPage() {
               >
                 <Card>
                   <CardContent className="p-6">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                    <h2 className="mb-6 text-2xl font-bold text-gray-900">
                       Mode de réception
                     </h2>
 
-                    <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="mb-6 grid grid-cols-2 gap-4">
                       <button
                         onClick={() => setDeliveryType('delivery')}
-                        className={`p-6 rounded-2xl border-2 transition-all ${
+                        className={`rounded-2xl border-2 p-6 transition-all ${
                           deliveryType === 'delivery'
                             ? 'border-orange-500 bg-orange-50'
                             : 'border-gray-200 hover:border-orange-300'
                         }`}
                       >
                         <MapPin
-                          className={`w-8 h-8 mx-auto mb-3 ${
+                          className={`mx-auto mb-3 h-8 w-8 ${
                             deliveryType === 'delivery'
                               ? 'text-orange-600'
                               : 'text-gray-400'
                           }`}
                         />
                         <p className="font-semibold text-gray-900">Livraison</p>
-                        <p className="text-sm text-gray-500 mt-1">30 min</p>
+                        <p className="mt-1 text-sm text-gray-500">30 min</p>
                       </button>
 
                       <button
                         onClick={() => setDeliveryType('pickup')}
-                        className={`p-6 rounded-2xl border-2 transition-all ${
+                        className={`rounded-2xl border-2 p-6 transition-all ${
                           deliveryType === 'pickup'
                             ? 'border-orange-500 bg-orange-50'
                             : 'border-gray-200 hover:border-orange-300'
                         }`}
                       >
                         <ShoppingBag
-                          className={`w-8 h-8 mx-auto mb-3 ${
+                          className={`mx-auto mb-3 h-8 w-8 ${
                             deliveryType === 'pickup'
                               ? 'text-orange-600'
                               : 'text-gray-400'
@@ -152,7 +158,7 @@ export default function CheckoutPage() {
                         <p className="font-semibold text-gray-900">
                           À emporter
                         </p>
-                        <p className="text-sm text-gray-500 mt-1">15 min</p>
+                        <p className="mt-1 text-sm text-gray-500">15 min</p>
                       </button>
                     </div>
 
@@ -164,24 +170,24 @@ export default function CheckoutPage() {
                         <input
                           type="text"
                           placeholder="Rue, quartier"
-                          className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all"
+                          className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
                         />
                         <div className="grid grid-cols-2 gap-4">
                           <input
                             type="text"
                             placeholder="Ville"
-                            className="px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all"
+                            className="rounded-xl border-2 border-gray-200 px-4 py-3 outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
                           />
                           <input
                             type="text"
                             placeholder="Code postal"
-                            className="px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all"
+                            className="rounded-xl border-2 border-gray-200 px-4 py-3 outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
                           />
                         </div>
                         <textarea
                           placeholder="Instructions de livraison (optionnel)"
                           rows={3}
-                          className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all resize-none"
+                          className="w-full resize-none rounded-xl border-2 border-gray-200 px-4 py-3 outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
                         />
                       </div>
                     )}
@@ -190,14 +196,14 @@ export default function CheckoutPage() {
 
                 <Card>
                   <CardContent className="p-6">
-                    <h3 className="font-semibold text-gray-900 mb-4">
+                    <h3 className="mb-4 font-semibold text-gray-900">
                       Heure de livraison
                     </h3>
                     <div className="space-y-3">
-                      <button className="w-full p-4 rounded-xl border-2 border-orange-500 bg-orange-50 text-left">
+                      <button className="w-full rounded-xl border-2 border-orange-500 bg-orange-50 p-4 text-left">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <Clock className="w-5 h-5 text-orange-600" />
+                            <Clock className="h-5 w-5 text-orange-600" />
                             <div>
                               <p className="font-semibold text-gray-900">
                                 Dès que possible
@@ -208,10 +214,10 @@ export default function CheckoutPage() {
                           <Badge>Recommandé</Badge>
                         </div>
                       </button>
-                      <button className="w-full p-4 rounded-xl border-2 border-gray-200 hover:border-orange-300 text-left transition-colors">
+                      <button className="w-full rounded-xl border-2 border-gray-200 p-4 text-left transition-colors hover:border-orange-300">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <Clock className="w-5 h-5 text-gray-400" />
+                            <Clock className="h-5 w-5 text-gray-400" />
                             <div>
                               <p className="font-semibold text-gray-900">
                                 Programmer
@@ -221,7 +227,7 @@ export default function CheckoutPage() {
                               </p>
                             </div>
                           </div>
-                          <ChevronRight className="w-5 h-5 text-gray-400" />
+                          <ChevronRight className="h-5 w-5 text-gray-400" />
                         </div>
                       </button>
                     </div>
@@ -248,20 +254,24 @@ export default function CheckoutPage() {
               >
                 <Card>
                   <CardContent className="p-6">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                    <h2 className="mb-6 text-2xl font-bold text-gray-900">
                       Mode de paiement
                     </h2>
 
-                    <div className="space-y-3 mb-6">
+                    <div className="mb-6 space-y-3">
                       {[
                         { id: 'card', name: 'Carte bancaire', icon: '💳' },
                         { id: 'mobile', name: 'Mobile Money', icon: '📱' },
-                        { id: 'cash', name: 'Espèces à la livraison', icon: '💵' },
+                        {
+                          id: 'cash',
+                          name: 'Espèces à la livraison',
+                          icon: '💵',
+                        },
                       ].map(method => (
                         <button
                           key={method.id}
                           onClick={() => setPaymentMethod(method.id as any)}
-                          className={`w-full p-4 rounded-xl border-2 transition-all flex items-center justify-between ${
+                          className={`flex w-full items-center justify-between rounded-xl border-2 p-4 transition-all ${
                             paymentMethod === method.id
                               ? 'border-orange-500 bg-orange-50'
                               : 'border-gray-200 hover:border-orange-300'
@@ -274,7 +284,7 @@ export default function CheckoutPage() {
                             </span>
                           </div>
                           {paymentMethod === method.id && (
-                            <Check className="w-5 h-5 text-orange-600" />
+                            <Check className="h-5 w-5 text-orange-600" />
                           )}
                         </button>
                       ))}
@@ -285,18 +295,18 @@ export default function CheckoutPage() {
                         <input
                           type="text"
                           placeholder="Numéro de carte"
-                          className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all"
+                          className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
                         />
                         <div className="grid grid-cols-2 gap-4">
                           <input
                             type="text"
                             placeholder="MM/AA"
-                            className="px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all"
+                            className="rounded-xl border-2 border-gray-200 px-4 py-3 outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
                           />
                           <input
                             type="text"
                             placeholder="CVV"
-                            className="px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all"
+                            className="rounded-xl border-2 border-gray-200 px-4 py-3 outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
                           />
                         </div>
                       </div>
@@ -329,21 +339,21 @@ export default function CheckoutPage() {
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="text-center py-12"
+                className="py-12 text-center"
               >
-                <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-green-100 flex items-center justify-center">
-                  <Check className="w-12 h-12 text-green-600" />
+                <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-green-100">
+                  <Check className="h-12 w-12 text-green-600" />
                 </div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                <h2 className="mb-4 text-3xl font-bold text-gray-900">
                   Commande confirmée ! 🎉
                 </h2>
-                <p className="text-gray-600 mb-2">
+                <p className="mb-2 text-gray-600">
                   Numéro de commande: <strong>#PK20251007001</strong>
                 </p>
-                <p className="text-gray-600 mb-8">
+                <p className="mb-8 text-gray-600">
                   Votre pizza arrive dans environ <strong>30 minutes</strong>
                 </p>
-                <div className="flex gap-4 justify-center">
+                <div className="flex justify-center gap-4">
                   <Button size="lg">Suivre ma commande</Button>
                   <Button size="lg" variant="outline">
                     Retour à l'accueil
@@ -357,21 +367,18 @@ export default function CheckoutPage() {
           <div className="lg:col-span-1">
             <Card className="sticky top-24">
               <CardContent className="p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">
+                <h3 className="mb-4 text-xl font-bold text-gray-900">
                   Récapitulatif
                 </h3>
 
-                <div className="space-y-3 mb-6">
+                <div className="mb-6 space-y-3">
                   {cartItems.map(item => (
-                    <div
-                      key={item.id}
-                      className="flex justify-between text-sm"
-                    >
+                    <div key={item.id} className="flex justify-between text-sm">
                       <div className="flex-1">
                         <p className="font-medium text-gray-900">
                           {item.quantity}x {item.name}
                         </p>
-                        <p className="text-gray-500 text-xs">{item.size}</p>
+                        <p className="text-xs text-gray-500">{item.size}</p>
                       </div>
                       <p className="font-semibold text-gray-900">
                         {formatPrice(item.price)}
@@ -380,14 +387,14 @@ export default function CheckoutPage() {
                   ))}
                 </div>
 
-                <div className="space-y-2 py-4 border-t border-gray-100">
+                <div className="space-y-2 border-t border-gray-100 py-4">
                   <div className="flex justify-between text-gray-700">
                     <span>Sous-total</span>
                     <span>{formatPrice(subtotal)}</span>
                   </div>
                   <div className="flex justify-between text-gray-700">
                     <span>Livraison</span>
-                    <span className="text-green-600 font-medium">Gratuit</span>
+                    <span className="font-medium text-green-600">Gratuit</span>
                   </div>
                   <div className="flex justify-between text-gray-700">
                     <span>TVA</span>
@@ -395,10 +402,12 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-gray-200">
+                <div className="border-t border-gray-200 pt-4">
                   <div className="flex justify-between text-xl font-bold">
                     <span>Total</span>
-                    <span className="text-orange-600">{formatPrice(total)}</span>
+                    <span className="text-orange-600">
+                      {formatPrice(total)}
+                    </span>
                   </div>
                 </div>
               </CardContent>

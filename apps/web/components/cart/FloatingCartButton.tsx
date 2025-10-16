@@ -35,7 +35,8 @@ export default function FloatingCartButton() {
               Voir mon panier
             </span>
             <span>
-              {itemCount} article{itemCount > 1 ? 's' : ''} - {formatPrice(subtotal)}
+              {itemCount} article{itemCount > 1 ? 's' : ''} -{' '}
+              {formatPrice(subtotal)}
             </span>
           </span>
           <ArrowRight className="h-5 w-5 text-white/90" />

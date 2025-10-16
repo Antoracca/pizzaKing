@@ -1,10 +1,4 @@
-import {
-  Pizza,
-  Coffee,
-  IceCream,
-  Users,
-  Heart,
-} from 'lucide-react';
+import { Pizza, Coffee, IceCream, Users, Heart } from 'lucide-react';
 
 export type MealBundleId = 'solo' | 'duo' | 'famille';
 

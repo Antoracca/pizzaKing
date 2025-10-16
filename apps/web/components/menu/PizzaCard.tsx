@@ -56,14 +56,14 @@ export default function PizzaCard({
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
     >
-      <Card className="group relative overflow-hidden hover:shadow-2xl transition-all duration-500 border-0 bg-white">
+      <Card className="group relative overflow-hidden border-0 bg-white transition-all duration-500 hover:shadow-2xl">
         {/* Image Container */}
         <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
           {/* Image */}
           <motion.img
             src={pizza.image}
             alt={pizza.name}
-            className="w-full h-full object-cover"
+            className="h-full w-full object-cover"
             animate={{
               scale: isHovered ? 1.1 : 1,
             }}
@@ -78,14 +78,14 @@ export default function PizzaCard({
           />
 
           {/* Top Badges */}
-          <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
+          <div className="absolute left-4 top-4 z-10 flex flex-col gap-2">
             {pizza.isSpicy && (
               <motion.div
                 initial={{ x: -20, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
               >
                 <Badge variant="destructive" className="gap-1 shadow-lg">
-                  <Flame className="w-3 h-3" />
+                  <Flame className="h-3 w-3" />
                   Épicée
                 </Badge>
               </motion.div>
@@ -97,7 +97,7 @@ export default function PizzaCard({
                 transition={{ delay: 0.1 }}
               >
                 <Badge variant="success" className="gap-1 shadow-lg">
-                  <Leaf className="w-3 h-3" />
+                  <Leaf className="h-3 w-3" />
                   Végé
                 </Badge>
               </motion.div>
@@ -108,8 +108,8 @@ export default function PizzaCard({
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                <Badge className="gap-1 shadow-lg bg-gradient-to-r from-yellow-500 to-orange-500 border-0">
-                  <Star className="w-3 h-3 fill-white" />
+                <Badge className="gap-1 border-0 bg-gradient-to-r from-yellow-500 to-orange-500 shadow-lg">
+                  <Star className="h-3 w-3 fill-white" />
                   Top
                 </Badge>
               </motion.div>
@@ -122,13 +122,11 @@ export default function PizzaCard({
             animate={{ scale: isHovered ? 1 : 0 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => setIsFavorite(!isFavorite)}
-            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center z-10 hover:scale-110 transition-transform"
+            className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-lg transition-transform hover:scale-110"
           >
             <Heart
-              className={`w-5 h-5 ${
-                isFavorite
-                  ? 'fill-red-500 text-red-500'
-                  : 'text-gray-600'
+              className={`h-5 w-5 ${
+                isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600'
               }`}
             />
           </motion.button>
@@ -140,12 +138,12 @@ export default function PizzaCard({
               y: isHovered ? 0 : 20,
               opacity: isHovered ? 1 : 0,
             }}
-            className="absolute bottom-4 right-4 flex gap-2 z-10"
+            className="absolute bottom-4 right-4 z-10 flex gap-2"
           >
             <Button
               size="icon"
               variant="secondary"
-              className="rounded-full shadow-lg bg-white/90 backdrop-blur-sm hover:bg-white"
+              className="rounded-full bg-white/90 shadow-lg backdrop-blur-sm hover:bg-white"
               onClick={() => onViewDetails(pizza.id)}
             >
               <Info className="h-5 w-5" />
@@ -168,8 +166,8 @@ export default function PizzaCard({
             }}
             className="absolute bottom-4 left-4 z-10"
           >
-            <div className="flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg">
-              <Clock className="w-4 h-4 text-orange-600" />
+            <div className="flex items-center gap-2 rounded-full bg-white/90 px-3 py-1.5 shadow-lg backdrop-blur-sm">
+              <Clock className="h-4 w-4 text-orange-600" />
               <span className="text-sm font-medium text-gray-900">
                 {pizza.preparationTime} min
               </span>
@@ -179,11 +177,11 @@ export default function PizzaCard({
 
         <CardContent className="p-6">
           {/* Category Tags */}
-          <div className="flex flex-wrap gap-2 mb-3">
+          <div className="mb-3 flex flex-wrap gap-2">
             {pizza.tags.slice(0, 2).map(tag => (
               <span
                 key={tag}
-                className="text-xs px-2.5 py-1 rounded-full bg-orange-50 text-orange-600 font-medium"
+                className="rounded-full bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-600"
               >
                 {tag}
               </span>
@@ -191,20 +189,20 @@ export default function PizzaCard({
           </div>
 
           {/* Title */}
-          <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-orange-600 transition-colors line-clamp-1">
+          <h3 className="mb-2 line-clamp-1 text-xl font-bold text-gray-900 transition-colors group-hover:text-orange-600">
             {pizza.name}
           </h3>
 
           {/* Description */}
-          <p className="text-sm text-gray-600 mb-4 line-clamp-2 leading-relaxed">
+          <p className="mb-4 line-clamp-2 text-sm leading-relaxed text-gray-600">
             {pizza.description}
           </p>
 
           {/* Rating & Calories */}
-          <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
+          <div className="mb-4 flex items-center justify-between border-b border-gray-100 pb-4">
             <div className="flex items-center gap-2">
               <div className="flex items-center">
-                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                 <span className="ml-1 text-sm font-semibold text-gray-900">
                   {pizza.rating}
                 </span>
@@ -213,7 +211,7 @@ export default function PizzaCard({
                 ({pizza.reviewCount})
               </span>
             </div>
-            <span className="text-xs text-gray-500 font-medium">
+            <span className="text-xs font-medium text-gray-500">
               {pizza.calories} cal
             </span>
           </div>
@@ -221,8 +219,8 @@ export default function PizzaCard({
           {/* Price & CTA */}
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-500 mb-1">À partir de</p>
-              <p className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
+              <p className="mb-1 text-xs text-gray-500">À partir de</p>
+              <p className="bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-2xl font-bold text-transparent">
                 {formatPrice(pizza.basePrice)}
               </p>
             </div>
@@ -231,7 +229,7 @@ export default function PizzaCard({
               className="group/btn"
               onClick={() => onAddToCart(pizza.id)}
             >
-              <Plus className="mr-2 h-5 w-5 group-hover/btn:rotate-90 transition-transform" />
+              <Plus className="mr-2 h-5 w-5 transition-transform group-hover/btn:rotate-90" />
               Ajouter
             </Button>
           </div>
@@ -241,7 +239,7 @@ export default function PizzaCard({
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: isHovered ? 1 : 0 }}
-          className="absolute inset-0 rounded-2xl border-2 border-orange-500 pointer-events-none"
+          className="pointer-events-none absolute inset-0 rounded-2xl border-2 border-orange-500"
         />
       </Card>
     </motion.div>

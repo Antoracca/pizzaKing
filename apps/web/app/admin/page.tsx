@@ -97,9 +97,9 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Sidebar */}
-      <div className="fixed left-0 top-0 h-full w-64 bg-gray-900 text-white p-6">
-        <div className="flex items-center gap-3 mb-12">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 flex items-center justify-center text-xl">
+      <div className="fixed left-0 top-0 h-full w-64 bg-gray-900 p-6 text-white">
+        <div className="mb-12 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-orange-500 to-orange-600 text-xl">
             🍕
           </div>
           <span className="text-xl font-bold">Pizza King Admin</span>
@@ -116,19 +116,17 @@ export default function AdminDashboard() {
           ].map((item, index) => (
             <button
               key={index}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all ${
+              className={`flex w-full items-center justify-between rounded-xl px-4 py-3 transition-all ${
                 item.active
                   ? 'bg-orange-500 shadow-lg shadow-orange-500/30'
                   : 'hover:bg-gray-800'
               }`}
             >
               <div className="flex items-center gap-3">
-                <item.icon className="w-5 h-5" />
+                <item.icon className="h-5 w-5" />
                 <span className="font-medium">{item.label}</span>
               </div>
-              {item.badge && (
-                <Badge className="bg-red-500">{item.badge}</Badge>
-              )}
+              {item.badge && <Badge className="bg-red-500">{item.badge}</Badge>}
             </button>
           ))}
         </nav>
@@ -137,20 +135,16 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <div className="ml-64 p-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Dashboard
-            </h1>
-            <p className="text-gray-600">
-              Vue d'ensemble de votre activité
-            </p>
+            <h1 className="mb-2 text-3xl font-bold text-gray-900">Dashboard</h1>
+            <p className="text-gray-600">Vue d'ensemble de votre activité</p>
           </div>
           <div className="flex gap-3">
             <select
               value={timeRange}
               onChange={e => setTimeRange(e.target.value)}
-              className="px-4 py-2 rounded-xl border-2 border-gray-200 font-medium"
+              className="rounded-xl border-2 border-gray-200 px-4 py-2 font-medium"
             >
               <option value="today">Aujourd'hui</option>
               <option value="week">Cette semaine</option>
@@ -158,14 +152,14 @@ export default function AdminDashboard() {
               <option value="year">Cette année</option>
             </select>
             <Button>
-              <Plus className="w-5 h-5 mr-2" />
+              <Plus className="mr-2 h-5 w-5" />
               Nouvelle commande
             </Button>
           </div>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat, index) => (
             <motion.div
               key={stat.label}
@@ -173,36 +167,42 @@ export default function AdminDashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
             >
-              <Card className="hover:shadow-xl transition-all cursor-pointer group">
+              <Card className="group cursor-pointer transition-all hover:shadow-xl">
                 <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`w-12 h-12 rounded-xl bg-${stat.color}-100 flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                      <stat.icon className={`w-6 h-6 text-${stat.color}-600`} />
+                  <div className="mb-4 flex items-center justify-between">
+                    <div
+                      className={`h-12 w-12 rounded-xl bg-${stat.color}-100 flex items-center justify-center transition-transform group-hover:scale-110`}
+                    >
+                      <stat.icon className={`h-6 w-6 text-${stat.color}-600`} />
                     </div>
-                    <Badge variant={stat.trend === 'up' ? 'success' : 'destructive'}>
+                    <Badge
+                      variant={stat.trend === 'up' ? 'success' : 'destructive'}
+                    >
                       {stat.change}
                     </Badge>
                   </div>
-                  <p className="text-gray-600 text-sm mb-1">{stat.label}</p>
-                  <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+                  <p className="mb-1 text-sm text-gray-600">{stat.label}</p>
+                  <p className="text-3xl font-bold text-gray-900">
+                    {stat.value}
+                  </p>
                 </CardContent>
               </Card>
             </motion.div>
           ))}
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid gap-8 lg:grid-cols-3">
           {/* Recent Orders */}
           <div className="lg:col-span-2">
             <Card>
               <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-6">
+                <div className="mb-6 flex items-center justify-between">
                   <h2 className="text-xl font-bold text-gray-900">
                     Commandes Récentes
                   </h2>
                   <Button variant="ghost" size="sm">
                     Voir tout
-                    <ChevronRight className="w-4 h-4 ml-1" />
+                    <ChevronRight className="ml-1 h-4 w-4" />
                   </Button>
                 </div>
 
@@ -213,10 +213,10 @@ export default function AdminDashboard() {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className="flex items-center justify-between p-4 rounded-xl border-2 border-gray-100 hover:border-orange-500 hover:bg-orange-50 transition-all cursor-pointer"
+                      className="flex cursor-pointer items-center justify-between rounded-xl border-2 border-gray-100 p-4 transition-all hover:border-orange-500 hover:bg-orange-50"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 font-bold text-white">
                           {order.items}
                         </div>
                         <div>
@@ -235,7 +235,7 @@ export default function AdminDashboard() {
                             {formatPrice(order.total)}
                           </p>
                           <div className="flex items-center gap-1 text-sm text-gray-600">
-                            <Clock className="w-3 h-3" />
+                            <Clock className="h-3 w-3" />
                             {order.time}
                           </div>
                         </div>
@@ -244,15 +244,15 @@ export default function AdminDashboard() {
                             order.status === 'preparing'
                               ? 'default'
                               : order.status === 'confirmed'
-                              ? 'secondary'
-                              : 'success'
+                                ? 'secondary'
+                                : 'success'
                           }
                         >
                           {order.status === 'preparing'
                             ? 'En préparation'
                             : order.status === 'confirmed'
-                            ? 'Confirmée'
-                            : 'En route'}
+                              ? 'Confirmée'
+                              : 'En route'}
                         </Badge>
                       </div>
                     </motion.div>
@@ -266,7 +266,7 @@ export default function AdminDashboard() {
           <div className="lg:col-span-1">
             <Card>
               <CardContent className="p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">
+                <h2 className="mb-6 text-xl font-bold text-gray-900">
                   Top Pizzas
                 </h2>
 
@@ -279,11 +279,11 @@ export default function AdminDashboard() {
                       transition={{ delay: index * 0.1 }}
                       className="flex items-start gap-3"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold text-sm">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-sm font-bold text-white">
                         {index + 1}
                       </div>
                       <div className="flex-1">
-                        <p className="font-semibold text-gray-900 mb-1">
+                        <p className="mb-1 font-semibold text-gray-900">
                           {pizza.name}
                         </p>
                         <div className="flex items-center justify-between text-sm">
@@ -304,20 +304,20 @@ export default function AdminDashboard() {
             {/* Quick Actions */}
             <Card className="mt-6">
               <CardContent className="p-6">
-                <h3 className="font-bold text-gray-900 mb-4">
+                <h3 className="mb-4 font-bold text-gray-900">
                   Actions Rapides
                 </h3>
                 <div className="space-y-2">
                   <Button variant="outline" className="w-full justify-start">
-                    <Pizza className="w-4 h-4 mr-2" />
+                    <Pizza className="mr-2 h-4 w-4" />
                     Ajouter une pizza
                   </Button>
                   <Button variant="outline" className="w-full justify-start">
-                    <Users className="w-4 h-4 mr-2" />
+                    <Users className="mr-2 h-4 w-4" />
                     Gérer les utilisateurs
                   </Button>
                   <Button variant="outline" className="w-full justify-start">
-                    <TrendingUp className="w-4 h-4 mr-2" />
+                    <TrendingUp className="mr-2 h-4 w-4" />
                     Voir les rapports
                   </Button>
                 </div>

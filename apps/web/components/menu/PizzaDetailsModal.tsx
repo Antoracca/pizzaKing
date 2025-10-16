@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Image from "next/image";
+import Image from 'next/image';
 import {
   X,
   Plus,
@@ -73,7 +73,6 @@ interface PizzaDetailsModalProps {
   onAddToCart: (configuration: CartConfig) => void;
 }
 
-
 export default function PizzaDetailsModal({
   pizza,
   isOpen,
@@ -143,39 +142,39 @@ export default function PizzaDetailsModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
           />
 
           {/* Modal */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+          <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white rounded-3xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden pointer-events-auto"
+              className="pointer-events-auto max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-3xl bg-white shadow-2xl"
             >
-              <div className="grid md:grid-cols-2 h-full max-h-[90vh]">
+              <div className="grid h-full max-h-[90vh] md:grid-cols-2">
                 {/* Left Side - Image */}
-                <div className="relative bg-gradient-to-br from-orange-50 to-orange-100 p-8 flex items-center justify-center">
+                <div className="relative flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100 p-8">
                   {/* Close Button */}
                   <button
                     onClick={onClose}
-                    className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center hover:bg-gray-100 transition-colors z-10"
+                    className="absolute right-6 top-6 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-lg transition-colors hover:bg-gray-100"
                   >
-                    <X className="w-5 h-5" />
+                    <X className="h-5 w-5" />
                   </button>
 
                   {/* Badges */}
-                  <div className="absolute top-6 left-6 flex flex-col gap-2 z-10">
+                  <div className="absolute left-6 top-6 z-10 flex flex-col gap-2">
                     {pizza.isSpicy && (
                       <Badge variant="destructive" className="gap-1">
-                        <Flame className="w-3 h-3" />
+                        <Flame className="h-3 w-3" />
                         Épicée
                       </Badge>
                     )}
                     {pizza.isVegetarian && (
                       <Badge variant="success" className="gap-1">
-                        <Leaf className="w-3 h-3" />
+                        <Leaf className="h-3 w-3" />
                         Végétarien
                       </Badge>
                     )}
@@ -188,17 +187,15 @@ export default function PizzaDetailsModal({
                     transition={{ type: 'spring', bounce: 0.4 }}
                     className="relative"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full blur-3xl opacity-30 animate-pulse" />
-                  
+                    <div className="absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-orange-500 to-orange-600 opacity-30 blur-3xl" />
 
-<Image
-  src={pizza.image}
-  alt={pizza.name}
-  width={512}
-  height={512}
-  className="relative w-full max-w-md rounded-full shadow-2xl"
-/>
-
+                    <Image
+                      src={pizza.image}
+                      alt={pizza.name}
+                      width={512}
+                      height={512}
+                      className="relative w-full max-w-md rounded-full shadow-2xl"
+                    />
                   </motion.div>
 
                   {/* Action Buttons */}
@@ -210,7 +207,7 @@ export default function PizzaDetailsModal({
                       onClick={() => setIsFavorite(!isFavorite)}
                     >
                       <Heart
-                        className={`w-5 h-5 ${
+                        className={`h-5 w-5 ${
                           isFavorite ? 'fill-red-500 text-red-500' : ''
                         }`}
                       />
@@ -220,46 +217,46 @@ export default function PizzaDetailsModal({
                       size="icon"
                       className="rounded-full shadow-lg"
                     >
-                      <Share2 className="w-5 h-5" />
+                      <Share2 className="h-5 w-5" />
                     </Button>
                   </div>
                 </div>
 
                 {/* Right Side - Details & Customization */}
-                <div className="flex flex-col max-h-[90vh]">
+                <div className="flex max-h-[90vh] flex-col">
                   {/* Header - Fixed */}
-                  <div className="p-8 border-b border-gray-100">
-                    <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                  <div className="border-b border-gray-100 p-8">
+                    <h2 className="mb-2 text-3xl font-bold text-gray-900">
                       {pizza.name}
                     </h2>
-                    <p className="text-gray-600 mb-4">{pizza.description}</p>
+                    <p className="mb-4 text-gray-600">{pizza.description}</p>
 
                     {/* Stats */}
                     <div className="flex items-center gap-6">
                       <div className="flex items-center gap-2">
-                        <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                        <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                         <span className="font-semibold">{pizza.rating}</span>
-                        <span className="text-gray-500 text-sm">
+                        <span className="text-sm text-gray-500">
                           ({pizza.reviewCount} avis)
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Clock className="w-5 h-5 text-orange-600" />
+                        <Clock className="h-5 w-5 text-orange-600" />
                         <span className="text-gray-700">
                           {pizza.preparationTime} min
                         </span>
                       </div>
-                      <div className="text-gray-600 text-sm">
+                      <div className="text-sm text-gray-600">
                         {pizza.calories} cal
                       </div>
                     </div>
                   </div>
 
                   {/* Scrollable Content */}
-                  <div className="flex-1 overflow-y-auto p-8 space-y-6">
+                  <div className="flex-1 space-y-6 overflow-y-auto p-8">
                     {/* Size Selection */}
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                      <h3 className="mb-3 text-lg font-semibold text-gray-900">
                         Choisissez votre taille
                       </h3>
                       <div className="grid grid-cols-3 gap-3">
@@ -267,17 +264,17 @@ export default function PizzaDetailsModal({
                           <button
                             key={size.size}
                             onClick={() => setSelectedSize(size)}
-                            className={`p-4 rounded-xl border-2 transition-all ${
+                            className={`rounded-xl border-2 p-4 transition-all ${
                               selectedSize?.size === size.size
                                 ? 'border-orange-500 bg-orange-50'
                                 : 'border-gray-200 hover:border-orange-300'
                             }`}
                           >
                             <div className="text-center">
-                              <p className="font-semibold text-gray-900 mb-1">
+                              <p className="mb-1 font-semibold text-gray-900">
                                 {size.name}
                               </p>
-                              <p className="text-xs text-gray-500 mb-2">
+                              <p className="mb-2 text-xs text-gray-500">
                                 {size.diameter}cm
                               </p>
                               <p className="text-sm font-bold text-orange-600">
@@ -291,7 +288,7 @@ export default function PizzaDetailsModal({
 
                     {/* Crust Selection */}
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                      <h3 className="mb-3 text-lg font-semibold text-gray-900">
                         Type de pâte
                       </h3>
                       <div className="space-y-2">
@@ -299,7 +296,7 @@ export default function PizzaDetailsModal({
                           <button
                             key={crust.type}
                             onClick={() => setSelectedCrust(crust)}
-                            className={`w-full p-4 rounded-xl border-2 transition-all flex items-center justify-between ${
+                            className={`flex w-full items-center justify-between rounded-xl border-2 p-4 transition-all ${
                               selectedCrust?.type === crust.type
                                 ? 'border-orange-500 bg-orange-50'
                                 : 'border-gray-200 hover:border-orange-300'
@@ -309,7 +306,7 @@ export default function PizzaDetailsModal({
                               {crust.name}
                             </span>
                             {crust.priceModifier > 0 && (
-                              <span className="text-sm text-orange-600 font-semibold">
+                              <span className="text-sm font-semibold text-orange-600">
                                 +{formatPrice(crust.priceModifier)}
                               </span>
                             )}
@@ -320,7 +317,7 @@ export default function PizzaDetailsModal({
 
                     {/* Extra Ingredients */}
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                      <h3 className="mb-3 text-lg font-semibold text-gray-900">
                         Ingrédients supplémentaires
                       </h3>
                       <div className="grid grid-cols-2 gap-2">
@@ -332,7 +329,7 @@ export default function PizzaDetailsModal({
                             <button
                               key={ingredient.name}
                               onClick={() => toggleIngredient(ingredient.name)}
-                              className={`p-3 rounded-lg border-2 transition-all text-left ${
+                              className={`rounded-lg border-2 p-3 text-left transition-all ${
                                 isSelected
                                   ? 'border-orange-500 bg-orange-50'
                                   : 'border-gray-200 hover:border-orange-300'
@@ -342,7 +339,7 @@ export default function PizzaDetailsModal({
                                 <span className="text-sm font-medium text-gray-900">
                                   {ingredient.name}
                                 </span>
-                                <span className="text-xs text-orange-600 font-semibold">
+                                <span className="text-xs font-semibold text-orange-600">
                                   +{formatPrice(ingredient.price)}
                                 </span>
                               </div>
@@ -353,8 +350,8 @@ export default function PizzaDetailsModal({
                     </div>
 
                     {/* Default Ingredients Info */}
-                    <div className="bg-gray-50 rounded-xl p-4">
-                      <h4 className="text-sm font-semibold text-gray-900 mb-2">
+                    <div className="rounded-xl bg-gray-50 p-4">
+                      <h4 className="mb-2 text-sm font-semibold text-gray-900">
                         Ingrédients inclus:
                       </h4>
                       <p className="text-sm text-gray-600">
@@ -364,9 +361,9 @@ export default function PizzaDetailsModal({
                   </div>
 
                   {/* Footer - Fixed */}
-                  <div className="p-8 border-t border-gray-100 bg-white">
+                  <div className="border-t border-gray-100 bg-white p-8">
                     {/* Quantity Selector */}
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="mb-4 flex items-center justify-between">
                       <span className="text-sm font-medium text-gray-700">
                         Quantité
                       </span>
@@ -377,9 +374,9 @@ export default function PizzaDetailsModal({
                           onClick={() => setQuantity(Math.max(1, quantity - 1))}
                           disabled={quantity <= 1}
                         >
-                          <Minus className="w-4 h-4" />
+                          <Minus className="h-4 w-4" />
                         </Button>
-                        <span className="text-xl font-bold w-12 text-center">
+                        <span className="w-12 text-center text-xl font-bold">
                           {quantity}
                         </span>
                         <Button
@@ -387,7 +384,7 @@ export default function PizzaDetailsModal({
                           size="icon"
                           onClick={() => setQuantity(quantity + 1)}
                         >
-                          <Plus className="w-4 h-4" />
+                          <Plus className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>

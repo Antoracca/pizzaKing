@@ -44,16 +44,15 @@ export const verifyPhoneNumber = functions.https.onCall(
       }
 
       // Update user document
-      await db
-        .collection(COLLECTIONS.USERS)
-        .doc(userId)
-        .update({
-          phoneNumber,
-          isPhoneVerified: true,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
+      await db.collection(COLLECTIONS.USERS).doc(userId).update({
+        phoneNumber,
+        isPhoneVerified: true,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
 
-      functions.logger.info(`Phone verified for user ${userId}: ${phoneNumber}`);
+      functions.logger.info(
+        `Phone verified for user ${userId}: ${phoneNumber}`
+      );
 
       return {
         success: true,

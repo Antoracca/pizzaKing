@@ -33,7 +33,10 @@ export const getOrderById = functions.https.onCall(
       const userId = context.auth.uid;
 
       // Get order
-      const orderDoc = await db.collection(COLLECTIONS.ORDERS).doc(orderId).get();
+      const orderDoc = await db
+        .collection(COLLECTIONS.ORDERS)
+        .doc(orderId)
+        .get();
 
       if (!orderDoc.exists) {
         throw new functions.https.HttpsError('not-found', 'Order not found');
@@ -47,7 +50,8 @@ export const getOrderById = functions.https.onCall(
 
       // Check permissions
       const isAdmin = ['admin', 'superadmin'].includes(userRole);
-      const isDeliverer = userRole === 'deliverer' && order?.delivererId === userId;
+      const isDeliverer =
+        userRole === 'deliverer' && order?.delivererId === userId;
       const isOwner = order?.userId === userId;
 
       if (!isAdmin && !isDeliverer && !isOwner) {

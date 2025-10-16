@@ -9,7 +9,13 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, TYPOGRAPHY, SPACING, RADIUS, SHADOWS } from '@/constants/theme';
+import {
+  COLORS,
+  TYPOGRAPHY,
+  SPACING,
+  RADIUS,
+  SHADOWS,
+} from '@/constants/theme';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -19,27 +25,82 @@ const menuSections = [
   {
     title: 'Mon compte',
     items: [
-      { id: 'profile', label: 'Informations personnelles', icon: 'person-outline', badge: null },
-      { id: 'addresses', label: 'Mes adresses', icon: 'location-outline', badge: '2' },
-      { id: 'payment', label: 'Moyens de paiement', icon: 'card-outline', badge: null },
-      { id: 'favorites', label: 'Mes favoris', icon: 'heart-outline', badge: '8' },
+      {
+        id: 'profile',
+        label: 'Informations personnelles',
+        icon: 'person-outline',
+        badge: null,
+      },
+      {
+        id: 'addresses',
+        label: 'Mes adresses',
+        icon: 'location-outline',
+        badge: '2',
+      },
+      {
+        id: 'payment',
+        label: 'Moyens de paiement',
+        icon: 'card-outline',
+        badge: null,
+      },
+      {
+        id: 'favorites',
+        label: 'Mes favoris',
+        icon: 'heart-outline',
+        badge: '8',
+      },
     ],
   },
   {
     title: 'Fidélité & Promos',
     items: [
-      { id: 'loyalty', label: 'Programme fidélité', icon: 'star-outline', badge: '250 pts' },
-      { id: 'promos', label: 'Codes promo', icon: 'pricetag-outline', badge: '3' },
-      { id: 'vouchers', label: 'Mes bons d\'achat', icon: 'ticket-outline', badge: null },
+      {
+        id: 'loyalty',
+        label: 'Programme fidélité',
+        icon: 'star-outline',
+        badge: '250 pts',
+      },
+      {
+        id: 'promos',
+        label: 'Codes promo',
+        icon: 'pricetag-outline',
+        badge: '3',
+      },
+      {
+        id: 'vouchers',
+        label: "Mes bons d'achat",
+        icon: 'ticket-outline',
+        badge: null,
+      },
     ],
   },
   {
     title: 'Paramètres',
     items: [
-      { id: 'notifications', label: 'Notifications', icon: 'notifications-outline', badge: null },
-      { id: 'language', label: 'Langue', icon: 'language-outline', badge: 'Français' },
-      { id: 'help', label: 'Aide & Support', icon: 'help-circle-outline', badge: null },
-      { id: 'about', label: 'À propos', icon: 'information-circle-outline', badge: null },
+      {
+        id: 'notifications',
+        label: 'Notifications',
+        icon: 'notifications-outline',
+        badge: null,
+      },
+      {
+        id: 'language',
+        label: 'Langue',
+        icon: 'language-outline',
+        badge: 'Français',
+      },
+      {
+        id: 'help',
+        label: 'Aide & Support',
+        icon: 'help-circle-outline',
+        badge: null,
+      },
+      {
+        id: 'about',
+        label: 'À propos',
+        icon: 'information-circle-outline',
+        badge: null,
+      },
     ],
   },
 ];
@@ -90,7 +151,9 @@ export default function ProfileScreen() {
 
           <View style={styles.memberBadge}>
             <Ionicons name="shield-checkmark" size={16} color={COLORS.white} />
-            <Text style={styles.memberText}>Membre depuis {user.memberSince}</Text>
+            <Text style={styles.memberText}>
+              Membre depuis {user.memberSince}
+            </Text>
           </View>
         </LinearGradient>
 
@@ -98,8 +161,17 @@ export default function ProfileScreen() {
         <View style={styles.statsContainer}>
           {stats.map((stat, index) => (
             <Card key={index} style={styles.statCard} shadow="lg">
-              <View style={[styles.statIcon, { backgroundColor: `${stat.color}20` }]}>
-                <Ionicons name={stat.icon as any} size={24} color={stat.color} />
+              <View
+                style={[
+                  styles.statIcon,
+                  { backgroundColor: `${stat.color}20` },
+                ]}
+              >
+                <Ionicons
+                  name={stat.icon as any}
+                  size={24}
+                  color={stat.color}
+                />
               </View>
               <Text style={styles.statValue}>{stat.value}</Text>
               <Text style={styles.statLabel}>{stat.label}</Text>
@@ -119,12 +191,17 @@ export default function ProfileScreen() {
                     activeOpacity={0.7}
                     style={[
                       styles.menuItem,
-                      itemIndex !== section.items.length - 1 && styles.menuItemBorder,
+                      itemIndex !== section.items.length - 1 &&
+                        styles.menuItemBorder,
                     ]}
                   >
                     <View style={styles.menuItemLeft}>
                       <View style={styles.menuItemIcon}>
-                        <Ionicons name={item.icon as any} size={22} color={COLORS.textPrimary} />
+                        <Ionicons
+                          name={item.icon as any}
+                          size={22}
+                          color={COLORS.textPrimary}
+                        />
                       </View>
                       <Text style={styles.menuItemLabel}>{item.label}</Text>
                     </View>
@@ -134,7 +211,11 @@ export default function ProfileScreen() {
                           {item.badge}
                         </Badge>
                       )}
-                      <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
+                      <Ionicons
+                        name="chevron-forward"
+                        size={20}
+                        color={COLORS.textSecondary}
+                      />
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -151,7 +232,11 @@ export default function ProfileScreen() {
                 end={{ x: 1, y: 0 }}
                 style={styles.logoutButton}
               >
-                <Ionicons name="log-out-outline" size={22} color={COLORS.white} />
+                <Ionicons
+                  name="log-out-outline"
+                  size={22}
+                  color={COLORS.white}
+                />
                 <Text style={styles.logoutText}>Déconnexion</Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -160,7 +245,9 @@ export default function ProfileScreen() {
           {/* App Version */}
           <View style={styles.versionContainer}>
             <Text style={styles.versionText}>Pizza King v1.0.0</Text>
-            <Text style={styles.versionSubtext}>Made with ❤️ in Burkina Faso</Text>
+            <Text style={styles.versionSubtext}>
+              Made with ❤️ in Burkina Faso
+            </Text>
           </View>
 
           <View style={{ height: SPACING['6xl'] }} />

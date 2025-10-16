@@ -26,7 +26,13 @@ export const createOrder = functions.https.onCall(
 
     const userId = context.auth.uid;
 
-    const { items, deliveryAddress, deliveryInstructions, paymentMethod, promoCode } = data;
+    const {
+      items,
+      deliveryAddress,
+      deliveryInstructions,
+      paymentMethod,
+      promoCode,
+    } = data;
 
     // Validate items
     if (!items || items.length === 0) {

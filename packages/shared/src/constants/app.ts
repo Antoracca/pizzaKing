@@ -2,7 +2,8 @@
 
 export const APP_NAME = 'Pizza King';
 export const APP_TAGLINE = 'La meilleure pizza livrée chez vous';
-export const APP_DESCRIPTION = 'Commandez vos pizzas préférées en quelques clics';
+export const APP_DESCRIPTION =
+  'Commandez vos pizzas préférées en quelques clics';
 
 // Contact
 export const CONTACT_EMAIL = 'contact@pizzaking.com';
