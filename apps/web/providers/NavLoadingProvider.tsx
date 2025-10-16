@@ -37,7 +37,7 @@ export default function NavLoadingProvider() {
           const url = (args && args[2]) as string | null;
           if (!isSameTarget(url)) startNav();
         } catch (_e) { /* noop */ }
-        return originalPush.apply(window.history, args as any);
+        return originalPush.apply(window.history, args as [any, string, string?]);
       } as typeof window.history.pushState;
 
       window.history.replaceState = function (...args) {
@@ -45,7 +45,7 @@ export default function NavLoadingProvider() {
           const url = (args && args[2]) as string | null;
           if (!isSameTarget(url)) startNav();
         } catch (_e) { /* noop */ }
-        return originalReplace.apply(window.history, args as any);
+        return originalReplace.apply(window.history, args as [any, string, string?]);
       } as typeof window.history.replaceState;
 
     // Back/forward

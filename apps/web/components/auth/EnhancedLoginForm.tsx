@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import { Eye, EyeOff, Loader2, Mail, Lock, Phone as PhoneIcon, CheckCircle2, XCircle } from 'lucide-react';
@@ -43,10 +43,19 @@ export default function EnhancedLoginForm({ backHref = '/' }: EnhancedLoginFormP
   const [resendLoading, setResendLoading] = useState(false);
 
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { signIn, signInWithGoogle, resendEmailVerification } = useAuth();
 
-  const redirectParam = searchParams?.get('redirect');
+  const [redirectTo, setRedirectTo] = useState<string | null>(null);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const r = sp.get('redirect');
+      if (r) setRedirectTo(r);
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // We handle redirects explicitly after successful sign-in
 
@@ -302,7 +311,7 @@ export default function EnhancedLoginForm({ backHref = '/' }: EnhancedLoginFormP
             window.sessionStorage.setItem('pk_phone_login_success', '1');
           }
         } catch { /* empty */ }
-        router.replace(redirectParam || '/');
+          router.replace(redirectTo || '/');
       } else {
         await signIn((resolvedEmail as string).trim(), password);
         try {
@@ -310,7 +319,7 @@ export default function EnhancedLoginForm({ backHref = '/' }: EnhancedLoginFormP
             window.sessionStorage.setItem('pk_email_login_success', '1');
           }
         } catch { /* empty */ }
-        router.replace(redirectParam || '/');
+          router.replace(redirectTo || '/');
       }
       } catch (signInError: unknown) {
         // stay on the page and surface a clear message
