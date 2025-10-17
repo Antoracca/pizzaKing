@@ -1,26 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx shadcn@latest init:*)",
-      "Bash(npm install:*)",
-      "Bash(pnpm install:*)",
-      "Bash(pnpm add:*)",
-      "Bash(npx:*)",
-      "WebSearch",
-      "Bash(npm run build:*)",
-      "Bash(taskkill:*)",
-      "Bash(pnpm web:*)",
-      "Bash(pnpm dev:*)",
-      "Bash(ipconfig)",
-      "Bash(findstr:*)",
-      "Bash(pnpm dev:web:*)",
-      "Bash(vercel env add:*)",
-      "Bash(vercel env:*)",
-      "Bash(vercel:*)",
-      "Bash(git commit:*)",
-      "Bash(git push:*)",
-      "Bash(firebase deploy:*)",
-      "Bash(firebase use:*)"
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []

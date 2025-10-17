@@ -44,9 +44,10 @@ export default function NavAccountMenu({
   const router = useRouter();
 
   const handleAccountClick = () => {
-    start(); // Déclencher le loader immédiatement
+    console.log('[NavAccountMenu] Bouton Voir mon compte cliqué - Mobile');
     setOpen(false);
-    router.push('/account'); // Navigation programmatique
+    start();
+    router.push('/account');
   };
 
   useEffect(() => {
@@ -144,7 +145,7 @@ export default function NavAccountMenu({
 
         {/* Mobile Dropdown */}
         {open && (
-          <div className="absolute right-4 top-16 z-[90] w-72 origin-top-right rounded-2xl border border-gray-100 bg-white shadow-2xl ring-1 ring-black/5">
+          <div className="absolute right-4 top-16 z-[9999] w-72 origin-top-right rounded-2xl border border-gray-100 bg-white shadow-2xl ring-1 ring-black/5">
             <div className="p-4">
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-orange-200 bg-orange-50 text-sm font-bold text-orange-600">
@@ -189,15 +190,23 @@ export default function NavAccountMenu({
 
               <div className="flex flex-col gap-2">
                 <button
-                  onClick={handleAccountClick}
-                  className="block w-full rounded-xl border border-gray-200 px-3 py-2.5 text-center text-sm font-semibold text-gray-700 transition hover:border-orange-400 hover:text-orange-600"
+                  type="button"
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    handleAccountClick();
+                  }}
+                  className="block w-full rounded-xl border border-gray-200 px-3 py-2.5 text-center text-sm font-semibold text-gray-700 transition hover:border-orange-400 hover:text-orange-600 cursor-pointer z-10 relative touch-none"
                 >
                   Voir mon compte
                 </button>
                 <button
-                  onClick={handleSignOut}
+                  type="button"
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    handleSignOut();
+                  }}
                   disabled={signingOut}
-                  className="w-full rounded-xl border border-transparent py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-60"
+                  className="w-full rounded-xl border border-transparent py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-60 cursor-pointer z-10 relative touch-none"
                 >
                   <LogOut className="mr-2 inline h-4 w-4" />
                   {signingOut ? 'Déconnexion...' : 'Se déconnecter'}

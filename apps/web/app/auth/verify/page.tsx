@@ -118,7 +118,7 @@ export default function VerifyPage() {
   const [phoneStep, setPhoneStep] = useState<'idle' | 'code'>('idle');
   const [phoneLoading, setPhoneLoading] = useState(false);
   const [phoneError, setPhoneError] = useState('');
-  const [phoneEditable, setPhoneEditable] = useState(false);
+  const [isEditingPhone, setIsEditingPhone] = useState(false);
   const [cooldownTime, setCooldownTime] = useState(0);
   
   // Force le re-render du PhoneInput quand le pays est détecté
@@ -151,7 +151,7 @@ export default function VerifyPage() {
 
     // Récupérer le téléphone depuis le sessionStorage si disponible (post-inscription)
     let derivedPhone = user?.phoneNumber || firebaseUser?.phoneNumber || '';
-    
+
     try {
       if (typeof window !== 'undefined') {
         const signupPhone = window.sessionStorage.getItem('pk_signup_phone');
@@ -165,7 +165,7 @@ export default function VerifyPage() {
     setPhoneValue(derivedPhone);
     setPhoneCode('');
     setPhoneStep('idle');
-    setPhoneEditable(!derivedPhone); // Permettre l'édition seulement si pas de numéro
+    setIsEditingPhone(false); // Par défaut, pas en mode édition
   }, [phoneModalOpen, user?.phoneNumber, firebaseUser?.phoneNumber]);
 
   useEffect(() => {
@@ -300,6 +300,7 @@ export default function VerifyPage() {
     setPhoneLoading(false);
     setPhoneError('');
     setCooldownTime(0);
+    setIsEditingPhone(false);
     confirmationResult.current = null;
     if (recaptchaVerifier.current) {
       recaptchaVerifier.current.clear();
@@ -580,43 +581,45 @@ export default function VerifyPage() {
             </div>
 
             <div className="space-y-4 sm:space-y-5">
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-gray-700">
-                  Numéro de téléphone
-                </label>
-                <PhoneInput
-                  key={phoneInputKey}
-                  international
-                  defaultCountry={country}
-                  value={phoneValue || undefined}
-                  onChange={value => phoneEditable && setPhoneValue(value ?? '')}
-                  className="PhoneInput"
-                  numberInputProps={{
-                    required: true,
-                    disabled: !phoneEditable,
-                    'aria-invalid': false,
-                    'aria-describedby': 'verify-phone-help',
-                    className: `w-full rounded-2xl border border-gray-300 px-5 py-3.5 text-base focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200 ${
-                      !phoneEditable ? 'bg-gray-100 cursor-not-allowed' : ''
-                    }`,
-                  }}
-                  countrySelectProps={{
-                    disabled: !phoneEditable,
-                    className: `rounded-2xl border border-gray-300 bg-white px-3 py-3.5 text-base focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200 ${
-                      !phoneEditable ? 'bg-gray-100 cursor-not-allowed' : ''
-                    }`,
-                  }}
-                />
-                {!phoneEditable && phoneValue && (
-                  <button
-                    type="button"
-                    onClick={() => setPhoneEditable(true)}
-                    className="text-xs text-orange-600 hover:text-orange-500 underline mt-2"
-                  >
+              {!isEditingPhone ? (
+                <div className="flex flex-col gap-3">
+                  <label className="text-sm font-medium text-gray-700">
+                    Numéro de téléphone
+                  </label>
+                  <div className="w-full rounded-2xl border border-gray-300 bg-gray-50 px-5 py-3.5 text-base text-gray-800 font-medium">
+                    {phoneValue || 'Aucun numéro disponible'}
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Code OTP envoyé à ce numéro
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-gray-700">
                     Modifier le numéro de téléphone
-                  </button>
-                )}
-              </div>
+                  </label>
+                  <PhoneInput
+                    key={phoneInputKey}
+                    international
+                    defaultCountry={country}
+                    value={phoneValue || undefined}
+                    onChange={value => setPhoneValue(value ?? '')}
+                    className="PhoneInput"
+                    numberInputProps={{
+                      required: true,
+                      'aria-invalid': false,
+                      'aria-describedby': 'verify-phone-help',
+                      className: 'w-full rounded-2xl border border-gray-300 px-5 py-3.5 text-base focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200',
+                    }}
+                    countrySelectProps={{
+                      className: 'rounded-2xl border border-gray-300 bg-white px-3 py-3.5 text-base focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200',
+                    }}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Modifiez le numéro puis envoyez le code
+                  </p>
+                </div>
+              )}
 
               {phoneStep === 'code' && (
                 <div className="flex flex-col gap-2 sm:gap-3">
@@ -645,49 +648,57 @@ export default function VerifyPage() {
 
               <div className="flex flex-col gap-3">
                 {phoneStep === 'code' ? (
-                  <button
-                    type="button"
-                    onClick={handleConfirmPhoneCode}
-                    disabled={phoneLoading}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60 sm:py-2.5 sm:text-base"
-                  >
-                    {phoneLoading && (
-                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                    )}
-                    {phoneLoading ? 'Vérification…' : 'Confirmer le code'}
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleConfirmPhoneCode}
+                      disabled={phoneLoading}
+                      className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60 sm:py-2.5 sm:text-base"
+                    >
+                      {phoneLoading && (
+                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                      )}
+                      {phoneLoading ? 'Vérification…' : 'Confirmer le code'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSendPhoneCode}
+                      disabled={phoneLoading || cooldownTime > 0}
+                      className={`text-sm font-medium transition ${
+                        cooldownTime > 0
+                          ? 'text-gray-400 cursor-not-allowed'
+                          : 'text-orange-600 hover:text-orange-500'
+                      }`}
+                    >
+                      {cooldownTime > 0
+                        ? `Renvoyer le code (${cooldownTime}s)`
+                        : 'Renvoyer le code'
+                      }
+                    </button>
+                  </>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={handleSendPhoneCode}
-                    disabled={phoneLoading}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60 sm:py-2.5 sm:text-base"
-                  >
-                    {phoneLoading && (
-                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleSendPhoneCode}
+                      disabled={phoneLoading || !phoneValue}
+                      className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60 sm:py-2.5 sm:text-base"
+                    >
+                      {phoneLoading && (
+                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                      )}
+                      {phoneLoading ? 'Envoi du code…' : 'Envoyer le code'}
+                    </button>
+                    {!isEditingPhone && phoneValue && (
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingPhone(true)}
+                        className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-orange-400 hover:bg-orange-50 hover:text-orange-600 sm:py-2.5 sm:text-base"
+                      >
+                        Modifier le numéro
+                      </button>
                     )}
-                    {phoneLoading
-                      ? 'Envoi du code…'
-                      : 'Envoyer le code par SMS'}
-                  </button>
-                )}
-
-                {phoneStep === 'code' && (
-                  <button
-                    type="button"
-                    onClick={handleSendPhoneCode}
-                    disabled={phoneLoading || cooldownTime > 0}
-                    className={`text-sm font-medium ${
-                      cooldownTime > 0 
-                        ? 'text-gray-400 cursor-not-allowed' 
-                        : 'text-orange-600 hover:text-orange-500'
-                    }`}
-                  >
-                    {cooldownTime > 0 
-                      ? `Renvoyer le code (${cooldownTime}s)` 
-                      : 'Renvoyer le code'
-                    }
-                  </button>
+                  </>
                 )}
               </div>
 

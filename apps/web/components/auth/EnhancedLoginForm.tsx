@@ -608,7 +608,10 @@ export default function EnhancedLoginForm({ backHref = '/' }: EnhancedLoginFormP
               name="password"
               type={showPassword ? 'text' : 'password'}
               value={password}
-              onChange={event => setPassword(event.target.value)}
+              onChange={event => {
+                setPassword(event.target.value);
+                if (passwordHint) setPasswordHint(''); // Réinitialise l'erreur lors de la saisie
+              }}
               autoComplete="current-password"
               aria-invalid={Boolean(passwordHint)}
               aria-describedby="password-help"
