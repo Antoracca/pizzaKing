@@ -11,8 +11,7 @@ import {
   updateProfile,
   sendEmailVerification,
   GoogleAuthProvider,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   Auth,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, Firestore, Timestamp } from 'firebase/firestore';
@@ -264,8 +263,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       provider.setCustomParameters({
         prompt: 'select_account',
       });
-      await signInWithRedirect(auth, provider);
-      // User will be redirected, onAuthStateChanged will handle the rest
+
+      // Utiliser signInWithPopup (fonctionne avec localhost)
+      const result = await signInWithPopup(auth, provider);
+
+      // Check if user document exists
+      const userData = await fetchUserData(result.user.uid);
+
+      if (!userData) {
+        // Create user document if it doesn't exist
+        const names = result.user.displayName?.split(' ') || ['', ''];
+        const firstName = names[0] || 'Utilisateur';
+        const lastName = names.slice(1).join(' ') || 'Google';
+
+        await createUserDocument(
+          result.user.uid,
+          result.user.email || '',
+          firstName,
+          lastName,
+          result.user.phoneNumber || '',
+          'google'
+        );
+      }
+
+      // User will be handled by onAuthStateChanged
     } catch (error: any) {
       throw new Error(
         error.message || 'Erreur lors de la connexion avec Google'
@@ -334,38 +355,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     }
     return user.role === role;
   };
-
-  /**
-   * Handle Google redirect result
-   */
-  useEffect(() => {
-    const handleRedirectResult = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        if (result?.user) {
-          // Check if user document exists
-          const userData = await fetchUserData(result.user.uid);
-
-          if (!userData) {
-            // Create user document if it doesn't exist
-            const names = result.user.displayName?.split(' ') || ['', ''];
-            await createUserDocument(
-              result.user.uid,
-              result.user.email || '',
-              names[0],
-              names.slice(1).join(' '),
-              result.user.phoneNumber || '',
-              'google'
-            );
-          }
-        }
-      } catch (error) {
-        console.error('Error handling redirect result:', error);
-      }
-    };
-
-    handleRedirectResult();
-  }, [auth, db]);
 
   /**
    * Auth state listener

@@ -28,8 +28,8 @@ type Props = {
   onPhoneFormChange: (updates: Partial<Props['phoneForm']>) => void;
   onEmailUpdate: (event: FormEvent<HTMLFormElement>) => void;
   onSendEmailVerification: () => Promise<boolean>;
-  onSendOtp: () => Promise<boolean>;
-  onVerifyOtp: () => Promise<boolean>;
+  onSendOtp: () => Promise<{ success: boolean; error?: string }>;
+  onVerifyOtp: () => Promise<{ success: boolean; error?: string }>;
   emailVerified: boolean;
   phoneVerified: boolean;
 };
@@ -60,6 +60,7 @@ export default function SecurityTab(props: Props) {
   const [cooldown, setCooldown] = useState(0);
   const [emailCooldown, setEmailCooldown] = useState(0);
   const [emailSending, setEmailSending] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
   const prevStepRef = useRef(phoneForm.step);
 
   useEffect(() => {
@@ -77,29 +78,38 @@ export default function SecurityTab(props: Props) {
 
   const handlePhoneSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setPhoneError('');
 
     if (phoneForm.step === 'verify') {
-      const verified = await onVerifyOtp();
-      if (verified) {
+      const result = await onVerifyOtp();
+      if (result.success) {
         setCooldown(0);
+        setPhoneError('');
         setShowPhoneModal(false);
+      } else if (result.error) {
+        setPhoneError(result.error);
       }
       return;
     }
 
     onPhoneFormChange({ code: '' });
-    const success = await onSendOtp();
-    if (success) {
+    const result = await onSendOtp();
+    if (result.success) {
       onPhoneFormChange({ step: 'verify' });
       setCooldown(24);
+      setPhoneError('');
     } else {
       onPhoneFormChange({ step: 'idle' });
+      if (result.error) {
+        setPhoneError(result.error);
+      }
     }
   };
 
   const handleOpenPhoneModal = (mode: 'verify' | 'edit') => {
     setPhoneModalMode(mode);
     setShowPhoneModal(true);
+    setPhoneError('');
     const basePhone =
       mode === 'verify'
         ? user.phoneNumber ?? ''
@@ -115,6 +125,7 @@ export default function SecurityTab(props: Props) {
     setShowPhoneModal(false);
     setPhoneModalMode('edit');
     setCooldown(0);
+    setPhoneError('');
     onPhoneFormChange({
       phone: user.phoneNumber ?? phoneForm.phone ?? '',
       code: '',
@@ -153,13 +164,18 @@ export default function SecurityTab(props: Props) {
 
   const handleResendCode = async () => {
     if (phoneSaving || cooldown > 0) return;
+    setPhoneError('');
     onPhoneFormChange({ code: '', step: 'idle' });
-    const success = await onSendOtp();
-    if (success) {
+    const result = await onSendOtp();
+    if (result.success) {
       onPhoneFormChange({ step: 'verify' });
       setCooldown(24);
+      setPhoneError('');
     } else {
       onPhoneFormChange({ step: 'idle' });
+      if (result.error) {
+        setPhoneError(result.error);
+      }
     }
   };
 
@@ -374,6 +390,12 @@ export default function SecurityTab(props: Props) {
         onClose={handleClosePhoneModal}
       >
         <form className="space-y-4" onSubmit={handlePhoneSubmit}>
+          {phoneError && (
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+              {phoneError}
+            </div>
+          )}
+
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700">
               {verifyMode ? 'Numéro enregistré' : 'Nouveau numéro de téléphone'}
@@ -388,7 +410,10 @@ export default function SecurityTab(props: Props) {
                 international
                 defaultCountry={country}
                 value={phoneForm.phone || undefined}
-                onChange={value => onPhoneFormChange({ phone: value ?? '' })}
+                onChange={value => {
+                  onPhoneFormChange({ phone: value ?? '' });
+                  setPhoneError('');
+                }}
                 className="PhoneInput"
                 numberInputProps={{
                   required: true,
@@ -416,9 +441,10 @@ export default function SecurityTab(props: Props) {
               <input
                 type="text"
                 value={phoneForm.code}
-                onChange={event =>
-                  onPhoneFormChange({ code: event.target.value })
-                }
+                onChange={event => {
+                  onPhoneFormChange({ code: event.target.value });
+                  setPhoneError('');
+                }}
                 inputMode="numeric"
                 className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-base uppercase tracking-widest shadow-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
                 placeholder="123456"

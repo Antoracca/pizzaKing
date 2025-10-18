@@ -9,28 +9,42 @@ export default function PostLoginToast() {
   const [show, setShow] = useState(false);
   const [message, setMessage] = useState<string>('');
 
+  // Check for login flags on mount and pathname change
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (pathname !== '/') return;
+
     const emailFlag = window.sessionStorage.getItem('pk_email_login_success');
     const phoneFlag = window.sessionStorage.getItem('pk_phone_login_success');
-    if (pathname === '/') {
-      if (emailFlag === '1') {
-        setMessage("Connecté avec l'email");
-        setShow(true);
-        window.sessionStorage.removeItem('pk_email_login_success');
-        const t = setTimeout(() => setShow(false), 2500);
-        return () => clearTimeout(t);
-      }
-      if (phoneFlag === '1') {
-        setMessage('Connecté avec le numéro de téléphone');
-        setShow(true);
-        window.sessionStorage.removeItem('pk_phone_login_success');
-        const t = setTimeout(() => setShow(false), 2500);
-        return () => clearTimeout(t);
-      }
+    const googleFlag = window.sessionStorage.getItem('pk_google_login_success');
+
+    if (emailFlag === '1') {
+      setMessage("Connecté avec l'email");
+      setShow(true);
+      window.sessionStorage.removeItem('pk_email_login_success');
+    } else if (phoneFlag === '1') {
+      setMessage('Connecté avec le numéro de téléphone');
+      setShow(true);
+      window.sessionStorage.removeItem('pk_phone_login_success');
+    } else if (googleFlag === '1') {
+      setMessage('Connexion avec Google réussie');
+      setShow(true);
+      window.sessionStorage.removeItem('pk_google_login_success');
     }
-    return;
   }, [pathname]);
+
+  // Auto-hide after 5 seconds when shown
+  useEffect(() => {
+    if (!show) return;
+
+    const timeoutId = setTimeout(() => {
+      setShow(false);
+    }, 5000);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [show]);
 
   if (!show) return null;
 

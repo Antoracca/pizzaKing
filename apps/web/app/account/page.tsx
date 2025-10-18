@@ -34,6 +34,7 @@ import {
   type PhoneForm,
 } from '@/components/account';
 import { auth, storage } from '@/lib/firebase';
+import { checkPhoneExists, getUserByPhone } from '@/lib/auth/validation';
 import {
   updateProfile as updateFirebaseProfile,
   updateEmail as updateFirebaseEmail,
@@ -312,15 +313,35 @@ export default function AccountPage() {
     }
   };
 
-  const handleSendOtp = async (): Promise<boolean> => {
-    if (!firebaseUser || !phoneForm.phone) return false;
+  const handleSendOtp = async (): Promise<{ success: boolean; error?: string }> => {
+    if (!firebaseUser || !phoneForm.phone) {
+      return { success: false, error: "Numéro de téléphone manquant." };
+    }
     if (!ensureRecaptcha()) {
-      showFeedback("Vérification indisponible. Rechargez la page.", 'error');
-      return false;
+      const errorMsg = "Vérification indisponible. Rechargez la page.";
+      showFeedback(errorMsg, 'error');
+      return { success: false, error: errorMsg };
     }
 
     setPhoneSaving(true);
     try {
+      // Vérifier si le numéro est déjà utilisé par un autre compte
+      const trimmedPhone = phoneForm.phone.trim();
+      const phoneExists = await checkPhoneExists(trimmedPhone);
+
+      if (phoneExists) {
+        // Vérifier si c'est le numéro de l'utilisateur actuel
+        const phoneUserDoc = await getUserByPhone(trimmedPhone);
+        const phoneUserId = (phoneUserDoc as any)?.id;
+
+        // Si le numéro appartient à un autre utilisateur
+        if (phoneUserId && phoneUserId !== firebaseUser.uid) {
+          const errorMsg = "Ce numéro de téléphone est déjà associé à un autre compte. Veuillez utiliser un autre numéro.";
+          showFeedback(errorMsg, 'error');
+          return { success: false, error: errorMsg };
+        }
+      }
+
       const confirmation = await signInWithPhoneNumber(
         auth,
         phoneForm.phone,
@@ -329,18 +350,54 @@ export default function AccountPage() {
       phoneConfirmation.current = confirmation;
       setPhoneForm(prev => ({ ...prev, step: 'verify' }));
       showFeedback("Code SMS envoyé.");
-      return true;
+      return { success: true };
     } catch (error: any) {
       console.error(error);
-      showFeedback(error?.message ?? "Impossible d'envoyer le code.", 'error');
-      return false;
+
+      // Traduire les erreurs Firebase en messages clairs
+      let errorMsg = "Impossible d'envoyer le code.";
+      const errorCode = error?.code || '';
+
+      switch (errorCode) {
+        case 'auth/invalid-phone-number':
+          errorMsg = "Le numéro de téléphone est invalide. Vérifiez le format (ex: +33612345678).";
+          break;
+        case 'auth/missing-phone-number':
+          errorMsg = "Veuillez saisir un numéro de téléphone.";
+          break;
+        case 'auth/quota-exceeded':
+          errorMsg = "Trop de tentatives. Veuillez réessayer plus tard.";
+          break;
+        case 'auth/user-disabled':
+          errorMsg = "Votre compte a été désactivé. Contactez le support.";
+          break;
+        case 'auth/operation-not-allowed':
+          errorMsg = "L'authentification par téléphone n'est pas activée.";
+          break;
+        case 'auth/too-many-requests':
+          errorMsg = "Trop de demandes. Veuillez patienter quelques minutes.";
+          break;
+        default:
+          // Si le message contient "too long" ou "invalid"
+          if (error?.message?.toLowerCase().includes('too long') ||
+              error?.message?.toLowerCase().includes('invalid')) {
+            errorMsg = "Le numéro de téléphone saisi n'est pas valide. Utilisez le format international (ex: +33612345678).";
+          } else if (error?.message) {
+            errorMsg = error.message;
+          }
+      }
+
+      showFeedback(errorMsg, 'error');
+      return { success: false, error: errorMsg };
     } finally {
       setPhoneSaving(false);
     }
   };
 
-  const handleVerifyOtp = async (): Promise<boolean> => {
-    if (!firebaseUser || !phoneConfirmation.current || !phoneForm.code) return false;
+  const handleVerifyOtp = async (): Promise<{ success: boolean; error?: string }> => {
+    if (!firebaseUser || !phoneConfirmation.current || !phoneForm.code) {
+      return { success: false, error: "Veuillez saisir le code SMS reçu." };
+    }
     setPhoneSaving(true);
     try {
       const credential = PhoneAuthProvider.credential(
@@ -355,11 +412,45 @@ export default function AccountPage() {
       phoneConfirmation.current = null;
       setPhoneForm(prev => ({ ...prev, code: '', step: 'idle' }));
       showFeedback('Numéro de téléphone vérifié.');
-      return true;
+      return { success: true };
     } catch (error: any) {
       console.error(error);
-      showFeedback(error?.message ?? 'Code invalide.', 'error');
-      return false;
+
+      // Traduire les erreurs Firebase en messages clairs
+      let errorMsg = 'Code invalide.';
+      const errorCode = error?.code || '';
+
+      switch (errorCode) {
+        case 'auth/invalid-verification-code':
+          errorMsg = "Le code saisi est incorrect. Vérifiez et réessayez.";
+          break;
+        case 'auth/code-expired':
+          errorMsg = "Le code a expiré. Demandez un nouveau code.";
+          break;
+        case 'auth/missing-verification-code':
+          errorMsg = "Veuillez saisir le code SMS reçu.";
+          break;
+        case 'auth/credential-already-in-use':
+          errorMsg = "Ce numéro est déjà utilisé par un autre compte.";
+          break;
+        case 'auth/requires-recent-login':
+          errorMsg = "Veuillez vous reconnecter puis réessayer.";
+          break;
+        case 'auth/too-many-requests':
+          errorMsg = "Trop de tentatives. Veuillez patienter quelques minutes.";
+          break;
+        default:
+          if (error?.message?.toLowerCase().includes('invalid')) {
+            errorMsg = "Le code saisi est incorrect. Vérifiez et réessayez.";
+          } else if (error?.message?.toLowerCase().includes('expired')) {
+            errorMsg = "Le code a expiré. Demandez un nouveau code.";
+          } else if (error?.message) {
+            errorMsg = error.message;
+          }
+      }
+
+      showFeedback(errorMsg, 'error');
+      return { success: false, error: errorMsg };
     } finally {
       setPhoneSaving(false);
     }

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Eye, EyeOff, Loader2, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Mail, Lock, Pizza } from 'lucide-react';
 import { useAuth } from '@pizza-king/shared';
 import {
   validateEmail,
@@ -16,6 +16,7 @@ export default function LoginForm() {
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [checking, setChecking] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -147,15 +148,32 @@ export default function LoginForm() {
   const handleGoogleLogin = async () => {
     setError('');
     setInfo('');
-    setLoading(true);
+    setGoogleLoading(true);
 
     try {
+      // signInWithPopup ouvre une popup Google pour l'authentification
       await signInWithGoogle();
+
+      // Marquer le succès de la connexion Google
+      try {
+        if (typeof window !== 'undefined') {
+          window.sessionStorage.setItem('pk_google_login_success', '1');
+        }
+      } catch { /* empty */ }
+
+      // Forcer un rechargement complet de la page pour mettre à jour l'état de connexion
+      window.location.href = redirectParam || '/';
     } catch (googleError: any) {
       let message = 'Connexion Google impossible. Réessayez.';
       switch (googleError?.code) {
         case 'auth/popup-closed-by-user':
           message = 'Fenêtre fermée avant la validation.';
+          break;
+        case 'auth/cancelled-popup-request':
+          message = 'Demande annulée. Réessayez.';
+          break;
+        case 'auth/popup-blocked':
+          message = 'Popup bloquée par le navigateur. Autorisez les popups pour ce site.';
           break;
         case 'auth/network-request-failed':
           message = 'Problème réseau. Vérifiez votre connexion.';
@@ -164,7 +182,7 @@ export default function LoginForm() {
           if (googleError?.message) message = googleError.message;
       }
       setError(message);
-      setLoading(false);
+      setGoogleLoading(false);
     }
   };
 
@@ -300,7 +318,7 @@ export default function LoginForm() {
 
       <button
         onClick={handleGoogleLogin}
-        disabled={loading}
+        disabled={googleLoading}
         className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden>
@@ -333,6 +351,38 @@ export default function LoginForm() {
           Inscrivez-vous
         </a>
       </p>
+
+      {/* Loader fullscreen - Connexion Google uniquement */}
+      {googleLoading && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-6 rounded-3xl bg-white p-10 shadow-2xl">
+            <div className="relative">
+              <Pizza
+                className="h-16 w-16 text-orange-500 animate-spin"
+                style={{ animationDuration: '2s' }}
+              />
+              <div className="absolute inset-0 -z-10 rounded-full bg-orange-400 blur-xl opacity-30 animate-pulse" />
+            </div>
+            <div className="text-center">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Connexion avec Google en cours...
+              </h3>
+              <p className="text-sm text-gray-600">
+                Authentification et création de votre session
+              </p>
+            </div>
+            <div className="flex gap-2">
+              {[0, 1, 2].map(i => (
+                <div
+                  key={i}
+                  className="h-2 w-2 rounded-full bg-orange-500 animate-bounce"
+                  style={{ animationDelay: `${i * 0.2}s` }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
