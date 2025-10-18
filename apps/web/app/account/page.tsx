@@ -46,6 +46,8 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import type { ConfirmationResult } from 'firebase/auth';
 
+const PHONE_RECAPTCHA_ID = 'account-phone-recaptcha';
+
 const tabs: Array<{ id: TabId; name: string; icon: React.ElementType }> = [
   { id: 'overview', name: 'Aperçu', icon: Sparkles },
   { id: 'settings', name: 'Paramètres', icon: Settings },
@@ -124,26 +126,44 @@ export default function AccountPage() {
     }
   }, [user, firebaseUser]);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
+  const ensureRecaptcha = (): boolean => {
+    if (typeof window === 'undefined') return false;
 
     if (!recaptchaVerifier.current) {
+      let container = document.getElementById(PHONE_RECAPTCHA_ID);
+      if (!container) {
+        container = document.createElement('div');
+        container.id = PHONE_RECAPTCHA_ID;
+        container.style.display = 'none';
+        document.body.appendChild(container);
+      }
+
       try {
         recaptchaVerifier.current = new RecaptchaVerifier(
           auth,
-          'phone-recaptcha',
+          PHONE_RECAPTCHA_ID,
           {
             size: 'invisible',
           }
         );
       } catch (error) {
-        // ignored
+        console.error('Failed to initialize phone Recaptcha:', error);
+        recaptchaVerifier.current = null;
+        return false;
       }
     }
+
+    return true;
+  };
+
+  useEffect(() => {
+    ensureRecaptcha();
 
     return () => {
       recaptchaVerifier.current?.clear();
       recaptchaVerifier.current = null;
+      const container = document.getElementById(PHONE_RECAPTCHA_ID);
+      container?.remove();
     };
   }, []);
 
@@ -272,28 +292,31 @@ export default function AccountPage() {
     }
   };
 
-  const handleSendVerificationEmail = async () => {
-    if (!firebaseUser || isGoogleProvider) {
-      showFeedback("Votre adresse email Google est déjà vérifiée.");
-      return;
+  const handleSendVerificationEmail = async (): Promise<boolean> => {
+    if (!firebaseUser) return false;
+    if (isGoogleProvider || emailVerified) {
+      showFeedback("Votre adresse email est déjà vérifiée.");
+      return false;
     }
     try {
       await sendEmailVerification(firebaseUser);
       showFeedback("Email de vérification envoyé.");
+      return true;
     } catch (error: any) {
       console.error(error);
       showFeedback(
         error?.message ?? "Erreur lors de l'envoi de l'email",
         'error'
       );
+      return false;
     }
   };
 
-  const handleSendOtp = async () => {
-    if (!firebaseUser || !phoneForm.phone) return;
-    if (!recaptchaVerifier.current) {
+  const handleSendOtp = async (): Promise<boolean> => {
+    if (!firebaseUser || !phoneForm.phone) return false;
+    if (!ensureRecaptcha()) {
       showFeedback("Vérification indisponible. Rechargez la page.", 'error');
-      return;
+      return false;
     }
 
     setPhoneSaving(true);
@@ -301,22 +324,23 @@ export default function AccountPage() {
       const confirmation = await signInWithPhoneNumber(
         auth,
         phoneForm.phone,
-        recaptchaVerifier.current
+        recaptchaVerifier.current!
       );
       phoneConfirmation.current = confirmation;
       setPhoneForm(prev => ({ ...prev, step: 'verify' }));
       showFeedback("Code SMS envoyé.");
+      return true;
     } catch (error: any) {
       console.error(error);
       showFeedback(error?.message ?? "Impossible d'envoyer le code.", 'error');
+      return false;
     } finally {
       setPhoneSaving(false);
     }
   };
 
-  const handleVerifyOtp = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!firebaseUser || !phoneConfirmation.current || !phoneForm.code) return;
+  const handleVerifyOtp = async (): Promise<boolean> => {
+    if (!firebaseUser || !phoneConfirmation.current || !phoneForm.code) return false;
     setPhoneSaving(true);
     try {
       const credential = PhoneAuthProvider.credential(
@@ -331,9 +355,11 @@ export default function AccountPage() {
       phoneConfirmation.current = null;
       setPhoneForm(prev => ({ ...prev, code: '', step: 'idle' }));
       showFeedback('Numéro de téléphone vérifié.');
+      return true;
     } catch (error: any) {
       console.error(error);
       showFeedback(error?.message ?? 'Code invalide.', 'error');
+      return false;
     } finally {
       setPhoneSaving(false);
     }
@@ -385,7 +411,9 @@ export default function AccountPage() {
             fileInputRef={fileInputRef}
             onPhotoClick={handlePhotoClick}
             onPhotoChange={handlePhotoChange}
-            onSendVerificationEmail={handleSendVerificationEmail}
+            onSendVerificationEmail={() => {
+              void handleSendVerificationEmail();
+            }}
           />
 
           <MobileTabs
@@ -404,6 +432,8 @@ export default function AccountPage() {
                 user={user}
                 profileForm={profileForm}
                 preferencesForm={preferencesForm}
+                emailVerified={emailVerified}
+                phoneVerified={Boolean(user.phoneVerified)}
                 onProfileFormChange={updates =>
                   setProfileForm(prev => ({ ...prev, ...updates }))
                 }
@@ -423,6 +453,9 @@ export default function AccountPage() {
                 phoneForm={phoneForm}
                 emailSaving={emailSaving}
                 phoneSaving={phoneSaving}
+                onSendEmailVerification={handleSendVerificationEmail}
+                emailVerified={emailVerified}
+                phoneVerified={Boolean(user.phoneVerified)}
                 onEmailFormChange={updates =>
                   setEmailForm(prev => ({ ...prev, ...updates }))
                 }
@@ -473,7 +506,9 @@ export default function AccountPage() {
               fileInputRef={fileInputRef}
               onPhotoClick={handlePhotoClick}
               onPhotoChange={handlePhotoChange}
-              onSendVerificationEmail={handleSendVerificationEmail}
+              onSendVerificationEmail={() => {
+                void handleSendVerificationEmail();
+              }}
               onManageProfile={() => setActiveTab('settings')}
             />
           </motion.div>
@@ -518,6 +553,8 @@ export default function AccountPage() {
                     user={user}
                     profileForm={profileForm}
                     preferencesForm={preferencesForm}
+                    emailVerified={emailVerified}
+                    phoneVerified={Boolean(user.phoneVerified)}
                     onProfileFormChange={updates =>
                       setProfileForm(prev => ({ ...prev, ...updates }))
                     }
@@ -543,6 +580,9 @@ export default function AccountPage() {
                     phoneForm={phoneForm}
                     emailSaving={emailSaving}
                     phoneSaving={phoneSaving}
+                    onSendEmailVerification={handleSendVerificationEmail}
+                    emailVerified={emailVerified}
+                    phoneVerified={Boolean(user.phoneVerified)}
                     onEmailFormChange={updates =>
                       setEmailForm(prev => ({ ...prev, ...updates }))
                     }
