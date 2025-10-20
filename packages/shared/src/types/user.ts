@@ -1,6 +1,13 @@
 import { Timestamp } from 'firebase/firestore';
 
-export type UserRole = 'customer' | 'admin' | 'deliverer' | 'superadmin';
+export type UserRole =
+  | 'customer'
+  | 'admin'
+  | 'deliverer'
+  | 'superadmin'
+  | 'support_agent'
+  | 'support_manager'
+  | 'support_backoffice';
 export type UserStatus = 'pending' | 'active' | 'suspended' | 'deleted';
 export type LoyaltyTier = 'bronze' | 'silver' | 'gold' | 'platinum';
 export type Language = 'fr' | 'en' | 'ar';

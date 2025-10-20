@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import { Eye, EyeOff, Loader2, CheckCircle2, XCircle, Pizza } from 'lucide-react';
-import { useAuth } from '@pizza-king/shared';
+import { useAuth } from '@pizza-king/shared/src/hooks/useAuth';
 import {
   validateEmail,
   validatePassword,
@@ -284,13 +284,47 @@ export default function SignupForm() {
     setLoading(true);
 
     try {
-      await signUp(
+      const userCredential = await signUp(
         form.email.trim(),
         form.password,
         form.firstName.trim(),
         form.lastName.trim(),
         form.phone.trim()
       );
+
+      // ⏳ Polling en arrière-plan pour le custom claim (non bloquant)
+      if (userCredential?.user) {
+        // Fonction inline simple et robuste
+        (async () => {
+          try {
+            console.log('🔄 [Email] Démarrage du polling pour le custom claim...');
+
+            // Attendre que le claim soit ajouté (max 10 secondes)
+            for (let i = 0; i < 20; i++) {
+              await new Promise(resolve => setTimeout(resolve, 500));
+
+              // Force refresh et vérifie le claim
+              const token = await userCredential.user.getIdToken(true);
+
+              // Decode le JWT
+              try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const payload = JSON.parse(atob(base64));
+
+                if (payload.role) {
+                  console.log(`✅ [Email] Custom claim détecté après ${((i + 1) * 0.5).toFixed(1)}s`);
+                  break;
+                }
+              } catch (e) {
+                // Ignore decode errors
+              }
+            }
+          } catch (error) {
+            console.error('❌ [Email] Erreur polling:', error);
+          }
+        })();
+      }
 
       // Marquer le succès de l'inscription pour pré-charger les données
       try {
@@ -356,7 +390,7 @@ export default function SignupForm() {
                 onChange={event => handleChange('firstName', event.target.value)}
                 autoComplete="given-name"
                 className="w-full rounded-2xl border border-gray-300 px-5 py-3.5 text-base focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200"
-                placeholder="Jean"
+                placeholder="Maelis"
                 required
               />
               {firstNameHint && (
@@ -378,7 +412,7 @@ export default function SignupForm() {
                 onChange={event => handleChange('lastName', event.target.value)}
                 autoComplete="family-name"
                 className="w-full rounded-2xl border border-gray-300 px-5 py-3.5 text-base focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200"
-                placeholder="Dupont"
+                placeholder="Fifame"
                 required
               />
               {lastNameHint && (
@@ -402,7 +436,7 @@ export default function SignupForm() {
                 aria-invalid={emailStatus === 'invalid'}
                 aria-describedby="signup-email-help"
                 className="w-full rounded-2xl border border-gray-300 px-5 py-3.5 pr-12 text-base focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200"
-                placeholder="vous@example.com"
+                placeholder="maelis@gmail.com"
                 required
               />
               <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2">
@@ -445,6 +479,7 @@ export default function SignupForm() {
                 required: true,
                 'aria-invalid': phoneStatus === 'invalid',
                 'aria-describedby': 'signup-phone-help',
+                placeholder: '05 22 71 22',
                 className:
                   'w-full rounded-2xl border border-gray-300 px-5 py-3.5 pr-12 text-base focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200',
               }}

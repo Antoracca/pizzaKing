@@ -1,7 +1,10 @@
 import * as functions from 'firebase-functions';
-import * as admin from 'admin';
-import { COLLECTIONS } from '@pizza-king/shared';
-import { UserRole } from '@pizza-king/shared';
+import * as admin from 'firebase-admin';
+import type { UserRole } from '../constants';
+
+const COLLECTIONS = {
+  USERS: 'users'
+};
 
 interface SetUserRoleRequest {
   userId: string;
@@ -23,8 +26,8 @@ export const setUserRole = functions.https.onCall(
     }
 
     // Check if caller is admin
-    const callerDoc = await admin
-      .firestore()
+    const dbCheck = admin.firestore();
+    const callerDoc = await dbCheck
       .collection(COLLECTIONS.USERS)
       .doc(context.auth.uid)
       .get();

@@ -1,8 +1,14 @@
 import * as functions from 'firebase-functions';
-import { initializeFirebaseAdmin } from '@pizza-king/firebase-config';
+import * as admin from 'firebase-admin';
 
 // Initialize Firebase Admin
-initializeFirebaseAdmin();
+admin.initializeApp();
+
+// Configure Firestore to use 'pizzaking' database (MUST be done immediately after initializeApp)
+const db = admin.firestore();
+db.settings({
+  databaseId: 'pizzaking',
+});
 
 /**
  * Example HTTP Function
@@ -59,7 +65,7 @@ export const onOrderCreated = functions.firestore
  */
 export const dailyCleanup = functions.pubsub
   .schedule('0 0 * * *')
-  .timeZone('Africa/Ouagadougou')
+  .timeZone('Africa/Central Africa republic')
   .onRun(async context => {
     functions.logger.info('Running daily cleanup');
 
@@ -72,34 +78,5 @@ export const dailyCleanup = functions.pubsub
 
 // Export authentication functions
 export { onUserCreate } from './triggers/onUserCreate';
-export { verifyPhoneNumber } from './https/verifyPhoneNumber';
-export { sendVerificationCode } from './https/sendVerificationCode';
 export { setUserRole } from './https/setUserRole';
-
-// Export order functions
-export { createOrder } from './https/orders/createOrder';
-export { updateOrderStatus } from './https/orders/updateOrderStatus';
-export { getOrderById } from './https/orders/getOrderById';
-
-// Export menu functions
-export { getMenu } from './https/menu/getMenu';
-export { managePizza } from './https/menu/managePizza';
-
-// Export triggers
-export { onOrderUpdate } from './triggers/onOrderUpdate';
-
-// Export scheduled functions
-export { dailyAnalytics } from './scheduled/dailyAnalytics';
-export { expirePromotions } from './scheduled/expirePromotions';
-
-// Export payment functions
-export { createStripePaymentIntent } from './https/payments/createStripePaymentIntent';
-export { handleStripeWebhook } from './https/payments/handleStripeWebhook';
-export { createPayPalOrder } from './https/payments/createPayPalOrder';
-export { capturePayPalOrder } from './https/payments/capturePayPalOrder';
-export { initiateMobileMoneyPayment } from './https/payments/initiateMobileMoneyPayment';
-export { handleMobileMoneyCallback } from './https/payments/handleMobileMoneyCallback';
-export {
-  markCashOnDelivery,
-  confirmCashPaymentReceived,
-} from './https/payments/markCashOnDelivery';
+export { setCustomClaims } from './https/setCustomClaims';

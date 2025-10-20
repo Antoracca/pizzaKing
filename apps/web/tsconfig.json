@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "baseUrl": ".",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "jsx": "preserve",
     "module": "ESNext",
@@ -14,6 +15,11 @@
       }
     ],
     "paths": {
+      "@pizza-king/support-domain": ["../../packages/support-domain/src/index.ts"],
+      "@pizza-king/shared": ["../../packages/shared/src/index.ts"],
+      "@pizza-king/firebase-config": ["../../packages/firebase-config/src/index.ts"],
+      "@pizza-king/firebase-config/*": ["../../packages/firebase-config/src/*"],
+      "@pizza-king/*": ["../../packages/*/src/index.ts"],
       "@/*": ["./*"],
       "@/components/*": ["./components/*"],
       "@/lib/*": ["./lib/*"],

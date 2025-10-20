@@ -15,7 +15,7 @@ import {
 } from 'firebase/auth';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Loader2, MailCheck, MailQuestion, Smartphone, X, ArrowLeft } from 'lucide-react';
-import { useAuth, type UserStatus, type User } from '@pizza-king/shared';
+import { useAuth, type UserStatus, type User } from '@pizza-king/shared/src/hooks/useAuth';
 import { db, auth } from '@/lib/firebase';
 import { useDetectedCountry } from '@/lib/utils/countryDetection';
 

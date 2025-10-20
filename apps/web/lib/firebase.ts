@@ -5,6 +5,7 @@ import { getAuth, connectAuthEmulator } from 'firebase/auth';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAnalytics, type Analytics } from 'firebase/analytics';
+import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
 
 // Firebase configuration - PizzaKing Production
 const firebaseConfig = {
@@ -33,14 +34,14 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app);
 
 // --- Option simple (recommandée) ---
-const databaseId = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_ID;
-const db = databaseId ? getFirestore(app, databaseId) : getFirestore(app);
+const db = getFirestore(app, 'pizzaking');
 
 // --- Option avancée (si tu tiens à un databaseId dédié) ---
 // initializeFirestore(app, {}, 'pizzaking');
 // const db = getFirestore(app);
 
 const storage = getStorage(app);
+const functions = getFunctions(app, 'us-central1'); // Région explicite
 
 // Initialize Analytics only on client-side
 let analytics: Analytics | null = null;
@@ -60,7 +61,7 @@ console.log(
   firebaseConfig.projectId
 );
 
-export { app, auth, db, storage, analytics, isFirebaseConfigured };
+export { app, auth, db, storage, functions, analytics, isFirebaseConfigured };
 
 // Optional: connect to Firebase emulators in local dev
 if (
@@ -72,8 +73,9 @@ if (
       disableWarnings: true,
     });
     connectFirestoreEmulator(db, 'localhost', 8080);
+    connectFunctionsEmulator(functions, 'localhost', 5001);
     // eslint-disable-next-line no-console
-    console.log('Connected to Firebase emulators (auth, firestore).');
+    console.log('Connected to Firebase emulators (auth, firestore, functions).');
   } catch {
     // eslint-disable-next-line no-console
     console.log('Emulator connection failed or already connected.');

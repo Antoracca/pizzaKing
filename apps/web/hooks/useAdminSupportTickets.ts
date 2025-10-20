@@ -9,14 +9,13 @@ import {
   orderBy,
   query,
   where,
-  type Unsubscribe,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type {
-  SupportTicket,
-  SupportTicketStatus,
-  User,
-} from '@pizza-king/shared';
+import type { SupportTicket, SupportTicketStatus } from '@pizza-king/shared/src/types/support';
+import type { User } from '@pizza-king/shared/src/types/user';
+
+const SUPPORT_TICKETS_COLLECTION = 'supportTickets';
+const USERS_COLLECTION = 'users';
 
 export type AdminSupportTicket = SupportTicket & {
   customer: User | null;
@@ -24,106 +23,102 @@ export type AdminSupportTicket = SupportTicket & {
 
 type UseAdminSupportTicketsResult = {
   tickets: AdminSupportTicket[];
+  unassignedTickets: AdminSupportTicket[];
+  myTickets: AdminSupportTicket[];
   loading: boolean;
   error: string | null;
 };
 
-const SUPPORT_TICKETS_COLLECTION = 'supportTickets';
-const USERS_COLLECTION = 'users';
-
 export function useAdminSupportTickets(
-  status: SupportTicketStatus | 'all'
+  status: SupportTicketStatus | 'all',
+  agentId?: string | null
 ): UseAdminSupportTicketsResult {
   const [tickets, setTickets] = useState<AdminSupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let unsubscribe: Unsubscribe | null = null;
-    let cancelled = false;
-
     setLoading(true);
     setError(null);
 
     const baseRef = collection(db, SUPPORT_TICKETS_COLLECTION);
-    const q =
-      status === 'all'
-        ? query(baseRef, orderBy('updatedAt', 'desc'))
-        : query(
-            baseRef,
-            where('status', '==', status),
-            orderBy('updatedAt', 'desc')
-          );
 
-    unsubscribe = onSnapshot(
+    // Query simple : juste orderBy sans where pour éviter les problèmes d'index
+    const q = query(baseRef, orderBy('updatedAt', 'desc'));
+
+    const unsubscribe = onSnapshot(
       q,
       async snapshot => {
         try {
-          const baseTickets = snapshot.docs.map(docSnap => ({
-            id: docSnap.id,
-            ...(docSnap.data() as Omit<SupportTicket, 'id'>),
+          const ticketsData = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...(doc.data() as Omit<SupportTicket, 'id'>),
           }));
 
+          // Filtrer par statut en mémoire
+          const filteredByStatus = status === 'all'
+            ? ticketsData
+            : ticketsData.filter(ticket => ticket.status === status);
+
+          // Enrich with customer data
           const userIds = Array.from(
-            new Set(baseTickets.map(ticket => ticket.userId).filter(Boolean))
+            new Set(filteredByStatus.map(ticket => ticket.userId))
           );
 
           const userEntries = await Promise.all(
             userIds.map(async userId => {
-              const userRef = doc(db, USERS_COLLECTION, userId);
-              const userSnap = await getDoc(userRef);
-              if (!userSnap.exists()) return [userId, null] as const;
-              return [userId, userSnap.data() as User] as const;
+              try {
+                const userRef = doc(db, USERS_COLLECTION, userId);
+                const userSnap = await getDoc(userRef);
+                if (!userSnap.exists()) return [userId, null] as const;
+                const userData = userSnap.data() as User;
+                return [userId, { ...userData, id: userSnap.id }] as const;
+              } catch {
+                return [userId, null] as const;
+              }
             })
           );
 
-          if (cancelled) return;
-
           const userMap = new Map<string, User | null>(userEntries);
 
-          setTickets(
-            baseTickets.map(ticket => ({
-              ...ticket,
-              customer: userMap.get(ticket.userId) ?? null,
-            }))
-          );
+          const enriched: AdminSupportTicket[] = filteredByStatus.map(ticket => ({
+            ...ticket,
+            customer: userMap.get(ticket.userId) ?? null,
+          }));
+
+          setTickets(enriched);
           setLoading(false);
         } catch (err) {
-          if (cancelled) return;
-          setError(
-            (err as Error)?.message ||
-              "Impossible de récupérer les tickets support."
-          );
+          console.error('Failed to enrich support tickets', err);
+          setError(err instanceof Error ? err.message : 'Erreur de chargement');
           setLoading(false);
         }
       },
       err => {
-        if (cancelled) return;
-        setError(
-          err?.message || "Impossible d'écouter les tickets support."
-        );
+        console.error('Failed to fetch support tickets', err);
+        setError(err?.message || 'Impossible de charger les tickets.');
         setLoading(false);
       }
     );
 
-    return () => {
-      cancelled = true;
-      if (unsubscribe) unsubscribe();
-    };
+    return () => unsubscribe();
   }, [status]);
 
-  const orderedTickets = useMemo(
-    () =>
-      tickets.slice().sort((a, b) => {
-        const aDate = a.updatedAt?.toDate?.() ?? a.createdAt.toDate();
-        const bDate = b.updatedAt?.toDate?.() ?? b.createdAt.toDate();
-        return bDate.getTime() - aDate.getTime();
-      }),
-    [tickets]
-  );
+  const unassignedTickets = useMemo(() => {
+    return tickets.filter(
+      ticket => !ticket.assignedAgentId && ticket.status !== 'resolved'
+    );
+  }, [tickets]);
+
+  const myTickets = useMemo(() => {
+    if (!agentId) return [];
+    return tickets.filter(ticket => ticket.assignedAgentId === agentId);
+  }, [tickets, agentId]);
 
   return {
-    tickets: orderedTickets,
+    tickets,
+    unassignedTickets,
+    myTickets,
     loading,
     error,
   };

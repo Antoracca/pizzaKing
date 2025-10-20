@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 // Utilitaire pour détecter automatiquement le pays de l'utilisateur
 import { useEffect, useState } from 'react';
 
@@ -128,11 +129,11 @@ const LOCALE_TO_COUNTRY: Record<string, CountryCode> = {
 };
 
 export async function detectUserCountry(): Promise<CountryCode> {
-  console.log('🌍 Début de la détection automatique du pays...');
+  
   
   // 1. Essayer avec une API ultra-rapide d'abord
   try {
-    console.log('🔍 Tentative avec ipify...');
+    
     const response = await fetch('https://geo.ipify.org/api/v1?apiKey=at_free&format=json', {
       signal: AbortSignal.timeout(1500),
     });

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import AuthProvider from '@/providers/AuthProvider';
@@ -19,6 +19,13 @@ export const metadata: Metadata = {
   description:
     'Commandez vos pizzas préférées en quelques clics. Livraison rapide et qualité garantie.',
   keywords: ['pizza', 'livraison', 'restaurant', 'commande en ligne'],
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({

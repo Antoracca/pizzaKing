@@ -25,7 +25,7 @@ import {
 } from 'react';
 import type { LinkProps } from 'next/link';
 import { useCart } from '@/hooks/useCart';
-import { useAuth } from '@pizza-king/shared';
+import { useAuth } from '@pizza-king/shared/src/hooks/useAuth';
 import NavAccountMenu from './NavAccountMenu';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';

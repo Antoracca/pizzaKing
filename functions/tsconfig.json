@@ -2,6 +2,7 @@
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "module": "CommonJS",
+    "moduleResolution": "node",
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "outDir": "lib",
@@ -11,5 +12,11 @@
   "compileOnSave": true,
   "include": [
     "src"
+  ],
+  "exclude": [
+    "../packages/shared/src/contexts/**/*",
+    "../packages/shared/src/hooks/**/*",
+    "../packages/shared/src/components/**/*",
+    "**/*.tsx"
   ]
 }

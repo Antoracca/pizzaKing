@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle2 } from 'lucide-react';
-import { useAuth } from '@pizza-king/shared';
+import { useAuth } from '@pizza-king/shared/src/hooks/useAuth';
 
 export default function VerifySuccessPage() {
   const router = useRouter();

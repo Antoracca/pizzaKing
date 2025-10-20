@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, Loader2, Mail, Lock, Pizza } from 'lucide-react';
-import { useAuth } from '@pizza-king/shared';
+import { useAuth } from '@pizza-king/shared/src/hooks/useAuth';
 import {
   validateEmail,
   checkEmailExists,
@@ -161,8 +161,10 @@ export default function LoginForm() {
         }
       } catch { /* empty */ }
 
-      // Forcer un rechargement complet de la page pour mettre à jour l'état de connexion
-      window.location.href = redirectParam || '/';
+      // ⏳ NE PAS rediriger immédiatement !
+      // Le polling dans AuthContext détectera le custom claim (2-3s) et rechargera la page.
+      // Ensuite, le useEffect ci-dessous détectera l'utilisateur connecté et redirigera.
+      // L'utilisateur voit juste le loader pendant quelques secondes.
     } catch (googleError: any) {
       let message = 'Connexion Google impossible. Réessayez.';
       switch (googleError?.code) {

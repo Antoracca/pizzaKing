@@ -34,7 +34,7 @@ interface AuthContextType {
     firstName: string,
     lastName: string,
     phoneNumber: string
-  ) => Promise<void>;
+  ) => Promise<{ user: FirebaseUser }>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -131,7 +131,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       await setDoc(userRef, {
         id: uid,
         ...baseData,
-      });
+      }, { merge: true }); // Merge pour éviter d'écraser si onUserCreate a déjà créé le document
     } catch (error) {
       console.error('Failed to create user document:', error);
       throw new Error('Impossible de sauvegarder le profil utilisateur.');
@@ -207,7 +207,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     firstName: string,
     lastName: string,
     phoneNumber: string
-  ): Promise<void> => {
+  ): Promise<{ user: FirebaseUser }> => {
     try {
       const { user: firebaseUser } = await createUserWithEmailAndPassword(
         auth,
@@ -228,7 +228,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         console.error('Failed to send verification email:', verificationError);
       }
 
-      // Create Firestore document
+      // ⚠️ Pour EMAIL signup, le CLIENT doit créer le document
+      // car onUserCreate ne peut pas récupérer le phoneNumber
+      // (Firebase Auth ne le stocke pas pour email/password)
       await createUserDocument(
         firebaseUser.uid,
         email,
@@ -236,6 +238,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         lastName,
         phoneNumber
       );
+
+      // Return the user so that SignupForm can refresh the token
+      return { user: firebaseUser };
     } catch (error: any) {
       // Attempt to clean up partially created auth user
       try {
@@ -267,24 +272,54 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       // Utiliser signInWithPopup (fonctionne avec localhost)
       const result = await signInWithPopup(auth, provider);
 
-      // Check if user document exists
-      const userData = await fetchUserData(result.user.uid);
+      // ⚠️ NE PAS créer le document ici pour Google Sign-In !
+      // La Cloud Function onUserCreate s'en charge automatiquement.
+      // Le client doit juste attendre que onAuthStateChanged détecte l'utilisateur.
 
-      if (!userData) {
-        // Create user document if it doesn't exist
-        const names = result.user.displayName?.split(' ') || ['', ''];
-        const firstName = names[0] || 'Utilisateur';
-        const lastName = names.slice(1).join(' ') || 'Google';
+      // ⏳ Polling en arrière-plan pour le custom claim (TOUJOURS exécuté, même si le user existe)
+      // Fonction inline simple et robuste
+      (async () => {
+        try {
+          console.log('🔄 [Google] Démarrage du polling pour le custom claim...');
 
-        await createUserDocument(
-          result.user.uid,
-          result.user.email || '',
-          firstName,
-          lastName,
-          result.user.phoneNumber || '',
-          'google'
-        );
-      }
+          // Attendre que le claim soit ajouté (max 10 secondes)
+          for (let i = 0; i < 20; i++) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Force refresh et vérifie le claim
+            const token = await result.user.getIdToken(true);
+
+            // Decode le JWT
+            try {
+              const base64Url = token.split('.')[1];
+              const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+              const payload = JSON.parse(atob(base64));
+
+              if (payload.role) {
+                console.log(`✅ [Google] Custom claim détecté après ${((i + 1) * 0.5).toFixed(1)}s`);
+
+                // 🔄 FORCER le refresh de l'état utilisateur dans l'application
+                const userData = await fetchUserData(result.user.uid);
+                if (userData) {
+                  setUser(userData);
+                  console.log('🔄 [Google] État utilisateur mis à jour automatiquement');
+
+                  // 🔄 Redirection vers la page principale avec le claim activé
+                  if (typeof window !== 'undefined') {
+                    console.log('🔄 [Google] Redirection vers la page principale...');
+                    window.location.href = '/';
+                  }
+                }
+                break;
+              }
+            } catch (e) {
+              // Ignore decode errors
+            }
+          }
+        } catch (error) {
+          console.error('❌ [Google] Erreur polling:', error);
+        }
+      })();
 
       // User will be handled by onAuthStateChanged
     } catch (error: any) {

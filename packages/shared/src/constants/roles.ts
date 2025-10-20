@@ -5,6 +5,9 @@ export const USER_ROLES: UserRole[] = [
   'admin',
   'deliverer',
   'superadmin',
+  'support_agent',
+  'support_manager',
+  'support_backoffice',
 ];
 
 export const USER_ROLE_LABELS: Record<UserRole, string> = {
@@ -12,6 +15,9 @@ export const USER_ROLE_LABELS: Record<UserRole, string> = {
   admin: 'Administrateur',
   deliverer: 'Livreur',
   superadmin: 'Super Admin',
+  support_agent: 'Agent Support',
+  support_manager: 'Manager Support',
+  support_backoffice: 'Backoffice Support',
 };
 
 export const LOYALTY_TIERS: LoyaltyTier[] = [

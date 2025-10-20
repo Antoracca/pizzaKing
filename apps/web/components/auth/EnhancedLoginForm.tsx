@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import { Eye, EyeOff, Loader2, Mail, Lock, Phone as PhoneIcon, CheckCircle2, XCircle, Pizza } from 'lucide-react';
-import { useAuth } from '@pizza-king/shared';
+import { useAuth } from '@pizza-king/shared/src/hooks/useAuth';
 import {
   validateEmail,
   validatePhone,
@@ -427,9 +427,10 @@ export default function EnhancedLoginForm({ backHref = '/' }: EnhancedLoginFormP
           }
         } catch { /* empty */ }
 
-        // Forcer un rechargement complet de la page pour mettre à jour l'état de connexion
-        // Comme pour la connexion manuelle/inscription
-        window.location.href = redirectTo || '/';
+        // ⏳ NE PAS rediriger immédiatement !
+        // Le polling dans AuthContext détectera le custom claim (2-3s) et rechargera la page.
+        // Ensuite, le useEffect détectera l'utilisateur connecté et redirigera.
+        // L'utilisateur voit juste le loader pendant quelques secondes.
       } catch (googleError: unknown) {
         const code = (googleError as { code?: string } | null)?.code || '';
         let message = 'Connexion Google impossible. Réessayez.';

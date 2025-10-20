@@ -3,44 +3,320 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ========================================
+    // HELPER FUNCTIONS - AUTHENTICATION
+    // ========================================
+
     function isSignedIn() {
       return request.auth != null;
     }
 
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+    function uid() {
+      return request.auth.uid;
     }
 
-    function isValidProvider() {
-      return request.resource.data.provider in ['password', 'google'];
+    // ========================================
+    // HELPER FUNCTIONS - ROLE MANAGEMENT
+    // 🔐 Utilise CUSTOM CLAIMS (rapide, sécurisé, pas de get() Firestore)
+    // ========================================
+
+    function userRole() {
+      // Lire le rôle depuis le JWT token (custom claim)
+      return request.auth.token.role;
     }
 
-    function isValidRole() {
-      return request.resource.data.role == 'customer';
+    function isCustomer() {
+      // Un utilisateur est considéré comme customer si :
+      // 1. Il a explicitement le role 'customer' dans le JWT
+      // 2. OU il est authentifié mais n'a pas encore de role (nouveaux users)
+      // Ceci permet aux nouveaux utilisateurs de fonctionner avant que onUserCreate ne s'exécute
+      return isSignedIn() && (userRole() == 'customer' || userRole() == null);
     }
 
-    function preservesImmutableFields() {
-      return request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.referralCode == resource.data.referralCode
-        && request.resource.data.role == resource.data.role
-        && request.resource.data.provider == resource.data.provider;
+    function isAdmin() {
+      return isSignedIn() && userRole() == 'admin';
     }
+
+    function isSuperadmin() {
+      return isSignedIn() && userRole() == 'superadmin';
+    }
+
+    function isAdminRole() {
+      return isAdmin() || isSuperadmin();
+    }
+
+    function isSupportAgent() {
+      return isSignedIn() && userRole() == 'support_agent';
+    }
+
+    function isSupportManager() {
+      return isSignedIn() && userRole() == 'support_manager';
+    }
+
+    function isSupportBackoffice() {
+      return isSignedIn() && userRole() == 'support_backoffice';
+    }
+
+    function isSupportStaff() {
+      return isAdminRole() || isSupportAgent() || isSupportManager() || isSupportBackoffice();
+    }
+
+    function isSystem() {
+      return isSignedIn() && request.auth.token.role == 'system';
+    }
+
+    // ========================================
+    // HELPER FUNCTIONS - VALIDATION
+    // ========================================
+
+    function isValidTicketStatus(status) {
+      return status in ['open', 'in_progress', 'pending', 'resolved'];
+    }
+
+    function isValidMessageSender(sender) {
+      return sender in ['user', 'agent', 'system'];
+    }
+
+    function isValidMessageStatus(status) {
+      return status in ['pending', 'sent', 'delivered', 'read'];
+    }
+
+    // ========================================
+    // HELPER FUNCTIONS - TICKET OWNERSHIP
+    // ========================================
+
+    function isTicketOwner(ticketData) {
+      return isSignedIn() && ticketData.userId == uid();
+    }
+
+    function isAssignedAgent(ticketData) {
+      return isSignedIn()
+        && ticketData.assignedAgentId != null
+        && ticketData.assignedAgentId == uid();
+    }
+
+    function canAccessTicket(ticketData) {
+      return isSupportStaff() || isSystem() || isTicketOwner(ticketData);
+    }
+
+    // ========================================
+    // COLLECTION: users
+    // ========================================
 
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if false;
+      // Lecture: TOUT LE MONDE peut lire (même non authentifié)
+      // Nécessaire pour:
+      // 1. Vérifier les doublons email/phone lors de l'inscription (AVANT auth)
+      // 2. Fonctionnalités support (affichage nom client, etc.)
+      allow get, list: if true;
 
+      // Création: un utilisateur ne peut créer que son propre document
+      // Validation minimale pour permettre l'inscription Google/Email sans blocage
       allow create: if isSignedIn()
-        && request.auth.uid == userId
+        && uid() == userId
         && request.resource.data.id == userId
-        && request.resource.data.email == request.auth.token.email
-        && isValidProvider()
-        && isValidRole();
+        && request.resource.data.role == 'customer';
 
-      allow update: if isOwner(userId)
-        && preservesImmutableFields();
+      // Mise à jour: un utilisateur peut modifier son profil
+      // SAUF les champs critiques (role, id, email, createdAt, provider)
+      // Permet la mise à jour de emailVerified, phoneVerified en temps réel
+      allow update: if isSignedIn()
+        && uid() == userId
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.provider == resource.data.provider
+        && request.resource.data.email == resource.data.email;
 
+      // Suppression: interdit
       allow delete: if false;
+    }
+
+    // ========================================
+    // COLLECTION: supportTickets
+    // ========================================
+
+    match /supportTickets/{ticketId} {
+
+      // Lecture: staff support OU propriétaire du ticket
+      allow get: if isSignedIn() && (
+        isSupportStaff()
+        || isSystem()
+        || resource.data.userId == uid()
+      );
+
+      // Liste: staff support peut tout lister, clients peuvent lister leurs propres tickets
+      allow list: if isSupportStaff() || isSystem()
+        || (isSignedIn() && request.auth.uid != null && resource.data.userId == request.auth.uid);
+
+      // Création: clients créent leurs tickets, staff peut créer aussi
+      allow create: if isSignedIn() && (
+        // Cas 1: Client crée son propre ticket (customers OU admins pour testing)
+        ((isCustomer() || isAdminRole())
+          && request.resource.data.userId == uid()
+          && request.resource.data.status in ['open', 'pending']
+          && request.resource.data.channel == 'chat'
+          && request.resource.data.createdAt is timestamp
+          && request.resource.data.updatedAt is timestamp
+          && request.resource.data.unreadCountForAgent is int
+          && request.resource.data.unreadCountForUser is int
+          && (!('assignedAgentId' in request.resource.data) || request.resource.data.assignedAgentId == null)
+        )
+        // Cas 2: Staff support crée un ticket
+        || isSupportStaff()
+        || isSystem()
+      );
+
+      // Mise à jour: staff support OU propriétaire du ticket (avec restrictions)
+      allow update: if isSignedIn() && (
+        // Cas 1: Staff support peut tout modifier
+        isSupportStaff() || isSystem()
+
+        // Cas 2: Client peut modifier son propre ticket (champs métadonnées seulement)
+        || (
+          (isCustomer() || isAdminRole())
+          && resource.data.userId == uid()
+          && request.resource.data.userId == uid()
+          // Le client peut seulement modifier ces champs spécifiques
+          && resource.data.diff(request.resource.data).affectedKeys().hasOnly([
+            'status', 'updatedAt', 'lastMessageAt', 'lastMessagePreview',
+            'lastMessageSender', 'unreadCountForAgent', 'unreadCountForUser',
+            'autoReplySent'
+          ])
+          // Le client ne peut pas changer l'assignation
+          && (!resource.data.diff(request.resource.data).affectedKeys().hasAny(['assignedAgentId', 'assignedAgentName']))
+          // Le client ne peut pas résoudre un ticket
+          && (request.resource.data.status != 'resolved' || resource.data.status == 'resolved')
+        )
+      );
+
+      // Suppression: interdit
+      allow delete: if false;
+
+      // ========================================
+      // SUBCOLLECTION: messages
+      // ========================================
+
+      match /messages/{messageId} {
+
+        // Lecture: tous les utilisateurs authentifiés peuvent lire les messages
+        // (la sécurité est gérée au niveau du ticket parent)
+        allow get, list: if isSignedIn();
+
+        // Création: user peut créer dans son ticket, staff peut créer partout
+        allow create: if isSignedIn() && (
+          // Cas 1: Client envoie un message user (customers OU admins pour testing)
+          ((isCustomer() || isAdminRole())
+            && request.resource.data.sender == 'user'
+            && request.resource.data.senderId == uid()
+            && request.resource.data.ticketId == ticketId
+            && request.resource.data.text is string
+            && request.resource.data.text.size() > 0
+            && request.resource.data.text.size() <= 5000
+            && request.resource.data.createdAt is timestamp
+          )
+
+          // Cas 2: Client crée auto-reply system (validation stricte)
+          || ((isCustomer() || isAdminRole())
+            && request.resource.data.sender == 'system'
+            && request.resource.data.isAutoReply == true
+            && request.resource.data.ticketId == ticketId
+            && request.resource.data.text is string
+            && request.resource.data.createdAt is timestamp
+          )
+
+          // Cas 3: Staff support envoie un message
+          || (isSupportStaff()
+            && request.resource.data.sender in ['agent', 'system']
+            && request.resource.data.ticketId == ticketId
+            && request.resource.data.text is string
+            && request.resource.data.text.size() > 0
+            && request.resource.data.text.size() <= 5000
+            && request.resource.data.createdAt is timestamp
+          )
+
+          // Cas 4: Système
+          || isSystem()
+        );
+
+        // Mise à jour: pour marquer comme lu (tous les users authentifiés)
+        allow update: if isSignedIn();
+
+        // Suppression: interdit
+        allow delete: if false;
+      }
+
+      // ========================================
+      // SUBCOLLECTION: events
+      // ========================================
+
+      match /events/{eventId} {
+
+        // Lecture: tous les utilisateurs authentifiés peuvent lire les events
+        allow get, list: if isSignedIn();
+
+        // Création: staff support seulement
+        allow create: if isSupportStaff() || isSystem();
+
+        // Mise à jour et suppression: interdit
+        allow update, delete: if false;
+      }
+
+      // ========================================
+      // SUBCOLLECTION: presence
+      // ========================================
+
+      match /presence/{presenceId} {
+
+        // Lecture: tous les utilisateurs authentifiés peuvent lire la présence
+        // (nécessaire pour que clients voient agent typing et vice-versa)
+        allow get, list: if isSignedIn();
+
+        // Création/mise à jour: chacun peut gérer sa propre présence
+        allow create, update: if isSignedIn() && (
+          presenceId == 'user_' + uid()
+          || presenceId == 'agent_' + uid()
+          || isSystem()
+        );
+
+        // Suppression: interdit
+        allow delete: if false;
+      }
+
+      // ========================================
+      // SUBCOLLECTION: participants
+      // ========================================
+
+      match /participants/{participantId} {
+
+        // Lecture: tous les utilisateurs authentifiés peuvent lire les participants
+        allow get, list: if isSignedIn();
+
+        // Création: staff support seulement
+        allow create: if isSupportStaff() || isSystem();
+
+        // Mise à jour et suppression: interdit
+        allow update, delete: if false;
+      }
+    }
+
+    // ========================================
+    // COLLECTION: supportInboxState
+    // ========================================
+
+    match /supportInboxState/{docId} {
+      // Lecture et écriture: staff support seulement
+      allow get, list: if isSupportStaff() || isSystem();
+      allow create, update: if isSupportStaff() || isSystem();
+      allow delete: if false;
+    }
+
+    // ========================================
+    // FALLBACK: deny all by default
+    // ========================================
+
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

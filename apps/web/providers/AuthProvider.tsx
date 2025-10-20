@@ -1,6 +1,6 @@
 'use client';
 
-import { AuthProvider as SharedAuthProvider } from '@pizza-king/shared';
+import { AuthProvider as SharedAuthProvider } from '@pizza-king/shared/src/contexts/AuthContext';
 import { auth, db } from '@/lib/firebase';
 
 export default function AuthProvider({

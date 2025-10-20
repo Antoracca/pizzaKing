@@ -1,6 +1,11 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@pizza-king/support-domain": ["../support-domain/src/index.ts"],
+      "@pizza-king/shared": ["../shared/src/index.ts"]
+    },
     "resolveJsonModule": true,
     "allowJs": true,
     "declaration": true,
