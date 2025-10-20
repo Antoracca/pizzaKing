@@ -7,3 +7,4 @@ export * from './notification';
 export * from './loyalty';
 export * from './address';
 export * from './promotion';
+export * from './support';

@@ -9,6 +9,7 @@ export const COLLECTIONS = {
   PROMOTIONS: 'promotions',
   NOTIFICATIONS: 'notifications',
   LOYALTY_TRANSACTIONS: 'loyaltyTransactions',
+  SUPPORT_TICKETS: 'supportTickets',
 } as const;
 
 export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];
