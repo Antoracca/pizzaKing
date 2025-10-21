@@ -45,6 +45,9 @@ type UseSupportChatResult = {
   messages: SupportMessage[];
   pendingMessages: SupportMessage[];
   loading: boolean;
+  historyTickets: SupportTicket[];
+  historyLoading: boolean;
+  historyError: string | null;
   sending: boolean;
   error: string | null;
   sendMessage: (text: string) => Promise<void>;
@@ -149,10 +152,14 @@ export function useSupportChat(authUser: User | null | undefined): UseSupportCha
 
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [pendingMessages, setPendingMessages] = useState<SupportMessage[]>([]);
+  const hadActiveTicketRef = useRef(false);
 
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [historyTickets, setHistoryTickets] = useState<SupportTicket[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState<string | null>(null);
 
   const [agentTyping, setAgentTyping] = useState(false);
   const [agentTypingName, setAgentTypingName] = useState<string | null>(null);
@@ -173,6 +180,46 @@ export function useSupportChat(authUser: User | null | undefined): UseSupportCha
   useEffect(() => {
     syncPendingMessages();
   }, [syncPendingMessages]);
+
+  // Fetch ticket history (all statuses)
+  useEffect(() => {
+    if (!userId) {
+      setHistoryTickets([]);
+      setHistoryLoading(false);
+      setHistoryError(null);
+      return;
+    }
+
+    setHistoryLoading(true);
+    setHistoryError(null);
+
+    const ticketsRef = collection(db, SUPPORT_TICKETS_COLLECTION);
+    const historyQuery = query(
+      ticketsRef,
+      where('userId', '==', userId),
+      orderBy('updatedAt', 'desc'),
+      limit(25)
+    );
+
+    const unsubscribe = onSnapshot(
+      historyQuery,
+      snapshot => {
+        const tickets = snapshot.docs.map(docSnap => ({
+          id: docSnap.id,
+          ...(docSnap.data() as Omit<SupportTicket, 'id'>),
+        }));
+        setHistoryTickets(tickets);
+        setHistoryLoading(false);
+      },
+      err => {
+        console.error('Failed to fetch ticket history', err);
+        setHistoryError("Impossible de récupérer l'historique des tickets.");
+        setHistoryLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [userId]);
 
   // Remove local pending messages once we see the server-confirmed version
   useEffect(() => {
@@ -209,7 +256,7 @@ export function useSupportChat(authUser: User | null | undefined): UseSupportCha
     const q = query(
       ticketsRef,
       where('userId', '==', userId),
-      where('status', 'in', ['open', 'in_progress', 'pending']),
+      where('status', 'in', ['open', 'in_progress', 'pending', 'resolved']),
       orderBy('updatedAt', 'desc'),
       limit(1)
     );
@@ -221,13 +268,30 @@ export function useSupportChat(authUser: User | null | undefined): UseSupportCha
           setTicket(null);
           setTicketId(null);
           ticketIdRef.current = null;
+          hadActiveTicketRef.current = false;
           setLoading(false);
-        } else {
-          const doc = snapshot.docs[0];
-          const data = doc.data() as Omit<SupportTicket, 'id'>;
-          applyTicketSnapshot(data, doc.id);
-          setLoading(false);
+          return;
         }
+
+        const docSnap = snapshot.docs[0];
+        const data = docSnap.data() as Omit<SupportTicket, 'id'>;
+        const currentStatus = data.status ?? 'open';
+
+        if (currentStatus === 'resolved' && !hadActiveTicketRef.current) {
+          // Ticket déjà clôturé avant l'arrivée : ne rien afficher.
+          setTicket(null);
+          setTicketId(null);
+          ticketIdRef.current = null;
+          setMessages([]);
+          setLoading(false);
+          return;
+        }
+
+        applyTicketSnapshot(data, docSnap.id);
+        if (currentStatus !== 'resolved') {
+          hadActiveTicketRef.current = true;
+        }
+        setLoading(false);
       },
       err => {
         console.error('Failed to fetch ticket', err);
@@ -487,8 +551,9 @@ export function useSupportChat(authUser: User | null | undefined): UseSupportCha
       let sentSuccessfully = false;
 
       if (online) {
-        localPending = buildLocalMessage(baseEntry, userId);
-        setPendingMessages(prev => [...prev, localPending]);
+        const optimisticMessage = buildLocalMessage(baseEntry, userId);
+        localPending = optimisticMessage;
+        setPendingMessages(prev => [...prev, optimisticMessage]);
       }
 
       try {
@@ -620,6 +685,9 @@ export function useSupportChat(authUser: User | null | undefined): UseSupportCha
     messages,
     pendingMessages,
     loading,
+    historyTickets,
+    historyLoading,
+    historyError,
     sending,
     error,
     sendMessage,

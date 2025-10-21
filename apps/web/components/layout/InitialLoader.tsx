@@ -9,16 +9,18 @@ export default function InitialLoader() {
   const pathname = usePathname();
   const [isLoading, setIsLoading] = useState(true);
   const isAuthRoute = pathname?.startsWith('/auth');
+  const isSupportRoute =
+    pathname?.startsWith('/support') || pathname?.startsWith('/admin/support');
 
   useEffect(() => {
-    // Skip timer behavior on auth routes but keep hook call order stable
-    if (isAuthRoute) return;
+    // Skip timer behavior on auth/support routes but keep hook call order stable
+    if (isAuthRoute || isSupportRoute) return;
     const timer = setTimeout(() => setIsLoading(false), 1500);
     return () => clearTimeout(timer);
-  }, [isAuthRoute]);
+  }, [isAuthRoute, isSupportRoute]);
 
-  // Render nothing on auth routes
-  if (isAuthRoute) return null;
+  // Render nothing on auth/support routes
+  if (isAuthRoute || isSupportRoute) return null;
 
   return (
     <AnimatePresence mode="wait">

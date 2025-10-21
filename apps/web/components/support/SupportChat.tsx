@@ -2,14 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Check, CheckCheck, Pizza, Send, X } from 'lucide-react';
+import { ArrowLeft, Check, CheckCheck, History, PhoneOff, Pizza, Send, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@pizza-king/shared/src/hooks/useAuth';
 import { useSupportChat } from '@/hooks/useSupportChat';
 import { Timestamp } from 'firebase/firestore';
 import { TypingIndicator } from './TypingIndicator';
-import { formatMessageTime, formatDateSeparator, isDifferentDay } from '@/lib/support-utils';
-import type { SupportMessage } from '@pizza-king/shared/src/types/support';
+import { formatMessageTime, formatDateSeparator, formatRelativeTime, isDifferentDay } from '@/lib/support-utils';
+import type { SupportMessage, SupportTicket, SupportTicketStatus } from '@pizza-king/shared/src/types/support';
+import { SUPPORT_STATUS_LABELS, SUPPORT_STATUS_COLORS } from '@pizza-king/shared/src/constants/support';
 
 export default function SupportChat() {
   const router = useRouter();
@@ -19,6 +21,9 @@ export default function SupportChat() {
     messages,
     pendingMessages,
     loading,
+    historyTickets,
+    historyLoading,
+    historyError,
     sending,
     error,
     sendMessage,
@@ -38,6 +43,7 @@ export default function SupportChat() {
     status: 0,
     input: 96,
   });
+  const [historyOpen, setHistoryOpen] = useState(false);
   const endRef = useRef<HTMLDivElement | null>(null);
   const typingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -45,6 +51,8 @@ export default function SupportChat() {
   const headerRef = useRef<HTMLDivElement | null>(null);
   const statusRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLDivElement | null>(null);
+  const historyButtonRef = useRef<HTMLButtonElement | null>(null);
+  const historyMenuRef = useRef<HTMLDivElement | null>(null);
 
   const timeline = useMemo(() => {
     const merged = [...messages, ...pendingMessages];
@@ -79,6 +87,28 @@ export default function SupportChat() {
 
     return sorted;
   }, [messages, pendingMessages]);
+
+  const activeTicketId = ticket?.id ?? null;
+  const historyGroups = useMemo(() => {
+    const initial: Record<SupportTicketStatus, SupportTicket[]> = {
+      open: [],
+      in_progress: [],
+      pending: [],
+      resolved: [],
+    };
+
+    historyTickets.forEach(entry => {
+      if (entry.id === activeTicketId) return;
+      const status = entry.status ?? 'open';
+      initial[status as SupportTicketStatus] = [
+        ...initial[status as SupportTicketStatus],
+        entry,
+      ];
+    });
+
+    return initial;
+  }, [historyTickets, activeTicketId]);
+  const historyOrder: SupportTicketStatus[] = ['in_progress', 'pending', 'resolved', 'open'];
 
   // Group messages by date
   const groupedMessages = useMemo(() => {
@@ -123,6 +153,34 @@ export default function SupportChat() {
       document.body.style.overflow = previousOverflow;
     };
   }, []);
+
+  useEffect(() => {
+    if (!historyOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        historyMenuRef.current?.contains(event.target as Node) ||
+        historyButtonRef.current?.contains(event.target as Node)
+      ) {
+        return;
+      }
+      setHistoryOpen(false);
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setHistoryOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [historyOpen]);
 
   // Track visual viewport to keep header/footer pinned around the keyboard on mobile
   useEffect(() => {
@@ -227,6 +285,17 @@ export default function SupportChat() {
     },
     [setTyping, ticket?.id]
   );
+  const handleCallUnavailable = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const event = new CustomEvent('pk-toast', {
+      detail: {
+        variant: 'warning',
+        title: 'Appels indisponibles',
+        description: "Les appels vocaux ne sont pas encore disponibles dans votre région. Utilisez le chat pour nous contacter.",
+      },
+    });
+    window.dispatchEvent(event);
+  }, []);
 
   const ticketDisplay = useMemo(() => {
     if (!ticket) return null;
@@ -264,7 +333,7 @@ export default function SupportChat() {
           transform: 'translateZ(0)',
         }}
       >
-        <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4">
+        <div className="mx-auto flex h-14 max-w-4xl items-center justify-between gap-3 px-4">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
@@ -290,6 +359,140 @@ export default function SupportChat() {
                   </>
                 ) : null}
               </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div
+              className="hidden cursor-pointer items-center gap-2 rounded-full border border-orange-200 bg-orange-50/80 px-3 py-1 text-xs font-medium text-orange-600 transition hover:border-orange-300 hover:bg-orange-100 sm:flex"
+              onClick={handleCallUnavailable}
+            >
+              <PhoneOff className="h-3.5 w-3.5 text-orange-500" />
+              <span>Les appels sont indisponibles dans votre région</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 shrink-0 rounded-full text-orange-500 hover:bg-orange-50 sm:hidden"
+              title="Les appels sont indisponibles dans votre région"
+              aria-label="Les appels sont indisponibles dans votre région"
+              onClick={handleCallUnavailable}
+            >
+              <PhoneOff className="h-5 w-5" />
+            </Button>
+
+            <div className="relative">
+              <Button
+                ref={historyButtonRef}
+                variant="ghost"
+                size="icon"
+                className={`h-9 w-9 shrink-0 rounded-full text-slate-600 transition hover:bg-slate-100 ${historyOpen ? 'bg-slate-100' : ''}`}
+                aria-haspopup="true"
+                aria-expanded={historyOpen}
+                aria-label="Afficher l'historique des tickets"
+                onClick={() => setHistoryOpen(prev => !prev)}
+              >
+                <History className="h-5 w-5" />
+              </Button>
+
+              {historyOpen ? (
+                <div
+                  ref={historyMenuRef}
+                  className="absolute right-0 z-[120] mt-2 w-80 origin-top-right rounded-2xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5"
+                >
+                  <div className="max-h-[65vh] overflow-y-auto p-4">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Historique des tickets
+                      </p>
+                      {historyLoading ? (
+                        <div className="flex items-center gap-2 py-6 text-sm text-slate-500">
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-transparent" />
+                          Chargement en cours…
+                        </div>
+                      ) : historyError ? (
+                        <p className="py-4 text-sm text-red-600">{historyError}</p>
+                      ) : historyOrder.some(status => historyGroups[status].length > 0) ? (
+                        historyOrder.map(status =>
+                          historyGroups[status].length > 0 ? (
+                            <div key={status} className="mt-3">
+                              <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                <span>{SUPPORT_STATUS_LABELS[status]}</span>
+                                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
+                                  {historyGroups[status].length}
+                                </span>
+                              </div>
+                              <div className="mt-2 space-y-2">
+                                {historyGroups[status].map(historyTicket => {
+                                  const badgeClasses = SUPPORT_STATUS_COLORS[status];
+                                  const displayNumber =
+                                    historyTicket.ticketNumber ||
+                                    `#${historyTicket.id.slice(0, 8).toUpperCase()}`;
+                                  const updatedAt =
+                                    historyTicket.updatedAt ?? historyTicket.createdAt;
+                                  return (
+                                    <div
+                                      key={historyTicket.id}
+                                      className="rounded-2xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm transition hover:border-orange-300"
+                                    >
+                                      <div className="flex items-center justify-between gap-2">
+                                        <p className="truncate text-sm font-semibold text-slate-900">
+                                          {displayNumber}
+                                        </p>
+                                        <Badge className={badgeClasses}>{SUPPORT_STATUS_LABELS[status]}</Badge>
+                                      </div>
+                                      <p className="mt-1 text-xs text-slate-500">
+                                        Mis à jour {formatRelativeTime(updatedAt)}
+                                      </p>
+                                      {historyTicket.lastMessagePreview ? (
+                                        <p className="mt-1 line-clamp-2 text-xs text-slate-400">
+                                          « {historyTicket.lastMessagePreview} »
+                                        </p>
+                                      ) : null}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ) : null
+                        )
+                      ) : (
+                        <p className="py-4 text-sm text-slate-500">
+                          Encore aucun ticket terminé. Tes conversations actives apparaîtront ici une fois clôturées.
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="mt-4 border-t border-slate-100 pt-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Bientôt disponible
+                      </p>
+                      <div className="mt-3 space-y-2 text-sm">
+                        <button
+                          type="button"
+                          disabled
+                          className="flex w-full flex-col items-start gap-1 rounded-2xl border border-dashed border-slate-200 px-3 py-2 text-left text-slate-400"
+                        >
+                          <span className="font-medium text-slate-500">Programmer un rappel téléphonique</span>
+                          <span className="text-[11px] uppercase text-orange-500">
+                            Momentanément indisponible
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          disabled
+                          className="flex w-full flex-col items-start gap-1 rounded-2xl border border-dashed border-slate-200 px-3 py-2 text-left text-slate-400"
+                        >
+                          <span className="font-medium text-slate-500">Partager le ticket avec un proche</span>
+                          <span className="text-[11px] uppercase text-orange-500">
+                            Momentanément indisponible
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>

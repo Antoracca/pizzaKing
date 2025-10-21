@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { SUPPORT_STATUS_LABELS, SUPPORT_STATUS_COLORS } from '@pizza-king/shared/src/constants/support';
 import { formatRelativeTime } from '@/lib/support-utils';
+import { useNavLoading } from '@/hooks/useNavLoading';
 
 type ViewMode = 'unassigned' | 'mine' | 'all';
 
@@ -37,6 +38,20 @@ export default function AdminSupportPage() {
   const router = useRouter();
   const { user: authUser, isAdmin, loading: authLoading } = useAuth();
   const enabled = !authLoading && Boolean(isAdmin && authUser);
+  const { start, stop } = useNavLoading();
+  const shouldGuard = !enabled || !authUser;
+
+  useEffect(() => {
+    if (shouldGuard) {
+      start();
+    } else {
+      stop();
+    }
+
+    return () => {
+      stop();
+    };
+  }, [shouldGuard, start, stop]);
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -44,15 +59,8 @@ export default function AdminSupportPage() {
     }
   }, [authLoading, isAdmin, router]);
 
-  if (!enabled || !authUser) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="flex flex-col items-center gap-2 text-slate-500">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
-          <p>Vérification des droits d'accès…</p>
-        </div>
-      </main>
-    );
+  if (shouldGuard) {
+    return null;
   }
 
   return <SupportAdminShell currentUser={authUser} />;

@@ -381,7 +381,7 @@ export function useAdminSupportConversation(
         updates.resolvedByAgentName = agentName;
         await appendSystemMessage(
           ticketId,
-          `Conversation résolue par ${agentName}`
+          `${agentName} a mis fin à ce ticket. Statut : résolu. Merci pour votre fidélité !`
         );
         await addDoc(
           collection(
