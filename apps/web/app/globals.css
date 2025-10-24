@@ -135,6 +135,13 @@
     .bg-gradient-radial {
       background: radial-gradient(circle, var(--tw-gradient-stops));
     }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
   }
 
 /* Inline phone input variant (used on login): keep country selector left of input even on mobile */

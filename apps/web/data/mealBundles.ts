@@ -1,4 +1,6 @@
-import { Pizza, Coffee, IceCream, Users, Heart } from 'lucide-react';
+
+
+import { Coffee, Heart, IceCream, Pizza, Users } from 'lucide-react';
 
 export type MealBundleId = 'solo' | 'duo' | 'famille';
 
@@ -17,6 +19,12 @@ export type MealBundle = {
   savings: number;
   icon: typeof Pizza;
   color: string;
+  tagline: string;
+  vibe: string;
+  ctaLabel: string;
+  ctaSubLabel: string;
+  description: string;
+  highlights: string[];
   items: MealBundleItem[];
   badge: string;
   badgeColor: string;
@@ -31,14 +39,25 @@ export const MEAL_BUNDLES: MealBundle[] = [
     originalPrice: 15000,
     savings: 2500,
     icon: Pizza,
-    color: 'from-purple-500 to-pink-500',
+    color: 'from-orange-500 to-red-600',
+    tagline: 'Un combo généreux pour se faire plaisir sans partager.',
+    vibe: 'Pause solo gourmande',
+    ctaLabel: 'Ajouter le menu Solo',
+    ctaSubLabel: 'Livraison rapide · Points fidélité x2',
+    description:
+      'Notre menu solo rassemble ta pizza préférée, une boisson bien fraîche et un dessert maison pour terminer sur une note sucrée.',
+    highlights: [
+      'Prêt en 20 minutes',
+      'Dessert signature inclus',
+      'Parfait pour les soirées série',
+    ],
     items: [
       { icon: Pizza, text: '1 Pizza Moyenne au choix', highlight: true },
       { icon: Coffee, text: '1 Boisson 50cl', highlight: false },
       { icon: IceCream, text: '1 Dessert au choix', highlight: false },
     ],
     badge: 'Populaire',
-    badgeColor: 'bg-purple-600',
+    badgeColor: 'bg-orange-600',
   },
   {
     id: 'duo',
@@ -48,7 +67,18 @@ export const MEAL_BUNDLES: MealBundle[] = [
     originalPrice: 27000,
     savings: 5000,
     icon: Heart,
-    color: 'from-red-500 to-pink-500',
+    color: 'from-red-500 to-orange-600',
+    tagline: 'Le meilleur plan pour un moment à deux autour d’une bonne pizza.',
+    vibe: 'Formule duo',
+    ctaLabel: 'Ajouter le menu Duo',
+    ctaSubLabel: 'Pizza offerte le jeudi soir',
+    description:
+      'Deux pizzas gourmandes, deux boissons bien fraîches et un grand dessert à partager. Idéal pour un dîner relax à la maison.',
+    highlights: [
+      '1 pizza offerte le jeudi après 19h',
+      'Dessert XL à partager',
+      'Option croûte fromage disponible',
+    ],
     items: [
       { icon: Pizza, text: '2 Pizzas Moyennes au choix', highlight: true },
       { icon: Coffee, text: '2 Boissons 50cl', highlight: false },
@@ -65,13 +95,24 @@ export const MEAL_BUNDLES: MealBundle[] = [
     originalPrice: 48000,
     savings: 10000,
     icon: Users,
-    color: 'from-orange-500 to-amber-500',
+    color: 'from-red-500 to-orange-600',
+    tagline: 'Un festin complet pour régaler toute la table sans se compliquer.',
+    vibe: 'Menu famille',
+    ctaLabel: 'Ajouter le menu Famille',
+    ctaSubLabel: 'Livraison prioritaire week-end',
+    description:
+      'Deux pizzas XXL croustillantes, quatre boissons et quatre desserts. On s’occupe du dîner pendant que vous profitez.',
+    highlights: [
+      'Livraison prioritaire le week-end',
+      'Desserts au choix pour chaque convive',
+      'Convient pour 4 à 5 personnes',
+    ],
     items: [
       { icon: Pizza, text: '2 Pizzas Familiales XXL', highlight: true },
       { icon: Coffee, text: '4 Boissons 50cl', highlight: false },
       { icon: IceCream, text: '4 Desserts au choix', highlight: false },
     ],
     badge: 'Meilleur Prix',
-    badgeColor: 'bg-amber-600',
+    badgeColor: 'bg-orange-600',
   },
 ];

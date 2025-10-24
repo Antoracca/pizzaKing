@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -137,6 +137,8 @@ export default function FeaturedPizzas() {
   const { addItem, openCart } = useCart();
   const [pizzas, setPizzas] = useState<Pizza[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [activeIndex, setActiveIndex] = useState<number>(0);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -171,6 +173,78 @@ export default function FeaturedPizzas() {
     return pizzas.slice(0, 6);
   }, [pizzas]);
 
+  const marqueeLabels = useMemo(() => {
+    const featuredNames = displayedPizzas.map((pizza) => pizza.name);
+    const extraHighlights = [
+      'Menu Duo Mezzo',
+      'Formule Palazzo',
+      'Calzone Fumée',
+      'Focaccia Truffée',
+      'Salade César Royale',
+      'Dolci Tiramisu',
+    ];
+
+    return [...featuredNames, ...extraHighlights];
+  }, [displayedPizzas]);
+
+  const tickerItems = useMemo(() => {
+    return [...marqueeLabels, ...marqueeLabels];
+  }, [marqueeLabels]);
+
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) {
+      setActiveIndex(0);
+      return;
+    }
+
+    const updateActiveIndex = () => {
+      const items = Array.from(container.children) as HTMLElement[];
+      if (items.length === 0) {
+        setActiveIndex(0);
+        return;
+      }
+
+      const { scrollLeft, offsetWidth } = container;
+      const viewportCenter = scrollLeft + offsetWidth / 2;
+
+      let nearestIndex = 0;
+      let nearestDistance = Number.POSITIVE_INFINITY;
+
+      items.forEach((item, index) => {
+        const itemCenter = item.offsetLeft + item.offsetWidth / 2;
+        const distance = Math.abs(itemCenter - viewportCenter);
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestIndex = index;
+        }
+      });
+
+      setActiveIndex(nearestIndex);
+    };
+
+    updateActiveIndex();
+
+    const handleScroll = () => {
+      window.requestAnimationFrame(updateActiveIndex);
+    };
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+
+    let resizeObserver: ResizeObserver | undefined;
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(() => updateActiveIndex());
+      resizeObserver.observe(container);
+    }
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+    };
+  }, [displayedPizzas.length]);
+
   const handleAddToCart = (pizza: Pizza, shouldOpenCart: boolean) => {
     const variants = getPizzaSizeVariants(pizza.price);
     const defaultVariant = resolvePizzaVariant(variants);
@@ -200,6 +274,120 @@ export default function FeaturedPizzas() {
     }
   };
 
+  const scrollToSlide = (index: number) => {
+    const container = scrollRef.current;
+    if (!container) {
+      return;
+    }
+
+    const target = container.children[index] as HTMLElement | undefined;
+    if (!target) {
+      return;
+    }
+    target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    setActiveIndex(index);
+  };
+
+  const renderPizzaCard = (pizza: Pizza, index: number, wrapperClassName?: string) => (
+    <motion.div
+      key={pizza.id}
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.06, duration: 0.4 }}
+      className={['h-full', wrapperClassName ?? ''].filter(Boolean).join(' ')}
+    >
+      <Card className="group flex h-full flex-col overflow-hidden border border-orange-100 bg-white shadow-sm transition-shadow hover:shadow-lg lg:shadow-md lg:hover:shadow-xl">
+        <div className="relative h-48 w-full overflow-hidden bg-orange-50 sm:h-52 lg:h-56">
+          <Image
+            src={pizza.image}
+            alt={pizza.name}
+            fill
+            sizes="(max-width: 640px) 85vw, (max-width: 1280px) 50vw, 33vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            priority={index < 3}
+          />
+
+          <div className="absolute left-3 top-3 flex flex-wrap gap-2">
+            {pizza.isBestSeller && (
+              <Badge className="bg-orange-600/90 text-xs font-semibold text-white">
+                Coup de cœur
+              </Badge>
+            )}
+            {pizza.isVegetarian && (
+              <Badge
+                variant="outline"
+                className="flex items-center gap-1 border-emerald-200 bg-emerald-50 text-emerald-700"
+              >
+                <Leaf className="h-3.5 w-3.5" />
+                Végé
+              </Badge>
+            )}
+            {pizza.isSpicy && (
+              <Badge
+                variant="outline"
+                className="flex items-center gap-1 border-red-200 bg-red-50 text-red-600"
+              >
+                <Flame className="h-3.5 w-3.5" />
+                Épicé
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        <CardContent className="flex flex-1 flex-col gap-4 p-5 lg:gap-6 lg:p-7">
+          <div className="space-y-2 lg:space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <h3 className="text-lg font-semibold text-gray-900 lg:text-2xl lg:font-bold">
+                {pizza.name}
+              </h3>
+              <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-600 lg:px-5 lg:py-2 lg:text-base">
+                {formatPrice(pizza.price)}
+              </span>
+            </div>
+            <p className="line-clamp-2 text-sm text-gray-600 lg:text-lg lg:leading-relaxed">
+              {pizza.description}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-gray-500 lg:gap-4 lg:text-base">
+            <span className="flex items-center gap-1 lg:gap-2">
+              <Star className="h-3.5 w-3.5 text-orange-500 lg:h-5 lg:w-5" />
+              {pizza.rating.toFixed(1)} ({pizza.reviews} avis)
+            </span>
+            <span className="flex items-center gap-1 lg:gap-2">
+              <Clock className="h-3.5 w-3.5 text-orange-500 lg:h-5 lg:w-5" />
+              {pizza.prepTime}
+            </span>
+            <span className="hidden items-center gap-1 sm:flex lg:gap-2">
+              <ShoppingCart className="h-3.5 w-3.5 text-orange-500 lg:h-5 lg:w-5" />
+              {pizza.loves.toLocaleString()} commandes
+            </span>
+          </div>
+
+          <div className="mt-auto flex flex-col gap-2 sm:flex-row lg:flex-col lg:gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 lg:h-12 lg:text-lg lg:font-semibold"
+              onClick={() => handleAddToCart(pizza, false)}
+            >
+              <Plus className="mr-1.5 h-4 w-4 lg:h-5 lg:w-5" />
+              Ajouter
+            </Button>
+            <Button
+              size="sm"
+              className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600 lg:h-12 lg:text-lg lg:font-semibold"
+              onClick={() => handleAddToCart(pizza, true)}
+            >
+              <ShoppingCart className="mr-1.5 h-4 w-4 lg:h-5 lg:w-5" />
+              Commander
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-orange-50 via-white to-white py-16 sm:py-20 lg:py-24">
       <div className="absolute inset-x-0 top-10 hidden h-96 w-full rotate-3 rounded-full bg-gradient-to-r from-orange-200/30 via-red-200/20 to-orange-200/30 blur-3xl md:block" />
@@ -207,154 +395,89 @@ export default function FeaturedPizzas() {
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-12">
           <div className="space-y-6 lg:sticky lg:top-24 lg:w-1/3">
-            <Badge className="w-fit bg-orange-600 text-white lg:px-4 lg:py-2 lg:text-base">
-              Best Sellers
+            <Badge className="w-fit bg-gradient-to-r from-orange-600 to-red-500 text-white lg:px-4 lg:py-2 lg:text-base">
+              Best sellers signature
             </Badge>
             <div className="space-y-4">
               <h2 className="text-3xl font-black leading-tight text-gray-900 sm:text-4xl lg:text-5xl">
-                Les pizzas incontournables
+                Les incontournables maison
               </h2>
               <p className="text-base text-gray-600 sm:text-lg lg:text-xl lg:leading-relaxed">
-                Recettes signature, ingrédients premium et cuisson minute au
-                four à pierre. Goûtez à l'équilibre parfait entre tradition et
-                créativité.
+                Recettes iconiques, ingrédients premium, cuissons minute.
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 lg:gap-5 lg:text-base">
-              <span className="flex items-center gap-2 font-semibold">
-                <Star className="h-4 w-4 text-orange-500 lg:h-5 lg:w-5" />
-                Note moyenne 4.9/5
-              </span>
-              <span className="flex items-center gap-2 font-semibold">
-                <Clock className="h-4 w-4 text-orange-500 lg:h-5 lg:w-5" />
-                Prêt en 15 min
-              </span>
-              <span className="flex items-center gap-2 font-semibold">
-                <ShoppingCart className="h-4 w-4 text-orange-500 lg:h-5 lg:w-5" />
-                Livraison express
-              </span>
+            <div className="flex items-center gap-3 text-sm font-semibold text-orange-600 lg:gap-4 lg:text-base">
+              <ShoppingCart className="h-5 w-5 lg:h-6 lg:w-6" />
+              Livraison express chez vous
             </div>
 
-            <Link
-              href="/menu"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 transition-colors hover:text-orange-700 lg:text-base"
+            <Button
+              asChild
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/30 transition-transform hover:scale-[1.02] hover:from-orange-600 hover:to-red-600"
             >
-              Découvrir toute la carte
-              <ArrowRight className="h-4 w-4 lg:h-5 lg:w-5" />
-            </Link>
+              <Link href="/menu">
+                Découvrir tout le menu
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
           </div>
 
           <div className="flex-1">
             <div className="flex items-center justify-between pb-4 lg:pb-6">
-              <h3 className="text-lg font-semibold text-gray-900 sm:text-xl lg:text-2xl">
-                Sélection du moment
-              </h3>
-              <div className="text-sm text-gray-500 lg:text-base">
-                {displayedPizzas.length} suggestions à partager
+              <div className="space-y-1">
+                <h3 className="text-lg font-semibold text-gray-900 sm:text-xl lg:text-2xl">
+                  <span className="bg-gradient-to-r from-orange-600 via-red-500 to-amber-500 bg-clip-text text-transparent">
+                    Pépites gourmandes
+                  </span>
+                </h3>
+                <div className="relative mt-2 overflow-hidden rounded-full border border-orange-100 bg-white/80 shadow-sm backdrop-blur sm:hidden">
+                  <motion.div
+                    className="flex items-center gap-8 whitespace-nowrap px-5 py-2 text-[10px] font-semibold uppercase tracking-[0.35em] text-orange-600"
+                    animate={{ x: ['0%', '-50%'] }}
+                    transition={{ duration: 18, ease: 'linear', repeat: Infinity }}
+                  >
+                    {tickerItems.map((label, index) => (
+                      <span key={`${label}-${index}`} className="flex items-center gap-3">
+                        {label}
+                        <span className="h-1 w-1 rounded-full bg-orange-400" />
+                      </span>
+                    ))}
+                  </motion.div>
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-2 lg:gap-8">
-              {displayedPizzas.map((pizza, index) => (
-                <motion.div
-                  key={pizza.id}
-                  initial={{ opacity: 0, y: 24 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.06, duration: 0.4 }}
-                  className="h-full"
+            <div className="block md:hidden">
+              <div className="relative -mx-4 pb-6">
+                <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-white to-transparent" />
+                <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-white to-transparent" />
+                <div
+                  ref={scrollRef}
+                  className="no-scrollbar flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2"
                 >
-                  <Card className="group flex h-full flex-col overflow-hidden border border-orange-100 bg-white shadow-sm transition-shadow hover:shadow-lg lg:shadow-md lg:hover:shadow-xl">
-                    <div className="relative h-48 w-full overflow-hidden bg-orange-50 sm:h-52 lg:h-56">
-                      <Image
-                        src={pizza.image}
-                        alt={pizza.name}
-                        fill
-                        sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        priority={index < 3}
-                      />
+                  {displayedPizzas.map((pizza, index) =>
+                    renderPizzaCard(pizza, index, 'w-[85%] flex-shrink-0 snap-center')
+                  )}
+                </div>
+              </div>
+              <div className="flex justify-center gap-2">
+                {displayedPizzas.map((pizza, index) => (
+                  <button
+                    key={pizza.id}
+                    type="button"
+                    aria-label={`Voir la pizza ${pizza.name}`}
+                    onClick={() => scrollToSlide(index)}
+                    className={`h-2 rounded-full transition-all duration-300 ${
+                      index === activeIndex ? 'w-6 bg-orange-500' : 'w-2 bg-orange-200'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
 
-                      <div className="absolute left-3 top-3 flex flex-wrap gap-2">
-                        {pizza.isBestSeller && (
-                          <Badge className="bg-orange-600/90 text-xs font-semibold text-white">
-                            Coup de cœur
-                          </Badge>
-                        )}
-                        {pizza.isVegetarian && (
-                          <Badge
-                            variant="outline"
-                            className="flex items-center gap-1 border-emerald-200 bg-emerald-50 text-emerald-700"
-                          >
-                            <Leaf className="h-3.5 w-3.5" />
-                            Végé
-                          </Badge>
-                        )}
-                        {pizza.isSpicy && (
-                          <Badge
-                            variant="outline"
-                            className="flex items-center gap-1 border-red-200 bg-red-50 text-red-600"
-                          >
-                            <Flame className="h-3.5 w-3.5" />
-                            Épicé
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    <CardContent className="flex flex-1 flex-col gap-4 p-5 lg:gap-6 lg:p-7">
-                      <div className="space-y-2 lg:space-y-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <h3 className="text-lg font-semibold text-gray-900 lg:text-2xl lg:font-bold">
-                            {pizza.name}
-                          </h3>
-                          <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-600 lg:px-5 lg:py-2 lg:text-base">
-                            {formatPrice(pizza.price)}
-                          </span>
-                        </div>
-                        <p className="line-clamp-2 text-sm text-gray-600 lg:text-lg lg:leading-relaxed">
-                          {pizza.description}
-                        </p>
-                      </div>
-
-                      <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-gray-500 lg:gap-4 lg:text-base">
-                        <span className="flex items-center gap-1 lg:gap-2">
-                          <Star className="h-3.5 w-3.5 text-orange-500 lg:h-5 lg:w-5" />
-                          {pizza.rating.toFixed(1)} ({pizza.reviews} avis)
-                        </span>
-                        <span className="flex items-center gap-1 lg:gap-2">
-                          <Clock className="h-3.5 w-3.5 text-orange-500 lg:h-5 lg:w-5" />
-                          {pizza.prepTime}
-                        </span>
-                        <span className="hidden items-center gap-1 sm:flex lg:gap-2">
-                          <ShoppingCart className="h-3.5 w-3.5 text-orange-500 lg:h-5 lg:w-5" />
-                          {pizza.loves.toLocaleString()} commandes
-                        </span>
-                      </div>
-
-                      <div className="mt-auto flex flex-col gap-2 sm:flex-row lg:flex-col lg:gap-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 lg:h-12 lg:text-lg lg:font-semibold"
-                          onClick={() => handleAddToCart(pizza, false)}
-                        >
-                          <Plus className="mr-1.5 h-4 w-4 lg:h-5 lg:w-5" />
-                          Ajouter
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600 lg:h-12 lg:text-lg lg:font-semibold"
-                          onClick={() => handleAddToCart(pizza, true)}
-                        >
-                          <ShoppingCart className="mr-1.5 h-4 w-4 lg:h-5 lg:w-5" />
-                          Commander
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
+            <div className="hidden md:grid md:grid-cols-2 md:gap-6 lg:grid-cols-2 lg:gap-8">
+              {displayedPizzas.map((pizza, index) => renderPizzaCard(pizza, index))}
             </div>
 
             {isLoading && (

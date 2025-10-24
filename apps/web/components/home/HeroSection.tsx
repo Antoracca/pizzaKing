@@ -1,18 +1,65 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Clock, Sparkles, Star, Truck } from 'lucide-react';
+import { ArrowRight, Clock, MapPin, Sparkles, Star, Truck } from 'lucide-react';
 
 const HERO_IMAGE =
   'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=900&h=900&fit=crop';
-const MOBILE_PROMO_IMAGE = '/IMAGEP.jpeg';
+
+const MOBILE_PROMOS = [
+  {
+    id: 'launch',
+    image:
+      'https://images.unsplash.com/photo-1623398969394-2c02e167498e?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=735',
+    badge: 'Offre lancement',
+    eyebrow: 'Première commande ?',
+    title: '-20% sur votre panier',
+    description: 'Code PIZZA20 valable cette semaine sur toutes nos recettes signature.',
+    code: 'PIZZA20',
+    cta: { label: "Voir l'offre", href: '/offres' },
+  },
+  {
+    id: 'duo',
+    image:
+      'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=1200&h=1200&fit=crop&q=80',
+    badge: 'Soirée duo',
+    eyebrow: 'Tous les jeudis',
+    title: '1 pizza achetée = 1 offerte',
+    description: 'Ajoutez deux pizzas M au panier après 19h, la moins chère est offerte.',
+    code: 'DUOJEUDI',
+    cta: { label: 'Préparer ma soirée', href: '/menu' },
+  },
+  {
+    id: 'family',
+    image:
+      'https://images.unsplash.com/photo-1600628421060-939639517883?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1470',
+    badge: 'Pack famille',
+    eyebrow: 'Week-end',
+    title: '-8 000 FCFA sur 4 parts',
+    description: 'Deux grandes pizzas + boissons + desserts à prix réduit le week-end.',
+    code: 'FAMILY8K',
+    cta: { label: 'Découvrir le pack', href: '/menu' },
+  },
+  {
+    id: 'lunch',
+    image:
+      'https://images.unsplash.com/photo-1748040581816-6b1864cdd686?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=687',
+    badge: 'Midi express',
+    eyebrow: 'Service 11h-14h',
+    title: 'Livraison garantie 20 min',
+    description: "En cas de retard, votre dessert maison est offert automatiquement.",
+    code: 'MIDI20',
+    cta: { label: 'Commander pour midi', href: '/menu' },
+  },
+];
 
 const stats = [
   { label: 'Recettes signées', value: '24' },
-  { label: 'Clients ravis', value: '10k+' },
+  { label: 'Clients livrés', value: '10k+' },
   { label: 'Note moyenne', value: '4.9⭐' },
   { label: 'Ingrédients frais', value: '100%' },
 ];
@@ -20,13 +67,18 @@ const stats = [
 const highlights = [
   {
     icon: <Clock className="h-5 w-5 text-red-500" />,
-    title: 'Livraison 30 min',
-    subtitle: 'ou Pizza King vous régale',
+    title: 'Livraison 30 min chrono',
+    subtitle: "ou c'est offert",
   },
   {
     icon: <Truck className="h-5 w-5 text-orange-500" />,
-    title: 'Suivi GPS live',
+    title: 'Suivi livraison en live',
     subtitle: 'Livreurs internes formés',
+  },
+  {
+    icon: <MapPin className="h-5 w-5 text-emerald-500" />,
+    title: 'Livré chez vous, au bureau, à l’école',
+    subtitle: 'Nous couvrons tout Bangui',
   },
 ];
 
@@ -44,65 +96,87 @@ export default function HeroSection() {
           <DesktopVisual />
         </div>
       </div>
+      <div className="mt-10 text-center text-xs font-semibold uppercase tracking-[0.25em] text-slate-400 sm:mt-10">
+        Service 11h - minuit • Support 7j/7
+      </div>
     </section>
   );
 }
 
 const MobileLaunchOffer = () => {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    MOBILE_PROMOS.forEach(promo => {
+      const img = new window.Image();
+      img.src = promo.image;
+    });
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveIndex(prev => (prev + 1) % MOBILE_PROMOS.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const activePromo = MOBILE_PROMOS[activeIndex];
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1, type: 'spring', stiffness: 190 }}
-      className="relative mb-10 overflow-hidden rounded-3xl border border-red-100 bg-white/10 text-white shadow-[0_30px_90px_-55px_rgba(248,113,113,0.75)] backdrop-blur"
-    >
-      <div className="absolute inset-0">
-        <Image
-          src={MOBILE_PROMO_IMAGE}
-          alt="Offre lancement Pizza King"
-          fill
-          priority
-          sizes="100vw"
-          className="saturate-110 scale-[1.12] object-cover object-center brightness-95"
-        />
-      </div>
-      <div className="absolute inset-0 bg-gradient-to-br from-red-900/70 via-red-700/60 to-orange-600/60" />
-
-      <div className="relative z-10 flex min-h-[210px] flex-col justify-between gap-5 p-5">
-        <div className="space-y-3">
-          <span className="inline-flex w-fit items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em]">
-            <Sparkles className="h-3.5 w-3.5" />
-            Offre lancement
-          </span>
-          <div className="space-y-1.5">
-            <p className="text-sm font-semibold text-white/85">
-              Première commande ?
-            </p>
-            <p className="text-2xl font-black leading-tight text-white">
-              -20% 1ère commande
-            </p>
-            <p className="text-xs text-white/80">
-              Utilisez le code ci-dessous et goûtez Pizza King dès aujourd'hui.
-            </p>
+    <div className="relative mb-10 min-h-[240px] w-full overflow-hidden lg:hidden">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activePromo.id}
+          initial={{ x: 90, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: -90, opacity: 0 }}
+          transition={{ duration: 0.5, ease: 'easeInOut' }}
+          className="absolute inset-0 overflow-hidden rounded-3xl border border-red-100 bg-white/10 text-white shadow-[0_30px_90px_-55px_rgba(248,113,113,0.75)] backdrop-blur"
+        >
+          <div className="absolute inset-0">
+            <Image
+              src={activePromo.image}
+              alt={activePromo.title}
+              fill
+              sizes="100vw"
+              priority={activeIndex === 0}
+              className="scale-[1.08] object-cover object-center brightness-[0.92] saturate-[1.1]"
+            />
           </div>
-        </div>
+          <div className="absolute inset-0 bg-gradient-to-br from-red-900/70 via-red-700/60 to-orange-600/55" />
 
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.25em] text-red-600 shadow-lg shadow-red-900/25">
-            Code:
-            <span className="tracking-[0.35em] text-red-600">PIZZA20</span>
-          </span>
+          <div className="relative z-10 flex min-h-[220px] flex-col justify-between gap-5 p-5">
+            <div className="space-y-3">
+              <span className="inline-flex w-fit items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em]">
+                <Sparkles className="h-3.5 w-3.5" />
+                {activePromo.badge}
+              </span>
+              <div className="space-y-1.5">
+                <p className="text-sm font-semibold text-white/90">{activePromo.eyebrow}</p>
+                <p className="text-2xl font-black leading-tight text-white">{activePromo.title}</p>
+                <p className="text-xs text-white/80">{activePromo.description}</p>
+              </div>
+            </div>
 
-          <Link
-            href="/offres"
-            className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-white/90 underline decoration-white/40 underline-offset-4"
-          >
-            Voir l'offre
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-        </div>
-      </div>
-    </motion.div>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.25em] text-red-600 shadow-lg shadow-red-900/25">
+                Code:
+                <span className="tracking-[0.35em] text-red-600">{activePromo.code}</span>
+              </span>
+
+              <Link
+                href={activePromo.cta.href}
+                className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-white/90 underline decoration-white/40 underline-offset-4"
+              >
+                {activePromo.cta.label}
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    </div>
   );
 };
 
@@ -130,7 +204,7 @@ const HeroContent = () => {
           transition={{ delay: 0.15 }}
           className="text-[2.45rem] font-black leading-[1.05] text-slate-900 sm:text-[2.85rem] lg:text-[3.25rem]"
         >
-          Expérience pizza inspirée de Domino’s, exécutée à la façon Pizza King.
+          Pizza King, la chaleur Domino’s en 20 minutes.
         </motion.h1>
 
         <motion.p
@@ -139,9 +213,7 @@ const HeroContent = () => {
           transition={{ delay: 0.2 }}
           className="max-w-xl text-sm text-slate-600 sm:text-base"
         >
-          Pâte maturée 48h, sélection d’ingrédients premium, cuisson haute
-          flamme et livraison suivie à la minute. Une qualité constante, de
-          l’appli jusqu’à votre porte.
+          Pâte reposée 48h, ingrédients locaux choisis et suivi GPS minute par minute. Même chaleur, même croustillant, livré là où vous êtes.
         </motion.p>
       </div>
 
@@ -200,12 +272,12 @@ const Highlights = () => {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
-      className="grid grid-cols-1 gap-4 sm:grid-cols-2"
+      className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
     >
       {highlights.map(highlight => (
         <div
           key={highlight.title}
-          className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white/90 px-4 py-3 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.6)] backdrop-blur"
+          className="flex items-center gap-3 rounded-2xl border border-slate-100/70 bg-white px-4 py-4 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.6)] backdrop-blur"
         >
           <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100/80">
             {highlight.icon}
@@ -228,7 +300,7 @@ const HeroCta = () => {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.35 }}
-      className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4"
+      className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4"
     >
       <Link href="/menu" className="group relative flex w-full sm:w-auto">
         <motion.span
@@ -253,16 +325,10 @@ const HeroCta = () => {
           </span>
         </Button>
       </Link>
-
-      <Link
-        href="/menu"
-        className="text-center text-sm font-semibold text-red-600 underline-offset-4 transition hover:text-red-500 hover:underline sm:text-base"
-      >
-        Explorer la carte complète
-      </Link>
     </motion.div>
   );
 };
+
 
 const DesktopVisual = () => {
   return (
