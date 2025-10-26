@@ -88,9 +88,9 @@ export default function HeroSection() {
       <BackgroundAccent />
 
       <div className="container relative z-10">
-        <div className="lg:hidden">
-          <MobileLaunchOffer />
-        </div>
+        {/* Carrousel - Mobile ET Desktop */}
+        <PromoCarousel />
+
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-center lg:gap-14">
           <HeroContent />
           <DesktopVisual />
@@ -103,8 +103,9 @@ export default function HeroSection() {
   );
 }
 
-const MobileLaunchOffer = () => {
+const PromoCarousel = () => {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [showChef, setShowChef] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -121,10 +122,95 @@ const MobileLaunchOffer = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // Animation chef - Apparaît une fois et reste
+  useEffect(() => {
+    const showTimer = setTimeout(() => {
+      setShowChef(true);
+    }, 1000);
+
+    return () => {
+      clearTimeout(showTimer);
+    };
+  }, []);
+
   const activePromo = MOBILE_PROMOS[activeIndex];
 
   return (
-    <div className="relative mb-10 min-h-[240px] w-full overflow-hidden lg:hidden">
+    <div className="relative mb-10 min-h-[240px] w-full overflow-visible lg:min-h-[280px]">
+      {/* Chef et bulle - Gauche sur mobile, droite sur desktop */}
+      <AnimatePresence>
+        {showChef && (
+          <motion.div
+            initial={{ x: -50, opacity: 0, scale: 0.5 }}
+            animate={{ x: 0, opacity: 1, scale: 1 }}
+            transition={{
+              type: 'spring',
+              stiffness: 100,
+              damping: 12,
+              duration: 0.8
+            }}
+            className="absolute -top-7 left-4 lg:left-auto lg:right-4 z-30 flex items-center gap-2"
+          >
+            {/* Chef - Animation de salut continue */}
+            <motion.span
+              animate={{
+                rotate: [0, -20, 20, -20, 20, 0],
+                scale: [1, 1.1, 1, 1.1, 1]
+              }}
+              transition={{
+                duration: 2.5,
+                repeat: Infinity,
+                ease: 'easeInOut',
+                repeatDelay: 1
+              }}
+              className="text-3xl sm:text-4xl lg:text-5xl cursor-pointer"
+            >
+              👨‍🍳
+            </motion.span>
+
+            {/* Bulle avec texte italien - Animation pulsante */}
+            <motion.div
+              animate={{
+                scale: [1, 1.05, 1],
+                boxShadow: [
+                  '0 10px 25px -5px rgba(251, 146, 60, 0.4)',
+                  '0 10px 40px -5px rgba(251, 146, 60, 0.6)',
+                  '0 10px 25px -5px rgba(251, 146, 60, 0.4)'
+                ]
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: 'easeInOut'
+              }}
+              className="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl px-3 py-2 lg:px-4 lg:py-3 border-2 border-white"
+            >
+              <motion.p
+                animate={{ opacity: [1, 0.8, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                className="text-xs sm:text-sm lg:text-base font-black text-white italic flex items-center gap-1.5"
+              >
+                Ciao!
+                {/* Emoji sur mobile, drapeau CSS sur desktop */}
+                <span className="lg:hidden">🇮🇹</span>
+                <span className="hidden lg:inline-flex h-4 w-6 overflow-hidden rounded-sm border border-white/30">
+                  <span className="w-1/3 bg-green-600"></span>
+                  <span className="w-1/3 bg-white"></span>
+                  <span className="w-1/3 bg-red-600"></span>
+                </span>
+              </motion.p>
+              <motion.p
+                animate={{ opacity: [1, 0.8, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
+                className="text-xs sm:text-sm lg:text-base font-black text-white italic"
+              >
+                Benvenuto! 🍕
+              </motion.p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence mode="wait">
         <motion.div
           key={activePromo.id}

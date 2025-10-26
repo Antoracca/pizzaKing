@@ -4,7 +4,15 @@
       "Bash(node set-admin-claim.js)",
       "Bash(pnpm add firebase-admin)",
       "Bash(pnpm add -w firebase-admin)",
-      "Bash(firebase deploy --only functions:setCustomClaims,functions:setUserRole --project pizzaking-e99b1)"
+      "Bash(firebase deploy --only functions:setCustomClaims,functions:setUserRole --project pizzaking-e99b1)",
+      "Bash(dir \"C:\\Users\\admin\\PizzaKing\\apps\\web\" /b /ad)",
+      "Bash(awk:*)",
+      "WebSearch",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm run dev)",
+      "Bash(ipconfig:*)",
+      "Bash(findstr:*)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []

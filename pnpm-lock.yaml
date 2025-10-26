@@ -193,6 +193,9 @@ importers:
       react-hook-form:
         specifier: ^7.51.3
         version: 7.64.0(react@19.1.0)
+      react-parallax-tilt:
+        specifier: ^1.7.310
+        version: 1.7.310(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react-phone-number-input:
         specifier: ^3.3.2
         version: 3.4.12(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -5401,6 +5404,12 @@ packages:
     peerDependenciesMeta:
       '@types/react':
         optional: true
+
+  react-parallax-tilt@1.7.310:
+    resolution: {integrity: sha512-GUq5tqlnf1thUu73XsbwpnnuBrC0x8X60q+CmX6V3NW2UjlBfyP9btLvzChHPLb+sKcWXesCdTJ63okHx/IJcA==}
+    peerDependencies:
+      react: 19.1.0
+      react-dom: 19.1.0
 
   react-phone-number-input@3.4.12:
     resolution: {integrity: sha512-Raob77KdtLGm49iC6nuOX9qy6Mg16idkgC7Y1mHmvG2WBYoauHpzxYNlfmFskQKeiztrJIwPhPzBhjFwjenNCA==}
@@ -12821,6 +12830,11 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
+
+  react-parallax-tilt@1.7.310(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+    dependencies:
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
 
   react-phone-number-input@3.4.12(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
