@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from 'react';
@@ -110,9 +111,40 @@ const buildKey = ({
 const generateUid = () =>
   `cart_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
+const CART_STORAGE_KEY = 'pizzaking_cart';
+
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Load cart from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem(CART_STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setItems(parsed);
+        }
+      } catch (error) {
+        console.error('Failed to load cart from localStorage:', error);
+      } finally {
+        setIsHydrated(true);
+      }
+    }
+  }, []);
+
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    if (isHydrated && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+      } catch (error) {
+        console.error('Failed to save cart to localStorage:', error);
+      }
+    }
+  }, [items, isHydrated]);
 
   const openCart = useCallback(() => setIsOpen(true), []);
   const closeCart = useCallback(() => setIsOpen(false), []);

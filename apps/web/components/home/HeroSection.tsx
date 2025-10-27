@@ -149,26 +149,9 @@ const PromoCarousel = () => {
               damping: 12,
               duration: 0.8
             }}
-            className="absolute -top-7 left-4 lg:left-auto lg:right-4 z-30 flex items-center gap-2"
+            className="absolute -top-10 right-4 z-30 flex items-center gap-2"
           >
-            {/* Chef - Animation de salut continue */}
-            <motion.span
-              animate={{
-                rotate: [0, -20, 20, -20, 20, 0],
-                scale: [1, 1.1, 1, 1.1, 1]
-              }}
-              transition={{
-                duration: 2.5,
-                repeat: Infinity,
-                ease: 'easeInOut',
-                repeatDelay: 1
-              }}
-              className="text-3xl sm:text-4xl lg:text-5xl cursor-pointer"
-            >
-              👨‍🍳
-            </motion.span>
-
-            {/* Bulle avec texte italien - Animation pulsante */}
+            {/* Bulle avec texte italien et mascotte - Animation pulsante */}
             <motion.div
               animate={{
                 scale: [1, 1.05, 1],
@@ -183,29 +166,54 @@ const PromoCarousel = () => {
                 repeat: Infinity,
                 ease: 'easeInOut'
               }}
-              className="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl px-3 py-2 lg:px-4 lg:py-3 border-2 border-white"
+              className="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl px-3 py-2 lg:px-4 lg:py-3 border-2 border-white flex items-center gap-3"
             >
-              <motion.p
-                animate={{ opacity: [1, 0.8, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-                className="text-xs sm:text-sm lg:text-base font-black text-white italic flex items-center gap-1.5"
+              {/* Mascotte - Animation de salut continue */}
+              <motion.div
+                animate={{
+                  rotate: [0, -5, 5, -5, 5, 0],
+                  scale: [1, 1.05, 1, 1.05, 1]
+                }}
+                transition={{
+                  duration: 2.5,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                  repeatDelay: 1
+                }}
+                className="cursor-pointer relative w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 flex-shrink-0"
               >
-                Ciao!
-                {/* Emoji sur mobile, drapeau CSS sur desktop */}
-                <span className="lg:hidden">🇮🇹</span>
-                <span className="hidden lg:inline-flex h-4 w-6 overflow-hidden rounded-sm border border-white/30">
-                  <span className="w-1/3 bg-green-600"></span>
-                  <span className="w-1/3 bg-white"></span>
-                  <span className="w-1/3 bg-red-600"></span>
-                </span>
-              </motion.p>
-              <motion.p
-                animate={{ opacity: [1, 0.8, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
-                className="text-xs sm:text-sm lg:text-base font-black text-white italic"
-              >
-                Benvenuto! 🍕
-              </motion.p>
+                <Image
+                  src="/Mascotte1.jpg"
+                  alt="Pizza King Mascotte"
+                  fill
+                  className="object-contain"
+                />
+              </motion.div>
+
+              {/* Texte */}
+              <div>
+                <motion.p
+                  animate={{ opacity: [1, 0.8, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                  className="text-xs sm:text-sm lg:text-base font-black text-white italic flex items-center gap-1.5"
+                >
+                  Ciao!
+                  {/* Emoji sur mobile, drapeau CSS sur desktop */}
+                  <span className="lg:hidden">🇮🇹</span>
+                  <span className="hidden lg:inline-flex h-4 w-6 overflow-hidden rounded-sm border border-white/30">
+                    <span className="w-1/3 bg-green-600"></span>
+                    <span className="w-1/3 bg-white"></span>
+                    <span className="w-1/3 bg-red-600"></span>
+                  </span>
+                </motion.p>
+                <motion.p
+                  animate={{ opacity: [1, 0.8, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
+                  className="text-xs sm:text-sm lg:text-base font-black text-white italic"
+                >
+                  Benvenuto! 🍕
+                </motion.p>
+              </div>
             </motion.div>
           </motion.div>
         )}

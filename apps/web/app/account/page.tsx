@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Sparkles, Settings, Shield, Loader2 } from 'lucide-react';
+import { Sparkles, Settings, Shield, Loader2, MapPin } from 'lucide-react';
 import { useAuth } from '@pizza-king/shared/src/hooks/useAuth';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -20,6 +20,7 @@ import {
   OverviewTab,
   SecurityTab,
   SettingsTab,
+  AddressesTab,
   AccountStats,
   AccountNavigation,
   FeedbackMessage,
@@ -51,6 +52,7 @@ const PHONE_RECAPTCHA_ID = 'account-phone-recaptcha';
 
 const tabs: Array<{ id: TabId; name: string; icon: React.ElementType }> = [
   { id: 'overview', name: 'Aperçu', icon: Sparkles },
+  { id: 'addresses', name: 'Adresses', icon: MapPin },
   { id: 'settings', name: 'Paramètres', icon: Settings },
   { id: 'security', name: 'Sécurité', icon: Shield },
 ];
@@ -518,6 +520,10 @@ export default function AccountPage() {
               <OverviewTab preferences={preferencesForm} />
             )}
 
+            {activeTab === 'addresses' && (
+              <AddressesTab />
+            )}
+
             {activeTab === 'settings' && (
               <SettingsTab
                 user={user}
@@ -631,6 +637,16 @@ export default function AccountPage() {
                   className="space-y-6"
                 >
                   <OverviewTab preferences={preferencesForm} />
+                </motion.div>
+              )}
+
+              {activeTab === 'addresses' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-6"
+                >
+                  <AddressesTab />
                 </motion.div>
               )}
 

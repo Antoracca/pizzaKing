@@ -1,0 +1,895 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import Header from '@/components/layout/Header';
+import OrderSummary from '@/components/checkout/OrderSummary';
+import AddressSelector, { SavedAddress } from '@/components/checkout/AddressSelector';
+import AddAddressModal from '@/components/checkout/AddAddressModal';
+import { useCartContext } from '@/providers/CartProvider';
+import { useAuth } from '@pizza-king/shared/src/hooks/useAuth';
+import {
+  MapPin,
+  CreditCard,
+  Clock,
+  Check,
+  ChevronRight,
+  ShoppingBag,
+  AlertCircle,
+  Building2,
+  Home,
+  Phone,
+  User,
+  Save,
+  Edit,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+
+const steps = [
+  { id: 1, name: 'Livraison', icon: MapPin },
+  { id: 2, name: 'Paiement', icon: CreditCard },
+  { id: 3, name: 'Confirmation', icon: Check },
+];
+
+type DeliveryFormData = {
+  fullName: string;
+  phone: string;
+  quartier: string;
+  avenue: string;
+  pointDeRepere: string;
+  numeroPorte: string;
+  etage: string;
+  instructions: string;
+};
+
+type PaymentMethod = 'card' | 'cash' | 'mobile';
+
+export default function CheckoutPage() {
+  const router = useRouter();
+  const { items, subtotal, itemCount, clearCart } = useCartContext();
+  const { user, loading: authLoading } = useAuth();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [deliveryType, setDeliveryType] = useState<'delivery' | 'pickup'>('delivery');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orderNumber, setOrderNumber] = useState('');
+  const [showAuthWarning, setShowAuthWarning] = useState(false);
+
+  // Address management
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState<SavedAddress | null>(null);
+  const [useManualAddress, setUseManualAddress] = useState(!user);
+  const [saveAddressForLater, setSaveAddressForLater] = useState(false);
+
+  // Form data
+  const [formData, setFormData] = useState<DeliveryFormData>({
+    fullName: user?.displayName || '',
+    phone: user?.phoneNumber || '',
+    quartier: '',
+    avenue: '',
+    pointDeRepere: '',
+    numeroPorte: '',
+    etage: '',
+    instructions: '',
+  });
+
+  // Form errors
+  const [errors, setErrors] = useState<Partial<DeliveryFormData>>({});
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      // Save checkout intent in localStorage
+      localStorage.setItem('checkout_redirect', 'true');
+
+      // Show warning message
+      setShowAuthWarning(true);
+
+      // Redirect to login after 3 seconds
+      const timer = setTimeout(() => {
+        router.push('/auth/login?redirect=checkout');
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [user, authLoading, router]);
+
+  // Update form when user data changes
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        fullName: user.displayName || prev.fullName,
+        phone: user.phoneNumber || prev.phone,
+      }));
+    }
+  }, [user]);
+
+  // Redirect if cart is empty
+  useEffect(() => {
+    if (itemCount === 0 && currentStep === 1 && !authLoading) {
+      router.push('/menu');
+    }
+  }, [itemCount, currentStep, router, authLoading]);
+
+  // Validate delivery form
+  const validateDeliveryForm = (): boolean => {
+    const newErrors: Partial<DeliveryFormData> = {};
+
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = 'Nom complet requis';
+    }
+
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Numéro de téléphone requis';
+    } else if (!/^(\+236|236)?[0-9]{8}$/.test(formData.phone.replace(/\s/g, ''))) {
+      newErrors.phone = 'Numéro invalide (ex: +236 70 12 34 56)';
+    }
+
+    if (deliveryType === 'delivery') {
+      if (!formData.quartier.trim()) {
+        newErrors.quartier = 'Quartier requis';
+      }
+
+      if (!formData.avenue.trim()) {
+        newErrors.avenue = 'Avenue/Rue requise';
+      }
+
+      if (!formData.pointDeRepere.trim()) {
+        newErrors.pointDeRepere = 'Point de repère requis pour le livreur';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Handle form input change
+  const handleInputChange = (
+    field: keyof DeliveryFormData,
+    value: string
+  ) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error for this field
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  // Handle step 1 completion
+  const handleStep1Continue = () => {
+    if (validateDeliveryForm()) {
+      setCurrentStep(2);
+    }
+  };
+
+  // Handle order submission
+  const handleOrderSubmit = async () => {
+    setIsSubmitting(true);
+
+    try {
+      // Prepare order data
+      const orderData = {
+        items: items.map(item => ({
+          productId: item.productId,
+          name: item.name,
+          image: item.image,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          sizeLabel: item.sizeLabel,
+          crustLabel: item.crustLabel,
+          extras: item.extras,
+        })),
+        deliveryType,
+        address: deliveryType === 'delivery' ? {
+          quartier: formData.quartier,
+          avenue: formData.avenue,
+          pointDeRepere: formData.pointDeRepere,
+          numeroPorte: formData.numeroPorte,
+          etage: formData.etage,
+          instructions: formData.instructions,
+        } : null,
+        contact: {
+          fullName: formData.fullName,
+          phone: formData.phone,
+        },
+        paymentMethod,
+      };
+
+      // Call API to create order
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erreur lors de la création de la commande');
+      }
+
+      const result = await response.json();
+
+      // Set order number from response
+      setOrderNumber(result.order.orderNumber);
+
+      // Clear cart after successful order
+      clearCart();
+
+      // Move to confirmation step
+      setCurrentStep(3);
+    } catch (error) {
+      console.error('Order submission failed:', error);
+      alert(error instanceof Error ? error.message : 'Erreur lors de la création de la commande. Veuillez réessayer.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Show auth warning if user is not logged in
+  if (showAuthWarning || (!user && !authLoading)) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+
+        <div className="container mx-auto px-4 py-20">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="mx-auto max-w-md text-center"
+          >
+            <Card>
+              <CardContent className="p-8">
+                <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-orange-100">
+                  <AlertCircle className="h-10 w-10 text-orange-600" />
+                </div>
+
+                <h2 className="mb-4 text-2xl font-bold text-gray-900">
+                  Connexion requise
+                </h2>
+
+                <p className="mb-6 text-gray-600">
+                  Vous devez être connecté pour passer une commande.
+                  <br />
+                  Votre panier sera conservé.
+                </p>
+
+                <div className="mb-6 rounded-xl bg-blue-50 border border-blue-200 p-4">
+                  <p className="text-sm text-blue-900">
+                    ⏱️ Redirection automatique dans 3 secondes...
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => router.push('/menu')}
+                  >
+                    Retour au menu
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    onClick={() => router.push('/auth/login?redirect=checkout')}
+                  >
+                    Se connecter
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+
+        <div className="container mx-auto px-4 py-20">
+          <div className="mx-auto max-w-md text-center">
+            <div className="flex flex-col items-center justify-center">
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
+              <p className="mt-4 text-gray-600">Vérification...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+
+      <div className="container mx-auto px-4 py-12">
+        {/* Progress Steps */}
+        <div className="mx-auto mb-12 max-w-3xl">
+          <div className="flex items-center justify-between">
+            {steps.map((step, index) => (
+              <div key={step.id} className="flex flex-1 items-center">
+                <div className="relative z-10 flex flex-col items-center">
+                  <motion.div
+                    initial={false}
+                    animate={{
+                      scale: currentStep === step.id ? 1.1 : 1,
+                    }}
+                    className={`flex h-16 w-16 items-center justify-center rounded-full transition-all ${
+                      currentStep >= step.id
+                        ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30'
+                        : 'border-2 border-gray-300 bg-white text-gray-400'
+                    }`}
+                  >
+                    <step.icon className="h-7 w-7" />
+                  </motion.div>
+                  <p
+                    className={`mt-2 text-sm font-medium ${
+                      currentStep >= step.id
+                        ? 'text-orange-600'
+                        : 'text-gray-500'
+                    }`}
+                  >
+                    {step.name}
+                  </p>
+                </div>
+                {index < steps.length - 1 && (
+                  <div className="relative mx-4 h-1 flex-1 rounded bg-gray-200">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{
+                        width: currentStep > step.id ? '100%' : '0%',
+                      }}
+                      className="h-full rounded bg-gradient-to-r from-orange-500 to-orange-600"
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-8 lg:grid-cols-3">
+          {/* Left - Forms */}
+          <div className="lg:col-span-2">
+            {/* Step 1: Delivery */}
+            {currentStep === 1 && (
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="space-y-6"
+              >
+                <Card>
+                  <CardContent className="p-6">
+                    <h2 className="mb-6 text-2xl font-bold text-gray-900">
+                      Mode de réception
+                    </h2>
+
+                    <div className="mb-6 grid grid-cols-2 gap-4">
+                      <button
+                        onClick={() => setDeliveryType('delivery')}
+                        className={`rounded-2xl border-2 p-6 transition-all ${
+                          deliveryType === 'delivery'
+                            ? 'border-orange-500 bg-orange-50'
+                            : 'border-gray-200 hover:border-orange-300'
+                        }`}
+                      >
+                        <MapPin
+                          className={`mx-auto mb-3 h-8 w-8 ${
+                            deliveryType === 'delivery'
+                              ? 'text-orange-600'
+                              : 'text-gray-400'
+                          }`}
+                        />
+                        <p className="font-semibold text-gray-900">Livraison</p>
+                        <p className="mt-1 text-sm text-gray-500">30 min</p>
+                      </button>
+
+                      <button
+                        onClick={() => setDeliveryType('pickup')}
+                        className={`rounded-2xl border-2 p-6 transition-all ${
+                          deliveryType === 'pickup'
+                            ? 'border-orange-500 bg-orange-50'
+                            : 'border-gray-200 hover:border-orange-300'
+                        }`}
+                      >
+                        <ShoppingBag
+                          className={`mx-auto mb-3 h-8 w-8 ${
+                            deliveryType === 'pickup'
+                              ? 'text-orange-600'
+                              : 'text-gray-400'
+                          }`}
+                        />
+                        <p className="font-semibold text-gray-900">
+                          À emporter
+                        </p>
+                        <p className="mt-1 text-sm text-gray-500">15 min</p>
+                      </button>
+                    </div>
+
+                    {/* Contact Information */}
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                        <User className="h-5 w-5 text-orange-600" />
+                        Vos informations
+                      </h3>
+
+                      <div>
+                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                          Nom complet <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.fullName}
+                          onChange={e => handleInputChange('fullName', e.target.value)}
+                          placeholder="Jean Dupont"
+                          className={`w-full rounded-xl border-2 px-4 py-3 outline-none transition-all focus:ring-4 ${
+                            errors.fullName
+                              ? 'border-red-500 focus:border-red-500 focus:ring-red-500/10'
+                              : 'border-gray-200 focus:border-orange-500 focus:ring-orange-500/10'
+                          }`}
+                        />
+                        {errors.fullName && (
+                          <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                            <AlertCircle className="h-4 w-4" />
+                            {errors.fullName}
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                          Numéro de téléphone <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <Phone className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                          <input
+                            type="tel"
+                            value={formData.phone}
+                            onChange={e => handleInputChange('phone', e.target.value)}
+                            placeholder="+236 70 12 34 56"
+                            className={`w-full rounded-xl border-2 pl-11 pr-4 py-3 outline-none transition-all focus:ring-4 ${
+                              errors.phone
+                                ? 'border-red-500 focus:border-red-500 focus:ring-red-500/10'
+                                : 'border-gray-200 focus:border-orange-500 focus:ring-orange-500/10'
+                            }`}
+                          />
+                        </div>
+                        {errors.phone && (
+                          <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                            <AlertCircle className="h-4 w-4" />
+                            {errors.phone}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Delivery Address */}
+                    {deliveryType === 'delivery' && (
+                      <div className="mt-6 space-y-4">
+                        <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                          <Home className="h-5 w-5 text-orange-600" />
+                          Adresse de livraison
+                        </h3>
+
+                        {/* Address Mode Toggle for Authenticated Users */}
+                        {user && (
+                          <div className="rounded-xl bg-blue-50 border border-blue-200 p-4">
+                            <div className="flex items-start gap-3">
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-blue-900 mb-2">
+                                  Choisissez votre mode d'adresse :
+                                </p>
+                                <div className="flex gap-3">
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant={!useManualAddress ? "default" : "outline"}
+                                    onClick={() => setUseManualAddress(false)}
+                                  >
+                                    <MapPin className="mr-2 h-4 w-4" />
+                                    Adresses sauvegardées
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant={useManualAddress ? "default" : "outline"}
+                                    onClick={() => setUseManualAddress(true)}
+                                  >
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Saisir manuellement
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Saved Addresses Selector (for authenticated users) */}
+                        {user && !useManualAddress ? (
+                          <AddressSelector
+                            onSelectAddress={(address) => {
+                              setSelectedAddress(address);
+                              if (address) {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  quartier: address.quartier,
+                                  avenue: address.avenue,
+                                  pointDeRepere: address.pointDeRepere,
+                                  numeroPorte: address.numeroPorte || '',
+                                  etage: address.etage || '',
+                                  instructions: address.instructions || '',
+                                }));
+                              }
+                            }}
+                            onAddNew={() => setShowAddressModal(true)}
+                            selectedAddressId={selectedAddress?.id}
+                          />
+                        ) : (
+                          <div className="space-y-4">{/* Manual address form will go here */}
+
+                        <div>
+                          <label className="mb-2 block text-sm font-medium text-gray-700">
+                            Quartier <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.quartier}
+                            onChange={e => handleInputChange('quartier', e.target.value)}
+                            placeholder="Ex: PK5, Gobongo, Fatima..."
+                            className={`w-full rounded-xl border-2 px-4 py-3 outline-none transition-all focus:ring-4 ${
+                              errors.quartier
+                                ? 'border-red-500 focus:border-red-500 focus:ring-red-500/10'
+                                : 'border-gray-200 focus:border-orange-500 focus:ring-orange-500/10'
+                            }`}
+                          />
+                          {errors.quartier && (
+                            <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                              <AlertCircle className="h-4 w-4" />
+                              {errors.quartier}
+                            </p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="mb-2 block text-sm font-medium text-gray-700">
+                            Avenue / Rue <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.avenue}
+                            onChange={e => handleInputChange('avenue', e.target.value)}
+                            placeholder="Ex: Avenue de l'Indépendance"
+                            className={`w-full rounded-xl border-2 px-4 py-3 outline-none transition-all focus:ring-4 ${
+                              errors.avenue
+                                ? 'border-red-500 focus:border-red-500 focus:ring-red-500/10'
+                                : 'border-gray-200 focus:border-orange-500 focus:ring-orange-500/10'
+                            }`}
+                          />
+                          {errors.avenue && (
+                            <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                              <AlertCircle className="h-4 w-4" />
+                              {errors.avenue}
+                            </p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="mb-2 block text-sm font-medium text-gray-700">
+                            Point de repère <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.pointDeRepere}
+                            onChange={e =>
+                              handleInputChange('pointDeRepere', e.target.value)
+                            }
+                            placeholder="Ex: Face à la pharmacie centrale, à côté du marché..."
+                            className={`w-full rounded-xl border-2 px-4 py-3 outline-none transition-all focus:ring-4 ${
+                              errors.pointDeRepere
+                                ? 'border-red-500 focus:border-red-500 focus:ring-red-500/10'
+                                : 'border-gray-200 focus:border-orange-500 focus:ring-orange-500/10'
+                            }`}
+                          />
+                          {errors.pointDeRepere && (
+                            <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                              <AlertCircle className="h-4 w-4" />
+                              {errors.pointDeRepere}
+                            </p>
+                          )}
+                          <p className="mt-1 text-xs text-gray-500">
+                            Indiquez un point de repère connu pour aider le livreur à vous trouver facilement
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                              Numéro de porte
+                            </label>
+                            <div className="relative">
+                              <Building2 className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                              <input
+                                type="text"
+                                value={formData.numeroPorte}
+                                onChange={e =>
+                                  handleInputChange('numeroPorte', e.target.value)
+                                }
+                                placeholder="Ex: 123"
+                                className="w-full rounded-xl border-2 border-gray-200 pl-11 pr-4 py-3 outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                              Étage
+                            </label>
+                            <input
+                              type="text"
+                              value={formData.etage}
+                              onChange={e =>
+                                handleInputChange('etage', e.target.value)
+                              }
+                              placeholder="Ex: 2ème"
+                              className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="mb-2 block text-sm font-medium text-gray-700">
+                            Instructions supplémentaires
+                          </label>
+                          <textarea
+                            value={formData.instructions}
+                            onChange={e =>
+                              handleInputChange('instructions', e.target.value)
+                            }
+                            placeholder="Ex: Sonnez à l'interphone, code 1234. Le portail est bleu..."
+                            rows={3}
+                            className="w-full resize-none rounded-xl border-2 border-gray-200 px-4 py-3 outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
+                          />
+                          <p className="mt-1 text-xs text-gray-500">
+                            Toute information supplémentaire pour faciliter la livraison
+                          </p>
+                        </div>
+
+                        {/* Save Address Option for Authenticated Users */}
+                        {user && useManualAddress && (
+                          <div className="rounded-xl bg-orange-50 border border-orange-200 p-4">
+                            <label className="flex items-center gap-3 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={saveAddressForLater}
+                                onChange={(e) => setSaveAddressForLater(e.target.checked)}
+                                className="h-5 w-5 rounded border-orange-300 text-orange-600 focus:ring-orange-500"
+                              />
+                              <div>
+                                <p className="text-sm font-medium text-orange-900">
+                                  <Save className="inline h-4 w-4 mr-1" />
+                                  Enregistrer cette adresse pour plus tard
+                                </p>
+                                <p className="text-xs text-orange-700 mt-0.5">
+                                  Gagnez du temps lors de vos prochaines commandes
+                                </p>
+                              </div>
+                            </label>
+                          </div>
+                        )}
+                      </div>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="mb-4 font-semibold text-gray-900">
+                      Heure de livraison
+                    </h3>
+                    <div className="space-y-3">
+                      <button className="w-full rounded-xl border-2 border-orange-500 bg-orange-50 p-4 text-left">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Clock className="h-5 w-5 text-orange-600" />
+                            <div>
+                              <p className="font-semibold text-gray-900">
+                                Dès que possible
+                              </p>
+                              <p className="text-sm text-gray-500">~30 min</p>
+                            </div>
+                          </div>
+                          <Badge>Recommandé</Badge>
+                        </div>
+                      </button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Button
+                  size="lg"
+                  className="w-full"
+                  onClick={handleStep1Continue}
+                >
+                  Continuer vers le paiement
+                  <ChevronRight className="ml-2 h-5 w-5" />
+                </Button>
+              </motion.div>
+            )}
+
+            {/* Step 2: Payment */}
+            {currentStep === 2 && (
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="space-y-6"
+              >
+                <Card>
+                  <CardContent className="p-6">
+                    <h2 className="mb-6 text-2xl font-bold text-gray-900">
+                      Mode de paiement
+                    </h2>
+
+                    <div className="mb-6 space-y-3">
+                      {[
+                        { id: 'card', name: 'Carte bancaire', icon: '💳' },
+                        { id: 'mobile', name: 'Mobile Money', icon: '📱' },
+                        {
+                          id: 'cash',
+                          name: 'Espèces à la livraison',
+                          icon: '💵',
+                        },
+                      ].map(method => (
+                        <button
+                          key={method.id}
+                          onClick={() =>
+                            setPaymentMethod(method.id as PaymentMethod)
+                          }
+                          className={`flex w-full items-center justify-between rounded-xl border-2 p-4 transition-all ${
+                            paymentMethod === method.id
+                              ? 'border-orange-500 bg-orange-50'
+                              : 'border-gray-200 hover:border-orange-300'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">{method.icon}</span>
+                            <span className="font-semibold text-gray-900">
+                              {method.name}
+                            </span>
+                          </div>
+                          {paymentMethod === method.id && (
+                            <Check className="h-5 w-5 text-orange-600" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+
+                    {paymentMethod === 'card' && (
+                      <div className="space-y-4">
+                        <div className="rounded-xl bg-yellow-50 border border-yellow-200 p-4">
+                          <p className="text-sm text-yellow-800">
+                            <AlertCircle className="inline h-4 w-4 mr-2" />
+                            Le paiement par carte sera bientôt disponible. Veuillez choisir un autre mode de paiement.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {paymentMethod === 'mobile' && (
+                      <div className="space-y-4">
+                        <div className="rounded-xl bg-blue-50 border border-blue-200 p-4">
+                          <p className="text-sm text-blue-800">
+                            <AlertCircle className="inline h-4 w-4 mr-2" />
+                            Vous recevrez un message pour valider le paiement après la commande.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {paymentMethod === 'cash' && (
+                      <div className="space-y-4">
+                        <div className="rounded-xl bg-green-50 border border-green-200 p-4">
+                          <p className="text-sm text-green-800">
+                            <Check className="inline h-4 w-4 mr-2" />
+                            Vous paierez en espèces à la livraison. Préparez la monnaie si possible.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <div className="flex gap-4">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setCurrentStep(1)}
+                  >
+                    Retour
+                  </Button>
+                  <Button
+                    size="lg"
+                    className="flex-1"
+                    onClick={handleOrderSubmit}
+                    disabled={isSubmitting || paymentMethod === 'card'}
+                  >
+                    {isSubmitting ? 'Traitement...' : 'Passer la commande'}
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 3: Confirmation */}
+            {currentStep === 3 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="py-12 text-center"
+              >
+                <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-green-100">
+                  <Check className="h-12 w-12 text-green-600" />
+                </div>
+                <h2 className="mb-4 text-3xl font-bold text-gray-900">
+                  Commande confirmée !
+                </h2>
+                <p className="mb-2 text-gray-600">
+                  Numéro de commande: <strong>#{orderNumber}</strong>
+                </p>
+                <p className="mb-8 text-gray-600">
+                  Votre pizza arrive dans environ <strong>30 minutes</strong>
+                </p>
+                <div className="flex justify-center gap-4">
+                  <Button
+                    size="lg"
+                    onClick={() => router.push('/orders')}
+                  >
+                    Suivre ma commande
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={() => router.push('/')}
+                  >
+                    Retour à l'accueil
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+          </div>
+
+          {/* Right - Order Summary */}
+          {currentStep < 3 && (
+            <div className="lg:col-span-1">
+              <OrderSummary
+                items={items}
+                subtotal={subtotal}
+                isDelivery={deliveryType === 'delivery'}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Add Address Modal */}
+      <AddAddressModal
+        isOpen={showAddressModal}
+        onClose={() => setShowAddressModal(false)}
+        onSuccess={() => {
+          // Refresh address list by forcing a re-render
+          // The AddressSelector will fetch addresses again
+          setUseManualAddress(false);
+        }}
+      />
+    </div>
+  );
+}

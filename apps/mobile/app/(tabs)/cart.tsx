@@ -37,8 +37,7 @@ export default function CartScreen() {
   const updateQuantity = useCartStore(state => state.updateQuantity);
 
   const deliveryFee = subtotal >= 10000 ? 0 : 1000;
-  const tax = Math.round(subtotal * 0.18);
-  const total = subtotal + deliveryFee + tax;
+  const total = subtotal + deliveryFee;
 
   const deliveryProgress = Math.min((subtotal / 10000) * 100, 100);
 
@@ -236,11 +235,6 @@ export default function CartScreen() {
                   {formatPrice(deliveryFee)}
                 </Text>
               )}
-            </View>
-
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>TVA (18%)</Text>
-              <Text style={styles.summaryValue}>{formatPrice(tax)}</Text>
             </View>
 
             <View style={styles.summaryDivider} />

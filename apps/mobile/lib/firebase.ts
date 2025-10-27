@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAnalytics } from 'firebase/analytics';
 import Constants from 'expo-constants';
@@ -44,8 +44,8 @@ if (!isFirebaseConfigured) {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app);
 
-// Use the specific database ID "pizzaking" in africa-south1
-const db = getFirestore(app, 'pizzaking');
+// Initialize Firestore with named database 'pizzaking'
+const db = initializeFirestore(app, {}, 'pizzaking');
 const storage = getStorage(app);
 
 // Analytics (mobile)

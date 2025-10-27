@@ -2,12 +2,14 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowRight, ShoppingCart } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 import { useCart } from '@/hooks/useCart';
 import { formatPrice } from '@/lib/utils';
 
 export default function FloatingCartButton() {
   const { itemCount, subtotal, openCart, isOpen } = useCart();
+  const pathname = usePathname();
 
   const handleClick = () => {
     if (!isOpen) {
@@ -15,9 +17,13 @@ export default function FloatingCartButton() {
     }
   };
 
+  // Ne pas afficher sur la page checkout ni sur les pages de paiement
+  const isCheckoutPage = pathname === '/checkout';
+  const isPaymentPage = pathname?.startsWith('/payment');
+
   return (
     <AnimatePresence>
-      {itemCount > 0 && !isOpen && (
+      {itemCount > 0 && !isOpen && !isCheckoutPage && !isPaymentPage && (
         <motion.button
           type="button"
           onClick={handleClick}
@@ -25,7 +31,7 @@ export default function FloatingCartButton() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
           transition={{ duration: 0.2 }}
-          className="fixed bottom-6 right-4 z-[65] inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-orange-500 to-red-500 px-5 py-3 text-left shadow-2xl shadow-orange-500/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 sm:bottom-8 sm:right-8 sm:px-6"
+          className="fixed bottom-6 left-4 z-[65] inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-orange-500 to-red-500 px-5 py-3 text-left shadow-2xl shadow-orange-500/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 sm:bottom-8 sm:left-8 sm:px-6"
         >
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-orange-600 shadow-md">
             <ShoppingCart className="h-5 w-5" />

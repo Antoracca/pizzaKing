@@ -1,20 +1,33 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
+import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumber-js';
 import Header from '@/components/layout/Header';
+import OrderSummary from '@/components/checkout/OrderSummary';
+import PhoneSection from '@/components/checkout/PhoneSection';
+import AddressDeliverySection from '@/components/checkout/AddressDeliverySection';
+import PaymentMethodSelector, { PaymentMethod } from '@/components/checkout/PaymentMethodSelector';
+import CardPaymentForm, { CardPaymentData } from '@/components/checkout/CardPaymentForm';
+import MobileMoneyForm, { MobileMoneyData } from '@/components/checkout/MobileMoneyForm';
+import CashPaymentInfo from '@/components/checkout/CashPaymentInfo';
+import { SavedAddress } from '@/components/checkout/AddressSelector';
+import { useCartContext } from '@/providers/CartProvider';
+import { useAuth } from '@pizza-king/shared/src/hooks/useAuth';
 import {
   MapPin,
   CreditCard,
-  Clock,
   Check,
-  ChevronRight,
   ShoppingBag,
+  AlertCircle,
+  ArrowLeft,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { formatPrice } from '@/lib/utils';
+import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 const steps = [
   { id: 1, name: 'Livraison', icon: MapPin },
@@ -22,397 +35,542 @@ const steps = [
   { id: 3, name: 'Confirmation', icon: Check },
 ];
 
+type ManualAddressData = {
+  quartier: string;
+  avenue: string;
+  pointDeRepere: string;
+  numeroPorte: string;
+  etage: string;
+  instructions: string;
+};
+
+// Fonction de validation de numéro de téléphone intelligente
+const validatePhoneNumber = (phone: string): { isValid: boolean; error?: string; formatted?: string } => {
+  if (!phone || !phone.trim()) {
+    return { isValid: false, error: 'Numéro de téléphone requis' };
+  }
+
+  // Nettoyer le numéro (enlever les espaces, tirets, etc.)
+  const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+
+  // Essayer de détecter et valider avec différents pays
+  const countriesToTry: CountryCode[] = ['CF', 'FR', 'CD', 'CG', 'CM']; // Centrafrique, France, RDC, Congo, Cameroun
+
+  // D'abord, essayer de parser avec détection automatique
+  try {
+    if (isValidPhoneNumber(cleanPhone)) {
+      const parsed = parsePhoneNumber(cleanPhone);
+      return {
+        isValid: true,
+        formatted: parsed.formatInternational()
+      };
+    }
+  } catch (e) {
+    // Continue avec les autres méthodes
+  }
+
+  // Essayer avec chaque pays
+  for (const country of countriesToTry) {
+    try {
+      if (isValidPhoneNumber(cleanPhone, country)) {
+        const parsed = parsePhoneNumber(cleanPhone, country);
+        return {
+          isValid: true,
+          formatted: parsed.formatInternational()
+        };
+      }
+    } catch (e) {
+      continue;
+    }
+  }
+
+  // Si rien ne fonctionne, vérifier si c'est au moins un format basique valide
+  const basicPhoneRegex = /^(\+|00)?[0-9]{8,15}$/;
+  if (basicPhoneRegex.test(cleanPhone)) {
+    return {
+      isValid: true,
+      formatted: cleanPhone
+    };
+  }
+
+  return {
+    isValid: false,
+    error: 'Numéro de téléphone invalide. Utilisez un format international (+236...) ou local'
+  };
+};
+
 export default function CheckoutPage() {
+  const router = useRouter();
+  const { items, subtotal, itemCount, clearCart } = useCartContext();
+  const { user, loading: authLoading } = useAuth();
+
   const [currentStep, setCurrentStep] = useState(1);
-  const [deliveryType, setDeliveryType] = useState<'delivery' | 'pickup'>(
-    'delivery'
-  );
-  const [paymentMethod, setPaymentMethod] = useState<
-    'card' | 'cash' | 'mobile'
-  >('card');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
+  const [cardPaymentData, setCardPaymentData] = useState<CardPaymentData | null>(null);
+  const [mobileMoneyData, setMobileMoneyData] = useState<MobileMoneyData | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orderNumber, setOrderNumber] = useState('');
+  const [showAuthWarning, setShowAuthWarning] = useState(false);
 
-  // Mock cart data
-  const cartItems = [
-    {
-      id: '1',
-      name: 'Margherita Royale',
-      size: 'Grande',
-      quantity: 2,
-      price: 12000,
-    },
-    {
-      id: '2',
-      name: 'BBQ Chicken',
-      size: 'Moyenne',
-      quantity: 1,
-      price: 12500,
-    },
-  ];
+  // Phone state
+  const [currentPhone, setCurrentPhone] = useState('');
+  const [phoneError, setPhoneError] = useState('');
 
-  const subtotal = 36500;
-  const deliveryFee = 0;
-  const tax = 6570;
-  const total = 43070;
+  // Address state
+  const [selectedAddress, setSelectedAddress] = useState<SavedAddress | null>(null);
+  const [manualAddress, setManualAddress] = useState<ManualAddressData>({
+    quartier: '',
+    avenue: '',
+    pointDeRepere: '',
+    numeroPorte: '',
+    etage: '',
+    instructions: '',
+  });
+  const [saveAddressForLater, setSaveAddressForLater] = useState(false);
+  const [addressErrors, setAddressErrors] = useState<Partial<ManualAddressData>>({});
+  const [isManualAddressMode, setIsManualAddressMode] = useState(false);
+
+  // Initialize phone from user account
+  useEffect(() => {
+    if (user?.phoneNumber) {
+      setCurrentPhone(user.phoneNumber);
+    }
+  }, [user]);
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      localStorage.setItem('checkout_redirect', 'true');
+      setShowAuthWarning(true);
+
+      const timer = setTimeout(() => {
+        router.push('/auth/login?redirect=/checkout');
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [user, authLoading, router]);
+
+  // Redirect if cart is empty
+  useEffect(() => {
+    if (itemCount === 0 && currentStep === 1 && !authLoading) {
+      router.push('/menu');
+    }
+  }, [itemCount, currentStep, router, authLoading]);
+
+  // Validate Step 1 (Delivery)
+  const validateStep1 = (): boolean => {
+    console.log('🔍 Validation started');
+    console.log('Phone:', currentPhone);
+    console.log('isManualAddressMode:', isManualAddressMode);
+    console.log('selectedAddress:', selectedAddress);
+    console.log('manualAddress:', manualAddress);
+
+    let isValid = true;
+
+    // Validate phone avec la nouvelle fonction intelligente
+    const phoneValidation = validatePhoneNumber(currentPhone);
+    if (!phoneValidation.isValid) {
+      console.log('❌ Phone validation failed:', phoneValidation.error);
+      setPhoneError(phoneValidation.error || 'Numéro invalide');
+      isValid = false;
+    } else {
+      console.log('✅ Phone validation passed. Formatted:', phoneValidation.formatted);
+      setPhoneError('');
+      // Optionnel: mettre à jour avec le format international
+      if (phoneValidation.formatted && phoneValidation.formatted !== currentPhone) {
+        setCurrentPhone(phoneValidation.formatted);
+      }
+    }
+
+    // Validate address
+    if (isManualAddressMode) {
+      console.log('📝 Validating manual address');
+      // Validate manual address fields
+      const newAddressErrors: Partial<ManualAddressData> = {};
+
+      if (!manualAddress.quartier.trim()) {
+        newAddressErrors.quartier = 'Quartier requis';
+        isValid = false;
+      }
+
+      if (!manualAddress.avenue.trim()) {
+        newAddressErrors.avenue = 'Avenue/Rue requise';
+        isValid = false;
+      }
+
+      if (!manualAddress.pointDeRepere.trim()) {
+        newAddressErrors.pointDeRepere = 'Point de repère requis';
+        isValid = false;
+      }
+
+      console.log('Manual address errors:', newAddressErrors);
+      setAddressErrors(newAddressErrors);
+    } else {
+      console.log('🏠 Validating saved address');
+      // Validate that a saved address is selected
+      if (!selectedAddress) {
+        console.log('❌ No saved address selected');
+        alert('Veuillez sélectionner une adresse ou ajouter une nouvelle adresse');
+        isValid = false;
+      } else {
+        console.log('✅ Saved address selected');
+      }
+      setAddressErrors({});
+    }
+
+    console.log('Final validation result:', isValid);
+    return isValid;
+  };
+
+  // Handle Step 1 Continue
+  const handleStep1Continue = () => {
+    console.log('🚀 handleStep1Continue called');
+    const isValid = validateStep1();
+    console.log('Validation result:', isValid);
+
+    if (isValid) {
+      console.log('✅ Moving to step 2');
+      setCurrentStep(2);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      console.log('❌ Validation failed, staying on step 1');
+      // Scroll to top to show validation errors
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // Handle order submission
+  const handleOrderSubmit = async () => {
+    setIsSubmitting(true);
+
+    try {
+      // Determine final address data
+      const addressData = selectedAddress ? {
+        quartier: selectedAddress.quartier,
+        avenue: selectedAddress.avenue,
+        pointDeRepere: selectedAddress.pointDeRepere,
+        numeroPorte: selectedAddress.numeroPorte || '',
+        etage: selectedAddress.etage || '',
+        instructions: selectedAddress.instructions || '',
+      } : manualAddress;
+
+      // Save new address if checkbox is checked
+      if (!selectedAddress && saveAddressForLater && user) {
+        try {
+          await addDoc(collection(db, 'addresses'), {
+            userId: user.id,
+            label: 'home',
+            ...addressData,
+            isDefault: false,
+            createdAt: Timestamp.now(),
+            updatedAt: Timestamp.now(),
+          });
+        } catch (error) {
+          console.error('Failed to save address:', error);
+          // Don't block order if address save fails
+        }
+      }
+
+      // Create order in Firestore
+      const orderData = {
+        userId: user?.id || null,
+        items: items.map(item => ({
+          productId: item.productId,
+          name: item.name,
+          image: item.image,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          sizeLabel: item.sizeLabel,
+          crustLabel: item.crustLabel,
+          extras: item.extras || [],
+        })),
+        address: addressData,
+        contact: {
+          fullName: user?.displayName || 'Client',
+          phone: currentPhone,
+        },
+        paymentMethod,
+        subtotal,
+        deliveryFee: 1000, // Fixed delivery fee
+        total: subtotal + 1000,
+        status: 'pending',
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      };
+
+      const orderRef = await addDoc(collection(db, 'orders'), orderData);
+
+      // Generate order number
+      const generatedOrderNumber = `PK${Date.now().toString().slice(-8)}`;
+      setOrderNumber(generatedOrderNumber);
+
+      // Clear cart
+      clearCart();
+
+      // Move to confirmation step
+      setCurrentStep(3);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (error) {
+      console.error('Order submission failed:', error);
+      alert('Erreur lors de la création de la commande. Veuillez réessayer.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Show auth warning
+  if (showAuthWarning || (!user && !authLoading)) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="container mx-auto px-4 py-12 sm:py-20">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="mx-auto max-w-md"
+          >
+            <Card>
+              <CardContent className="p-6 sm:p-8 text-center">
+                <div className="mx-auto mb-4 sm:mb-6 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-orange-100">
+                  <AlertCircle className="h-8 w-8 sm:h-10 sm:w-10 text-orange-600" />
+                </div>
+                <h2 className="mb-2 text-lg sm:text-xl font-bold text-gray-900">
+                  Connexion requise
+                </h2>
+                <p className="mb-4 text-xs sm:text-sm text-gray-600">
+                  Vous devez être connecté pour passer commande.
+                </p>
+                <p className="text-xs sm:text-sm text-gray-500">
+                  Redirection vers la page de connexion...
+                </p>
+                <div className="mt-6">
+                  <Loader2 className="mx-auto h-6 w-6 animate-spin text-orange-600" />
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-6 sm:py-8">
         {/* Progress Steps */}
-        <div className="mx-auto mb-12 max-w-3xl">
-          <div className="flex items-center justify-between">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex items-center justify-center">
             {steps.map((step, index) => (
-              <div key={step.id} className="flex flex-1 items-center">
-                <div className="relative z-10 flex flex-col items-center">
-                  <motion.div
-                    initial={false}
-                    animate={{
-                      scale: currentStep === step.id ? 1.1 : 1,
-                    }}
-                    className={`flex h-16 w-16 items-center justify-center rounded-full transition-all ${
+              <div key={step.id} className="flex items-center">
+                <div className="flex flex-col items-center">
+                  <div
+                    className={`flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full transition-colors ${
                       currentStep >= step.id
-                        ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30'
-                        : 'border-2 border-gray-300 bg-white text-gray-400'
+                        ? 'bg-orange-600 text-white'
+                        : 'bg-gray-200 text-gray-400'
                     }`}
                   >
-                    <step.icon className="h-7 w-7" />
-                  </motion.div>
-                  <p
-                    className={`mt-2 text-sm font-medium ${
-                      currentStep >= step.id
-                        ? 'text-orange-600'
-                        : 'text-gray-500'
-                    }`}
-                  >
+                    <step.icon className="h-5 w-5 sm:h-6 sm:w-6" />
+                  </div>
+                  <span className="mt-1 sm:mt-2 text-[10px] sm:text-xs font-medium text-gray-600">
                     {step.name}
-                  </p>
+                  </span>
                 </div>
                 {index < steps.length - 1 && (
-                  <div className="relative mx-4 h-1 flex-1 rounded bg-gray-200">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{
-                        width: currentStep > step.id ? '100%' : '0%',
-                      }}
-                      className="h-full rounded bg-gradient-to-r from-orange-500 to-orange-600"
-                    />
-                  </div>
+                  <div
+                    className={`mx-2 sm:mx-4 h-0.5 w-12 sm:w-20 ${
+                      currentStep > step.id ? 'bg-orange-600' : 'bg-gray-200'
+                    }`}
+                  />
                 )}
               </div>
             ))}
           </div>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-3">
-          {/* Left - Forms */}
-          <div className="lg:col-span-2">
-            {/* Step 1: Delivery */}
-            {currentStep === 1 && (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="space-y-6"
-              >
-                <Card>
-                  <CardContent className="p-6">
-                    <h2 className="mb-6 text-2xl font-bold text-gray-900">
-                      Mode de réception
-                    </h2>
-
-                    <div className="mb-6 grid grid-cols-2 gap-4">
-                      <button
-                        onClick={() => setDeliveryType('delivery')}
-                        className={`rounded-2xl border-2 p-6 transition-all ${
-                          deliveryType === 'delivery'
-                            ? 'border-orange-500 bg-orange-50'
-                            : 'border-gray-200 hover:border-orange-300'
-                        }`}
-                      >
-                        <MapPin
-                          className={`mx-auto mb-3 h-8 w-8 ${
-                            deliveryType === 'delivery'
-                              ? 'text-orange-600'
-                              : 'text-gray-400'
-                          }`}
-                        />
-                        <p className="font-semibold text-gray-900">Livraison</p>
-                        <p className="mt-1 text-sm text-gray-500">30 min</p>
-                      </button>
-
-                      <button
-                        onClick={() => setDeliveryType('pickup')}
-                        className={`rounded-2xl border-2 p-6 transition-all ${
-                          deliveryType === 'pickup'
-                            ? 'border-orange-500 bg-orange-50'
-                            : 'border-gray-200 hover:border-orange-300'
-                        }`}
-                      >
-                        <ShoppingBag
-                          className={`mx-auto mb-3 h-8 w-8 ${
-                            deliveryType === 'pickup'
-                              ? 'text-orange-600'
-                              : 'text-gray-400'
-                          }`}
-                        />
-                        <p className="font-semibold text-gray-900">
-                          À emporter
-                        </p>
-                        <p className="mt-1 text-sm text-gray-500">15 min</p>
-                      </button>
-                    </div>
-
-                    {deliveryType === 'delivery' && (
-                      <div className="space-y-4">
-                        <h3 className="font-semibold text-gray-900">
-                          Adresse de livraison
-                        </h3>
-                        <input
-                          type="text"
-                          placeholder="Rue, quartier"
-                          className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
-                        />
-                        <div className="grid grid-cols-2 gap-4">
-                          <input
-                            type="text"
-                            placeholder="Ville"
-                            className="rounded-xl border-2 border-gray-200 px-4 py-3 outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Code postal"
-                            className="rounded-xl border-2 border-gray-200 px-4 py-3 outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
-                          />
-                        </div>
-                        <textarea
-                          placeholder="Instructions de livraison (optionnel)"
-                          rows={3}
-                          className="w-full resize-none rounded-xl border-2 border-gray-200 px-4 py-3 outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
-                        />
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <h3 className="mb-4 font-semibold text-gray-900">
-                      Heure de livraison
-                    </h3>
-                    <div className="space-y-3">
-                      <button className="w-full rounded-xl border-2 border-orange-500 bg-orange-50 p-4 text-left">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Clock className="h-5 w-5 text-orange-600" />
-                            <div>
-                              <p className="font-semibold text-gray-900">
-                                Dès que possible
-                              </p>
-                              <p className="text-sm text-gray-500">~30 min</p>
-                            </div>
-                          </div>
-                          <Badge>Recommandé</Badge>
-                        </div>
-                      </button>
-                      <button className="w-full rounded-xl border-2 border-gray-200 p-4 text-left transition-colors hover:border-orange-300">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Clock className="h-5 w-5 text-gray-400" />
-                            <div>
-                              <p className="font-semibold text-gray-900">
-                                Programmer
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                Choisir une heure
-                              </p>
-                            </div>
-                          </div>
-                          <ChevronRight className="h-5 w-5 text-gray-400" />
-                        </div>
-                      </button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Button
-                  size="lg"
-                  className="w-full"
-                  onClick={() => setCurrentStep(2)}
+        <div className={`grid gap-6 ${currentStep === 1 ? 'lg:grid-cols-3' : ''}`}>
+          {/* Main Content */}
+          <div className={`space-y-4 sm:space-y-6 ${currentStep === 1 ? 'lg:col-span-2' : 'max-w-4xl mx-auto w-full'}`}>
+            <AnimatePresence mode="wait">
+              {/* Step 1: Delivery */}
+              {currentStep === 1 && (
+                <motion.div
+                  key="step1"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-4"
                 >
-                  Continuer vers le paiement
-                  <ChevronRight className="ml-2 h-5 w-5" />
-                </Button>
-              </motion.div>
-            )}
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
+                    Finaliser ma commande
+                  </h1>
 
-            {/* Step 2: Payment */}
-            {currentStep === 2 && (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="space-y-6"
-              >
-                <Card>
-                  <CardContent className="p-6">
-                    <h2 className="mb-6 text-2xl font-bold text-gray-900">
+                  {/* Phone Section */}
+                  <PhoneSection
+                    userPhone={user?.phoneNumber || null}
+                    currentPhone={currentPhone}
+                    onPhoneChange={setCurrentPhone}
+                    error={phoneError}
+                  />
+
+                  {/* Address Section */}
+                  <AddressDeliverySection
+                    selectedAddress={selectedAddress}
+                    manualAddress={manualAddress}
+                    saveForLater={saveAddressForLater}
+                    onAddressSelect={setSelectedAddress}
+                    onManualAddressChange={setManualAddress}
+                    onSaveForLaterChange={setSaveAddressForLater}
+                    onModeChange={setIsManualAddressMode}
+                    errors={addressErrors}
+                  />
+
+                  <Button
+                    type="button"
+                    onClick={handleStep1Continue}
+                    className="w-full h-11 sm:h-12 text-sm sm:text-base"
+                    size="lg"
+                  >
+                    Continuer vers le paiement
+                  </Button>
+                </motion.div>
+              )}
+
+              {/* Step 2: Payment Method Selection Only */}
+              {currentStep === 2 && (
+                <motion.div
+                  key="step2"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-4 sm:space-y-6"
+                >
+                  <div className="flex items-center gap-3">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setCurrentStep(1)}
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                       Mode de paiement
                     </h2>
+                  </div>
 
-                    <div className="mb-6 space-y-3">
-                      {[
-                        { id: 'card', name: 'Carte bancaire', icon: '💳' },
-                        { id: 'mobile', name: 'Mobile Money', icon: '📱' },
-                        {
-                          id: 'cash',
-                          name: 'Espèces à la livraison',
-                          icon: '💵',
-                        },
-                      ].map(method => (
-                        <button
-                          key={method.id}
-                          onClick={() => setPaymentMethod(method.id as any)}
-                          className={`flex w-full items-center justify-between rounded-xl border-2 p-4 transition-all ${
-                            paymentMethod === method.id
-                              ? 'border-orange-500 bg-orange-50'
-                              : 'border-gray-200 hover:border-orange-300'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="text-2xl">{method.icon}</span>
-                            <span className="font-semibold text-gray-900">
-                              {method.name}
-                            </span>
-                          </div>
-                          {paymentMethod === method.id && (
-                            <Check className="h-5 w-5 text-orange-600" />
-                          )}
-                        </button>
-                      ))}
-                    </div>
+                  {/* Payment Method Selector ONLY */}
+                  <Card className="border-0 shadow-sm">
+                    <CardContent className="p-4 sm:p-6">
+                      <PaymentMethodSelector
+                        selectedMethod={paymentMethod}
+                        onMethodChange={setPaymentMethod}
+                      />
+                    </CardContent>
+                  </Card>
 
-                    {paymentMethod === 'card' && (
-                      <div className="space-y-4">
-                        <input
-                          type="text"
-                          placeholder="Numéro de carte"
-                          className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
-                        />
-                        <div className="grid grid-cols-2 gap-4">
-                          <input
-                            type="text"
-                            placeholder="MM/AA"
-                            className="rounded-xl border-2 border-gray-200 px-4 py-3 outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
-                          />
-                          <input
-                            type="text"
-                            placeholder="CVV"
-                            className="rounded-xl border-2 border-gray-200 px-4 py-3 outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
-                          />
-                        </div>
+                  {/* Continue to Payment Button */}
+                  <div className="flex gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setCurrentStep(1)}
+                      className="flex-1"
+                    >
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Retour
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        // Rediriger vers la page de paiement correspondante
+                        if (paymentMethod === 'card') {
+                          router.push('/payment/card');
+                        } else if (paymentMethod === 'mobile_money') {
+                          router.push('/payment/mobile-money');
+                        } else if (paymentMethod === 'cash') {
+                          // Pour cash, on peut directement créer la commande
+                          handleOrderSubmit();
+                        }
+                      }}
+                      className="flex-1"
+                    >
+                      Continuer vers le paiement
+                      <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Step 3: Confirmation */}
+              {currentStep === 3 && (
+                <motion.div
+                  key="step3"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="text-center"
+                >
+                  <Card>
+                    <CardContent className="p-6 sm:p-8">
+                      <div className="mx-auto mb-4 sm:mb-6 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-green-100">
+                        <Check className="h-8 w-8 sm:h-10 sm:w-10 text-green-600" />
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <div className="flex gap-4">
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setCurrentStep(1)}
-                  >
-                    Retour
-                  </Button>
-                  <Button
-                    size="lg"
-                    className="flex-1"
-                    onClick={() => setCurrentStep(3)}
-                  >
-                    Passer la commande
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Step 3: Confirmation */}
-            {currentStep === 3 && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="py-12 text-center"
-              >
-                <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-green-100">
-                  <Check className="h-12 w-12 text-green-600" />
-                </div>
-                <h2 className="mb-4 text-3xl font-bold text-gray-900">
-                  Commande confirmée ! 🎉
-                </h2>
-                <p className="mb-2 text-gray-600">
-                  Numéro de commande: <strong>#PK20251007001</strong>
-                </p>
-                <p className="mb-8 text-gray-600">
-                  Votre pizza arrive dans environ <strong>30 minutes</strong>
-                </p>
-                <div className="flex justify-center gap-4">
-                  <Button size="lg">Suivre ma commande</Button>
-                  <Button size="lg" variant="outline">
-                    Retour à l'accueil
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-          </div>
-
-          {/* Right - Order Summary */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-24">
-              <CardContent className="p-6">
-                <h3 className="mb-4 text-xl font-bold text-gray-900">
-                  Récapitulatif
-                </h3>
-
-                <div className="mb-6 space-y-3">
-                  {cartItems.map(item => (
-                    <div key={item.id} className="flex justify-between text-sm">
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">
-                          {item.quantity}x {item.name}
-                        </p>
-                        <p className="text-xs text-gray-500">{item.size}</p>
-                      </div>
-                      <p className="font-semibold text-gray-900">
-                        {formatPrice(item.price)}
+                      <h2 className="mb-2 text-lg sm:text-2xl font-bold text-gray-900">
+                        Commande confirmée !
+                      </h2>
+                      <p className="mb-4 text-xs sm:text-sm text-gray-600">
+                        Votre commande <strong>#{orderNumber}</strong> a été reçue.
                       </p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="space-y-2 border-t border-gray-100 py-4">
-                  <div className="flex justify-between text-gray-700">
-                    <span>Sous-total</span>
-                    <span>{formatPrice(subtotal)}</span>
-                  </div>
-                  <div className="flex justify-between text-gray-700">
-                    <span>Livraison</span>
-                    <span className="font-medium text-green-600">Gratuit</span>
-                  </div>
-                  <div className="flex justify-between text-gray-700">
-                    <span>TVA</span>
-                    <span>{formatPrice(tax)}</span>
-                  </div>
-                </div>
-
-                <div className="border-t border-gray-200 pt-4">
-                  <div className="flex justify-between text-xl font-bold">
-                    <span>Total</span>
-                    <span className="text-orange-600">
-                      {formatPrice(total)}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                      <p className="mb-6 text-xs sm:text-sm text-gray-600">
+                        Vous recevrez un appel du livreur sur le <strong>{currentPhone}</strong>
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <Button
+                          variant="outline"
+                          onClick={() => router.push('/account')}
+                          className="flex-1"
+                        >
+                          Mon compte
+                        </Button>
+                        <Button
+                          onClick={() => router.push('/menu')}
+                          className="flex-1"
+                        >
+                          Nouvelle commande
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
+
+          {/* Order Summary Sidebar - Only on Step 1 */}
+          {currentStep === 1 && (
+            <div className="lg:col-span-1">
+              <div className="sticky top-4">
+                <OrderSummary
+                  items={items}
+                  subtotal={subtotal}
+                  isDelivery={true}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

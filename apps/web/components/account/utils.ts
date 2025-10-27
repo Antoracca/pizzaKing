@@ -1,5 +1,5 @@
 // Types partagés
-export type TabId = 'overview' | 'settings' | 'security';
+export type TabId = 'overview' | 'addresses' | 'settings' | 'security';
 
 export type Feedback = { type: 'success' | 'error'; message: string };
 

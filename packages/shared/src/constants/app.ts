@@ -50,9 +50,6 @@ export const MAX_ADDRESSES_PER_USER = 5;
 export const ORDER_CONFIRMATION_TIMEOUT = 5; // minutes
 export const PAYMENT_TIMEOUT = 10; // minutes
 
-// Tax
-export const TAX_RATE = 0.1; // 10% TVA
-
 // Pagination
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;

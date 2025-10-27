@@ -2,7 +2,7 @@
 
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator } from 'firebase/auth';
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { initializeFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAnalytics, type Analytics } from 'firebase/analytics';
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
@@ -33,12 +33,8 @@ if (!isFirebaseConfigured) {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app);
 
-// --- Option simple (recommandée) ---
-const db = getFirestore(app, 'pizzaking');
-
-// --- Option avancée (si tu tiens à un databaseId dédié) ---
-// initializeFirestore(app, {}, 'pizzaking');
-// const db = getFirestore(app);
+// Initialize Firestore with named database 'pizzaking'
+const db = initializeFirestore(app, {}, 'pizzaking');
 
 const storage = getStorage(app);
 const functions = getFunctions(app, 'us-central1'); // Région explicite

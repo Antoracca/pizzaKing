@@ -12,7 +12,10 @@
       "Bash(pnpm run dev)",
       "Bash(ipconfig:*)",
       "Bash(findstr:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(find:*)",
+      "Bash(cat:*)",
+      "Bash(firebase firestore:databases:list:*)"
     ],
     "deny": [],
     "ask": []

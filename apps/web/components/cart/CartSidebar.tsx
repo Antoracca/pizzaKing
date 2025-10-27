@@ -11,20 +11,24 @@ import {
   ArrowRight,
   Tag,
   Pizza,
+  Lock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatPrice } from '@/lib/utils';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCart } from '@/hooks/useCart';
 import { useLockBodyScroll } from '@/hooks/useLockBodyScroll';
+import { useAuth } from '@pizza-king/shared/src/hooks/useAuth';
 import { MEAL_BUNDLES } from '@/data/mealBundles';
 
 const FREE_DELIVERY_THRESHOLD = 10000;
 const DELIVERY_FEE = 1000;
-const TAX_RATE = 0.18;
 
 export default function CartSidebar() {
+  const router = useRouter();
+  const { user } = useAuth();
   const {
     items,
     isOpen,
@@ -43,8 +47,7 @@ export default function CartSidebar() {
     subtotal >= FREE_DELIVERY_THRESHOLD || items.length === 0
       ? 0
       : DELIVERY_FEE;
-  const tax = Math.round(subtotal * TAX_RATE);
-  const total = subtotal + deliveryFee + tax;
+  const total = subtotal + deliveryFee;
 
   const bundleSelections = items.filter(item => item.bundleId);
   const selectedBundleIds = new Set(
@@ -634,12 +637,6 @@ export default function CartSidebar() {
                       {deliveryFee === 0 ? 'Offerte' : formatPrice(deliveryFee)}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span>TVA (18%)</span>
-                    <span className="font-semibold text-gray-900">
-                      {formatPrice(tax)}
-                    </span>
-                  </div>
                 </div>
 
                 <div className="flex items-center justify-between rounded-xl bg-white px-3 py-2.5 text-sm font-bold text-gray-900 shadow-sm sm:rounded-2xl sm:px-4 sm:py-3 sm:text-base">
@@ -647,12 +644,33 @@ export default function CartSidebar() {
                   <span>{formatPrice(total)}</span>
                 </div>
 
-                <Link href="/checkout" onClick={closeCart}>
-                  <Button className="flex w-full items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-orange-600 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:from-red-700 hover:to-orange-700 active:scale-95 sm:py-4 sm:text-base">
-                    Commander - {formatPrice(total)}
-                    <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
-                  </Button>
-                </Link>
+                {user ? (
+                  <Link href="/checkout" onClick={closeCart}>
+                    <Button className="flex w-full items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-orange-600 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:from-red-700 hover:to-orange-700 active:scale-95 sm:py-4 sm:text-base">
+                      Commander - {formatPrice(total)}
+                      <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                    </Button>
+                  </Link>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="rounded-xl bg-orange-50 border border-orange-200 p-3 text-center">
+                      <Lock className="mx-auto mb-1 h-5 w-5 text-orange-600" />
+                      <p className="text-xs font-medium text-orange-900">
+                        Connexion requise pour commander
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => {
+                        closeCart();
+                        router.push('/auth/login?redirect=checkout');
+                      }}
+                      className="flex w-full items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:from-blue-700 hover:to-blue-800 active:scale-95 sm:py-4 sm:text-base"
+                    >
+                      <Lock className="h-4 w-4 sm:h-5 sm:w-5" />
+                      Se connecter pour commander
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </motion.aside>

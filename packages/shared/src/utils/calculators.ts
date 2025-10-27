@@ -1,5 +1,4 @@
 import {
-  TAX_RATE,
   DELIVERY_FEE,
   FREE_DELIVERY_THRESHOLD,
   POINTS_PER_EURO,
@@ -27,27 +26,19 @@ export const calculateDeliveryFee = (
 };
 
 /**
- * Calculate tax amount
- */
-export const calculateTax = (subtotal: number): number => {
-  return subtotal * TAX_RATE;
-};
-
-/**
  * Calculate total price
  */
 export const calculateTotal = (pricing: Partial<OrderPricing>): number => {
   const {
     subtotal = 0,
     deliveryFee = 0,
-    taxAmount = 0,
     discountAmount = 0,
     loyaltyDiscount = 0,
   } = pricing;
 
   return Math.max(
     0,
-    subtotal + deliveryFee + taxAmount - discountAmount - loyaltyDiscount
+    subtotal + deliveryFee - discountAmount - loyaltyDiscount
   );
 };
 
@@ -62,13 +53,11 @@ export const calculateOrderPricing = (
 ): OrderPricing => {
   const subtotal = calculateSubtotal(items);
   const deliveryFee = calculateDeliveryFee(subtotal, isDelivery);
-  const taxAmount = calculateTax(subtotal);
   const loyaltyDiscount = loyaltyPointsUsed * EURO_PER_POINT;
 
   const total = calculateTotal({
     subtotal,
     deliveryFee,
-    taxAmount,
     discountAmount,
     loyaltyDiscount,
   });
@@ -76,7 +65,7 @@ export const calculateOrderPricing = (
   return {
     subtotal,
     deliveryFee,
-    taxAmount,
+    taxAmount: 0,
     discountAmount,
     loyaltyPointsUsed,
     loyaltyDiscount,

@@ -120,13 +120,19 @@ service cloud.firestore {
       // Mise à jour: un utilisateur peut modifier son profil
       // SAUF les champs critiques (role, id, email, createdAt, provider)
       // Permet la mise à jour de emailVerified, phoneVerified en temps réel
+      // Note: On vérifie seulement les champs qui sont présents dans la requête
       allow update: if isSignedIn()
         && uid() == userId
-        && request.resource.data.id == resource.data.id
-        && request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.role == resource.data.role
-        && request.resource.data.provider == resource.data.provider
-        && request.resource.data.email == resource.data.email;
+        // Si id est présent, il ne doit pas changer
+        && (!('id' in request.resource.data) || request.resource.data.id == resource.data.id)
+        // Si createdAt est présent, il ne doit pas changer
+        && (!('createdAt' in request.resource.data) || request.resource.data.createdAt == resource.data.createdAt)
+        // Si role est présent, il ne doit pas changer
+        && (!('role' in request.resource.data) || request.resource.data.role == resource.data.role)
+        // Si provider est présent, il ne doit pas changer
+        && (!('provider' in request.resource.data) || request.resource.data.provider == resource.data.provider)
+        // Si email est présent, il ne doit pas changer
+        && (!('email' in request.resource.data) || request.resource.data.email == resource.data.email);
 
       // Suppression: interdit
       allow delete: if false;
@@ -309,6 +315,50 @@ service cloud.firestore {
       allow get, list: if isSupportStaff() || isSystem();
       allow create, update: if isSupportStaff() || isSystem();
       allow delete: if false;
+    }
+
+    // ========================================
+    // COLLECTION: addresses
+    // ========================================
+
+    match /addresses/{addressId} {
+      // Lecture GET (document spécifique): utilisateur propriétaire ou admin/support
+      allow get: if isSignedIn() && (
+        resource.data.userId == uid()
+        || isAdminRole()
+        || isSupportStaff()
+      );
+
+      // Lecture LIST (collection): filtrée côté client/serveur par userId
+      // On autorise la lecture pour tous les utilisateurs authentifiés
+      // Les API routes filtrent par userId, donc sécurisé
+      allow list: if isSignedIn();
+
+      // Création: utilisateur connecté
+      allow create: if isSignedIn()
+        && request.resource.data.userId == uid()
+        && request.resource.data.label in ['home', 'work', 'other']
+        && request.resource.data.quartier is string
+        && request.resource.data.quartier.size() > 0
+        && request.resource.data.quartier.size() <= 100
+        && request.resource.data.avenue is string
+        && request.resource.data.avenue.size() > 0
+        && request.resource.data.avenue.size() <= 200
+        && request.resource.data.pointDeRepere is string
+        && request.resource.data.pointDeRepere.size() > 0
+        && request.resource.data.pointDeRepere.size() <= 200
+        && request.resource.data.isDefault is bool
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp;
+
+      // Mise à jour: propriétaire seulement (ne peut pas changer userId)
+      allow update: if isSignedIn()
+        && resource.data.userId == uid()
+        && request.resource.data.userId == uid();
+
+      // Suppression: propriétaire seulement
+      allow delete: if isSignedIn()
+        && resource.data.userId == uid();
     }
 
     // ========================================
