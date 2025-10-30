@@ -32,9 +32,6 @@ import { db } from '@/lib/firebase';
 import { DELIVERY_CONFIG } from '@/lib/config';
 import { firestoreWrite } from '@/lib/firebase-retry';
 
-// ✅ Désactiver le prerendering (page de paiement dynamique)
-export const dynamic = 'force-dynamic';
-
 const VisaIcon = () => (
   <div className="relative h-full w-full bg-white rounded flex items-center justify-center shadow-sm">
     <Image

@@ -30,9 +30,6 @@ import { db } from '@/lib/firebase';
 import { DELIVERY_CONFIG } from '@/lib/config';
 import { firestoreWrite } from '@/lib/firebase-retry';
 
-// ✅ Désactiver le prerendering pour cette page (nécessite searchParams dynamiques)
-export const dynamic = 'force-dynamic';
-
 const steps = [
   { id: 1, name: 'Livraison', icon: MapPin },
   { id: 2, name: 'Paiement', icon: CreditCard },
