@@ -1,8 +1,7 @@
 'use client';
 
 import type { ElementType } from 'react';
-
-type TabId = 'overview' | 'settings' | 'security';
+import type { TabId } from './utils';
 
 type Tab = {
   id: TabId;

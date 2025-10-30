@@ -3,8 +3,7 @@
 import { LogOut, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import type { ElementType } from 'react';
-
-type TabId = 'overview' | 'settings' | 'security';
+import type { TabId } from './utils';
 
 type Tab = {
   id: TabId;
