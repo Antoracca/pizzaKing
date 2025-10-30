@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+
+// ✅ Désactiver le prerendering pour cette page (nécessite searchParams dynamiques)
+export const dynamic = 'force-dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { validatePhoneNumber } from '@/lib/phone-validation';
 import Header from '@/components/layout/Header';
