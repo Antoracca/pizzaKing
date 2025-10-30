@@ -155,7 +155,7 @@ export default function MobileMoneyPaymentPage() {
           phoneNumber,
           paymentCode,
           orderReference,
-          items: effectiveItems.map(item => ({
+          items: effectiveItems.map((item: any) => ({
             productId: item.productId,
             name: item.name,
             image: item.image ?? null,

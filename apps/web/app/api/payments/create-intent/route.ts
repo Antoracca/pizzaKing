@@ -116,15 +116,23 @@ type CreateIntentPayload = {
 };
 
 export async function POST(request: NextRequest) {
+  // Déclarer les variables en dehors du try pour qu'elles soient accessibles dans le catch
+  let amount: number | undefined;
+  let currency: string | undefined;
+
   try {
     const body = (await request.json()) as CreateIntentPayload;
     const {
-      amount,
+      amount: bodyAmount,
       currency: requestedCurrency = 'xaf',
       metadata,
       customerEmail,
       order,
     } = body;
+
+    // Assigner aux variables externes
+    amount = bodyAmount;
+    currency = requestedCurrency.toLowerCase();
 
     if (!stripeClient) {
       console.error('Stripe client is not configured. Missing STRIPE_SECRET_KEY.');
@@ -135,8 +143,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Validation côté serveur
-    const currency = requestedCurrency.toLowerCase();
-
     const amountValidation = validatePaymentAmount(amount, currency);
     if (!amountValidation.isValid) {
       return NextResponse.json(
