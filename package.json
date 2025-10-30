@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "pnpm --parallel --filter \"./apps/**\" dev",
     "dev:web": "cd apps/web && pnpm dev",
+    "dev:stripe": "stripe listen --forward-to localhost:3000/api/payments/webhook",
     "run:web": "cd apps/web && pnpm dev",
     "dev:mobile": "pnpm --filter mobile start",
     "dev:functions": "pnpm --filter functions dev",

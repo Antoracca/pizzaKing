@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
+    "dev:stripe": "stripe listen --forward-to localhost:3000/api/payments/webhook",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

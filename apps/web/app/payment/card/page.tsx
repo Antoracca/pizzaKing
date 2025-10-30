@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
@@ -178,7 +178,8 @@ export default function CardPaymentPage() {
   const { subtotal, items, clearCart, isHydrated } = useCartContext();
 
   // États initiaux
-  const [checkoutData, setCheckoutData] = useState<any>(null);
+  const [checkoutDataRaw, setCheckoutDataRaw] = useState<any>(null);
+  const [isCheckoutDataLoaded, setIsCheckoutDataLoaded] = useState(false); // ← Nouveau flag
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [isIntentLoading, setIsIntentLoading] = useState(true);
   const [intentError, setIntentError] = useState<string | null>(null);
@@ -189,20 +190,37 @@ export default function CardPaymentPage() {
   const [orderReference] = useState(() => getOrCreateOrderReference());
   const [intentCreated, setIntentCreated] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [isCreating, setIsCreating] = useState(false); // ← LOCK pour empêcher doublons
+
+  // 🔒 VERROU SYNCHRONE avec useRef au lieu de useState
+  const isCreatingRef = useRef(false);
+  const creationInProgressRef = useRef(false);
   
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedCheckout = localStorage.getItem('pending_checkout');
       if (savedCheckout) {
         try {
-          setCheckoutData(JSON.parse(savedCheckout));
+          const parsed = JSON.parse(savedCheckout);
+          setCheckoutDataRaw(parsed);
+          console.log('✅ Données de checkout chargées depuis localStorage:', parsed);
         } catch (e) {
-          console.error('Erreur parsing checkout data:', e);
+          console.error('❌ Erreur parsing checkout data:', e);
         }
+      } else {
+        console.log('⚠️ Pas de données pending_checkout dans localStorage');
       }
+      // Marquer comme chargé dans tous les cas (même si vide)
+      setIsCheckoutDataLoaded(true);
     }
   }, []);
+
+  // 🎯 MÉMORISER checkoutData pour éviter les changements de référence
+  const checkoutData = useMemo(() => checkoutDataRaw, [
+    checkoutDataRaw?.cart?.items?.length,
+    checkoutDataRaw?.cart?.subtotal,
+    checkoutDataRaw?.cart?.total,
+    checkoutDataRaw?.deliveryInfo?.phone, // ← Suivre aussi deliveryInfo
+  ]);
 
   const effectiveSubtotal = subtotal > 0 ? subtotal : (checkoutData?.cart?.subtotal || 0);
   const effectiveItems = items.length > 0 ? items : (checkoutData?.cart?.items || []);
@@ -244,58 +262,88 @@ export default function CardPaymentPage() {
 
   // Récupération du PaymentIntent depuis la session au montage
   useEffect(() => {
-    if (typeof window !== 'undefined' && orderReference) {
+    if (typeof window !== 'undefined' && orderReference && totalToPay > 0) {
       const saved = sessionStorage.getItem(`payment_intent_${orderReference}`);
       if (saved) {
         try {
           const data = JSON.parse(saved);
           console.log('📦 PaymentIntent trouvé en session:', data);
-          
-          // Vérifier que le clientSecret est valide
-          if (data.clientSecret && typeof data.clientSecret === 'string') {
-            setClientSecret(data.clientSecret);
-            setIntentCreated(true);
-            setIsIntentLoading(false);
-            console.log('✅ PaymentIntent récupéré et appliqué');
-            return;
+
+          // ✅ VALIDATION: Vérifier que le montant correspond toujours
+          const savedAmount = data.amount;
+          const currentAmount = totalToPay; // Montant en FCFA
+
+          if (savedAmount && Math.abs(savedAmount - currentAmount) < 1) {
+            // Le montant correspond, on peut réutiliser l'intent
+            if (data.clientSecret && typeof data.clientSecret === 'string') {
+              setClientSecret(data.clientSecret);
+              setIntentCreated(true);
+              setIsIntentLoading(false);
+              isCreatingRef.current = true; // Marquer comme déjà créé
+              console.log('✅ PaymentIntent récupéré et validé');
+              return;
+            }
+          } else {
+            // Le montant a changé, nettoyer l'ancien intent
+            console.log('⚠️ Montant changé, nettoyage de l\'ancien intent', {
+              saved: savedAmount,
+              current: currentAmount
+            });
+            sessionStorage.removeItem(`payment_intent_${orderReference}`);
           }
         } catch (e) {
           console.error('❌ Erreur parsing saved intent:', e);
-          // Nettoyer la session corrompue
           sessionStorage.removeItem(`payment_intent_${orderReference}`);
         }
       }
-      
+
       // Si pas de session valide, on indique qu'on doit créer un intent
       console.log('📝 Pas de PaymentIntent en session, création nécessaire');
       setIntentCreated(false);
       setIsIntentLoading(true);
     }
-  }, [orderReference]);
+  }, [orderReference, totalToPay]);
 
   // Création du PaymentIntent si nécessaire
   useEffect(() => {
     let cancelled = false;
 
     const createIntent = async () => {
+      // 🔒 VERROU #1: Vérifier avec useRef (synchrone)
+      if (creationInProgressRef.current) {
+        console.log('⏳ Création déjà en cours (verrou actif)');
+        return;
+      }
+
       // Si on a déjà un clientSecret valide, on ne fait rien
       if (clientSecret && intentCreated) {
         console.log('✅ ClientSecret déjà présent, pas de création');
         return;
       }
 
-      // Si on est déjà en train de créer, on attend
-      if (intentCreated || isCreating) {
-        console.log('⏳ Intent déjà créé ou en cours de création');
+      // 🔒 VERROU #2: Vérifier si déjà créé
+      if (isCreatingRef.current || intentCreated) {
+        console.log('⏳ Intent déjà créé ou marqué comme créé');
         return;
       }
 
       console.log('🚀 Début création PaymentIntent');
-      setIsCreating(true); // ← VERROUILLER
+
+      // 🔒 ACTIVER LES VERROUS IMMÉDIATEMENT (synchrone)
+      creationInProgressRef.current = true;
+      isCreatingRef.current = true;
+
       setIsIntentLoading(true);
       setIntentError(null);
 
       try {
+        // 📦 Récupérer les infos de livraison depuis checkoutData
+        const deliveryInfo = checkoutData?.deliveryInfo;
+
+        if (!deliveryInfo) {
+          throw new Error('Données de livraison manquantes. Veuillez retourner au checkout.');
+        }
+
         const orderSnapshot = {
           items: effectiveItems.map((item: any) => ({
             productId: item.productId,
@@ -313,6 +361,12 @@ export default function CardPaymentPage() {
           userId: user?.id ?? null,
           userEmail: user?.email ?? null,
           userDisplayName: user?.displayName ?? null,
+          // ✅ AJOUTER les infos de livraison
+          address: deliveryInfo.address,
+          contact: {
+            fullName: deliveryInfo.fullName || user?.displayName || 'Client',
+            phone: deliveryInfo.phone,
+          },
         };
 
         const response = await fetch('/api/payments/create-intent', {
@@ -343,14 +397,14 @@ export default function CardPaymentPage() {
         if (!cancelled) {
           setClientSecret(data.clientSecret as string);
           setIntentCreated(true);
-          
-          // Sauvegarder en session
+
+          // Sauvegarder en session avec le montant pour validation future
           sessionStorage.setItem(
             `payment_intent_${orderReference}`,
             JSON.stringify({
               clientSecret: data.clientSecret,
               paymentIntentId: data.paymentIntentId,
-              amount: data.amount,
+              amount: totalToPay, // ← Sauvegarder le montant en FCFA
               createdAt: Date.now(),
             })
           );
@@ -362,30 +416,61 @@ export default function CardPaymentPage() {
           setIntentError(
             error instanceof Error ? error.message : 'Erreur lors de la préparation du paiement'
           );
-          setIsCreating(false); // ← DÉVERROUILLER en cas d'erreur
+          // 🔒 DÉVERROUILLER en cas d'erreur
+          creationInProgressRef.current = false;
+          isCreatingRef.current = false;
         }
       } finally {
         if (!cancelled) {
           setIsIntentLoading(false);
+          // 🔒 Libérer le verrou de création en cours
+          creationInProgressRef.current = false;
         }
       }
     };
 
+    // ✅ ATTENDRE que localStorage soit lu avant de continuer
+    if (!isCheckoutDataLoaded) {
+      console.log('⏳ Chargement des données depuis localStorage...');
+      return;
+    }
+
     // Attendre que les données soient prêtes
-    const hasData = (isHydrated && effectiveItems.length > 0) || 
+    const hasData = (isHydrated && effectiveItems.length > 0) ||
                     (checkoutData && checkoutData.cart?.items?.length > 0);
-    
+
+    // ✅ Vérifier aussi que deliveryInfo est présent
+    const hasDeliveryInfo = checkoutData?.deliveryInfo?.phone && checkoutData?.deliveryInfo?.address;
+
     if (!hasData) {
-      console.log('⏳ En attente des données...', { 
-        isHydrated, 
+      console.log('⏳ En attente des données du panier...', {
+        isHydrated,
         hasCheckoutData: !!checkoutData,
-        itemsLength: effectiveItems.length 
+        itemsLength: effectiveItems.length
       });
-      
+
       // Si on n'a pas de données après 3 secondes, afficher une erreur
       setTimeout(() => {
         if (!hasData && !clientSecret) {
           setIntentError('Votre panier est vide ou les données ne sont pas disponibles');
+          setIsIntentLoading(false);
+        }
+      }, 3000);
+      return;
+    }
+
+    if (!hasDeliveryInfo && !clientSecret) {
+      console.log('⏳ En attente des données de livraison...', {
+        hasCheckoutData: !!checkoutData,
+        hasDeliveryInfo: !!checkoutData?.deliveryInfo,
+        hasPhone: !!checkoutData?.deliveryInfo?.phone,
+        hasAddress: !!checkoutData?.deliveryInfo?.address,
+      });
+
+      // Si on n'a pas de deliveryInfo après 3 secondes, afficher une erreur
+      setTimeout(() => {
+        if (!hasDeliveryInfo && !clientSecret) {
+          setIntentError('Données de livraison manquantes. Veuillez retourner au checkout.');
           setIsIntentLoading(false);
         }
       }, 3000);
@@ -408,18 +493,20 @@ export default function CardPaymentPage() {
       cancelled = true;
     };
   }, [
-    isHydrated, 
-    checkoutData, 
-    totalToPay, 
-    effectiveItems.length, // ← CRITIQUE: Utiliser .length pas le tableau complet!
+    // ✅ Utiliser uniquement des VALEURS PRIMITIVES (pas d'objets!)
+    isCheckoutDataLoaded, // ← IMPORTANT: Attendre que localStorage soit lu
+    isHydrated,
+    totalToPay,
+    effectiveItems.length, // ← Longueur du tableau, pas le tableau complet
     effectiveSubtotal,
     deliveryFee,
-    user?.email, 
-    user?.id, 
-    orderReference, 
+    user?.email,
+    user?.id,
+    orderReference,
     intentRetry,
     clientSecret,
-    intentCreated
+    intentCreated,
+    // checkoutData retiré car c'est un objet mémorisé
   ]);
 
   const handleSuccess = useCallback(
@@ -458,6 +545,11 @@ export default function CardPaymentPage() {
     setIntentCreated(false);
     setIntentError(null);
     setIsIntentLoading(true);
+
+    // 🔒 Réinitialiser les verrous
+    isCreatingRef.current = false;
+    creationInProgressRef.current = false;
+
     setIntentRetry(prev => prev + 1);
   };
 
