@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const metadataValidation = validatePaymentMetadata(metadata);
+    const metadataValidation = validatePaymentMetadata(metadata || {});
     if (!metadataValidation.isValid) {
       return NextResponse.json(
         {
