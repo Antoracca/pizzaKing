@@ -7,16 +7,25 @@ import { adminDb } from '@/lib/firebase-admin';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET ?? null;
+// ✅ Ne pas initialiser Stripe au niveau du module (build time)
+// Initialiser seulement quand la fonction est appelée (runtime)
+let stripe: Stripe | null = null;
 
-if (!stripeSecretKey) {
-  throw new Error('STRIPE_SECRET_KEY is not configured');
+function getStripeClient(): Stripe {
+  if (!stripe) {
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+
+    if (!stripeSecretKey) {
+      throw new Error('STRIPE_SECRET_KEY is not configured');
+    }
+
+    stripe = new Stripe(stripeSecretKey, {
+      apiVersion: '2024-04-10',
+    });
+  }
+
+  return stripe;
 }
-
-const stripe = new Stripe(stripeSecretKey, {
-  apiVersion: '2024-04-10',
-});
 
 type StoredOrderSnapshot = {
   items?: Array<{
@@ -174,6 +183,8 @@ const createOrUpdateOrder = async (
 };
 
 export async function POST(request: NextRequest) {
+  const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
   if (!stripeWebhookSecret) {
     console.error('Stripe webhook called without STRIPE_WEBHOOK_SECRET configured');
     return NextResponse.json(
@@ -193,7 +204,8 @@ export async function POST(request: NextRequest) {
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(payload, signature, stripeWebhookSecret);
+    const stripeClient = getStripeClient();
+    event = stripeClient.webhooks.constructEvent(payload, signature, stripeWebhookSecret);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Signature Stripe invalide';
