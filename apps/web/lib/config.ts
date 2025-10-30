@@ -8,9 +8,9 @@
  */
 export const DELIVERY_CONFIG = {
   /** Delivery fee in FCFA */
-  FEE: 1000,
+  FEE: 0,
   /** Minimum order amount for free delivery in FCFA */
-  FREE_THRESHOLD: 10000,
+  FREE_THRESHOLD: 0,
 } as const;
 
 /**

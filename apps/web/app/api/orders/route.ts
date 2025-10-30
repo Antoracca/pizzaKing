@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { DELIVERY_CONFIG } from '@/lib/config';
 
 export async function POST(request: NextRequest) {
   try {
@@ -53,7 +54,9 @@ export async function POST(request: NextRequest) {
     );
 
     const deliveryFee =
-      body.deliveryType === 'delivery' && subtotal < 10000 ? 1000 : 0;
+      body.deliveryType === 'delivery' && subtotal < DELIVERY_CONFIG.FREE_THRESHOLD
+        ? DELIVERY_CONFIG.FEE
+        : 0;
 
     const total = subtotal + deliveryFee;
 
