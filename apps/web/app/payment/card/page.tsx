@@ -254,7 +254,11 @@ export default function CardPaymentPage() {
     }
   }, [mounted, items.length, checkoutData, clientSecret, isIntentLoading, router]);
 
-  const stripePromise = useMemo(() => getStripe(), []);
+  // ✅ Ne charger Stripe que côté client (pas pendant le build SSR)
+  const stripePromise = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    return getStripe();
+  }, []);
 
   useEffect(() => {
     setMounted(true);
