@@ -2,9 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-
-// ✅ Désactiver le prerendering pour cette page (nécessite searchParams dynamiques)
-export const dynamic = 'force-dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { validatePhoneNumber } from '@/lib/phone-validation';
 import Header from '@/components/layout/Header';
@@ -32,6 +29,9 @@ import { doc, setDoc, collection, addDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { DELIVERY_CONFIG } from '@/lib/config';
 import { firestoreWrite } from '@/lib/firebase-retry';
+
+// ✅ Désactiver le prerendering pour cette page (nécessite searchParams dynamiques)
+export const dynamic = 'force-dynamic';
 
 const steps = [
   { id: 1, name: 'Livraison', icon: MapPin },
