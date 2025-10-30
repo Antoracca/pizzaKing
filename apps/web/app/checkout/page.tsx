@@ -54,19 +54,12 @@ export default function CheckoutPage() {
   const { items, subtotal, itemCount, clearCart } = useCartContext();
   const { user, loading: authLoading } = useAuth();
 
-  const stepFromQuery = searchParams.get('step');
-  const parsedInitialStep = stepFromQuery ? Number(stepFromQuery) : NaN;
-  const initialStep =
-    !Number.isNaN(parsedInitialStep) && parsedInitialStep >= 1 && parsedInitialStep <= 3
-      ? parsedInitialStep
-      : 1;
-  const orderRefFromQuery = searchParams.get('order_ref') ?? '';
-
-  const [currentStep, setCurrentStep] = useState(initialStep);
+  // ✅ Initialiser avec des valeurs par défaut sûres (pas de searchParams pendant prerender)
+  const [currentStep, setCurrentStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
   const [mobileMoneyData, setMobileMoneyData] = useState<MobileMoneyData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [orderNumber, setOrderNumber] = useState(orderRefFromQuery);
+  const [orderNumber, setOrderNumber] = useState('');
 
   // Générer un orderReference unique pour cette session (comme dans payment/card)
   const [orderReference] = useState(() => `PK${Date.now().toString().slice(-8)}`);
@@ -91,17 +84,19 @@ export default function CheckoutPage() {
   const [isManualAddressMode, setIsManualAddressMode] = useState(false);
 
   useEffect(() => {
+    // ✅ Vérifier qu'on est côté client
+    if (typeof window === 'undefined') return;
+
     const stepParam = searchParams.get('step');
     const parsedStep = stepParam ? Number(stepParam) : NaN;
 
     if (!Number.isNaN(parsedStep) && parsedStep >= 1 && parsedStep <= 3) {
       setCurrentStep(prev => (prev === parsedStep ? prev : parsedStep));
-      
+
       // 🧹 Nettoyer pending_checkout quand on arrive sur la confirmation (step 3)
       if (parsedStep === 3) {
         localStorage.removeItem('pending_checkout');
         localStorage.removeItem('pending_delivery_info');
-        console.log('🧹 Nettoyage pending_checkout sur page de confirmation');
       }
     }
 
@@ -141,8 +136,8 @@ export default function CheckoutPage() {
 
   // Validate Step 1 (Delivery)
   const validateStep1 = (): boolean => {
-    console.log('🔍 Validation started');
-    console.log('Phone:', currentPhone);
+    
+    
     console.log('isManualAddressMode:', isManualAddressMode);
     console.log('selectedAddress:', selectedAddress);
     console.log('manualAddress:', manualAddress);
@@ -215,7 +210,7 @@ export default function CheckoutPage() {
       setCurrentStep(2);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      console.log('❌ Validation failed, staying on step 1');
+      
       // Scroll to top to show validation errors
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
