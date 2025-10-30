@@ -6,6 +6,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@pizza-king/shared/src/hooks/useAuth';
+import { useConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useAlertMessage } from '@/components/ui/alert-message';
+import { firestoreRead, firestoreWrite, firestoreDelete } from '@/lib/firebase-retry';
 import {
   MapPin,
   Plus,
@@ -35,7 +38,7 @@ interface AddressSelectorProps {
   selectedAddressId?: string | null;
 }
 
-const ICON_MAP: Record<string, any> = {
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   home: Home,
   work: Briefcase,
   other: Building2,
@@ -47,6 +50,8 @@ export default function AddressSelector({
   selectedAddressId,
 }: AddressSelectorProps) {
   const { user } = useAuth();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
+  const { alert, AlertMessage } = useAlertMessage();
   const [addresses, setAddresses] = useState<SavedAddress[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -64,22 +69,24 @@ export default function AddressSelector({
     try {
       setLoading(true);
 
-      // Use Firestore directly
+      // Use Firestore directly with retry logic
       const { collection, query, where, orderBy, getDocs } = await import('firebase/firestore');
       const { db } = await import('@/lib/firebase');
 
-      const addressesRef = collection(db, 'addresses');
-      const q = query(
-        addressesRef,
-        where('userId', '==', user.id),
-        orderBy('createdAt', 'desc')
-      );
+      const fetchedAddresses = await firestoreRead(async () => {
+        const addressesRef = collection(db, 'addresses');
+        const q = query(
+          addressesRef,
+          where('userId', '==', user.id),
+          orderBy('createdAt', 'desc')
+        );
 
-      const snapshot = await getDocs(q);
-      const fetchedAddresses = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as SavedAddress[];
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as SavedAddress[];
+      });
 
       setAddresses(fetchedAddresses);
 
@@ -90,58 +97,76 @@ export default function AddressSelector({
       }
     } catch (error) {
       console.error('Failed to fetch addresses:', error);
+      alert({
+        title: 'Erreur',
+        description: 'Impossible de charger vos adresses. Veuillez réessayer.',
+        variant: 'error',
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (addressId: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette adresse ?')) {
-      return;
-    }
+    confirm({
+      title: 'Supprimer l\'adresse',
+      description: 'Êtes-vous sûr de vouloir supprimer cette adresse ? Cette action est irréversible.',
+      variant: 'danger',
+      confirmText: 'Supprimer',
+      cancelText: 'Annuler',
+      onConfirm: async () => {
+        try {
+          setDeleting(addressId);
 
-    try {
-      setDeleting(addressId);
+          // Use Firestore directly with retry logic
+          const { doc, deleteDoc } = await import('firebase/firestore');
+          const { db } = await import('@/lib/firebase');
 
-      // Use Firestore directly
-      const { doc, deleteDoc } = await import('firebase/firestore');
-      const { db } = await import('@/lib/firebase');
+          await firestoreDelete(async () => {
+            return deleteDoc(doc(db, 'addresses', addressId));
+          });
 
-      await deleteDoc(doc(db, 'addresses', addressId));
-
-      setAddresses(prev => prev.filter(a => a.id !== addressId));
-      if (selectedAddressId === addressId) {
-        onSelectAddress(null);
-      }
-    } catch (error) {
-      console.error('Failed to delete address:', error);
-      alert('Erreur lors de la suppression de l\'adresse');
-    } finally {
-      setDeleting(null);
-    }
+          setAddresses(prev => prev.filter(a => a.id !== addressId));
+          if (selectedAddressId === addressId) {
+            onSelectAddress(null);
+          }
+        } catch (error) {
+          console.error('Failed to delete address:', error);
+          alert({
+            title: 'Erreur',
+            description: 'Erreur lors de la suppression de l\'adresse',
+            variant: 'error',
+          });
+        } finally {
+          setDeleting(null);
+        }
+      },
+    });
   };
 
   const handleSetDefault = async (addressId: string) => {
     if (!user?.id) return;
 
     try {
-      // Use Firestore directly
+      // Use Firestore directly with retry logic
       const { collection, query, where, getDocs, doc, updateDoc, Timestamp } = await import('firebase/firestore');
       const { db } = await import('@/lib/firebase');
 
-      const addressesRef = collection(db, 'addresses');
-      const q = query(addressesRef, where('userId', '==', user.id));
-      const snapshot = await getDocs(q);
+      await firestoreWrite(async () => {
+        const addressesRef = collection(db, 'addresses');
+        const q = query(addressesRef, where('userId', '==', user.id));
+        const snapshot = await getDocs(q);
 
-      // Update all addresses: set isDefault based on whether it's the target address
-      const updatePromises = snapshot.docs.map(docSnapshot =>
-        updateDoc(doc(db, 'addresses', docSnapshot.id), {
-          isDefault: docSnapshot.id === addressId,
-          updatedAt: Timestamp.now(),
-        })
-      );
+        // Update all addresses: set isDefault based on whether it's the target address
+        const updatePromises = snapshot.docs.map(docSnapshot =>
+          updateDoc(doc(db, 'addresses', docSnapshot.id), {
+            isDefault: docSnapshot.id === addressId,
+            updatedAt: Timestamp.now(),
+          })
+        );
 
-      await Promise.all(updatePromises);
+        return Promise.all(updatePromises);
+      });
 
       setAddresses(prev =>
         prev.map(addr => ({
@@ -151,6 +176,11 @@ export default function AddressSelector({
       );
     } catch (error) {
       console.error('Failed to set default address:', error);
+      alert({
+        title: 'Erreur',
+        description: 'Impossible de définir l\'adresse par défaut',
+        variant: 'error',
+      });
     }
   };
 
@@ -300,6 +330,8 @@ export default function AddressSelector({
           </AnimatePresence>
         </div>
       )}
+      <ConfirmDialog />
+      <AlertMessage />
     </div>
   );
 }

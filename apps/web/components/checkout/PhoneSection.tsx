@@ -5,6 +5,7 @@ import { Phone, Edit2, Check, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { validatePhoneNumber } from '@/lib/phone-validation';
 
 interface PhoneSectionProps {
   userPhone: string | null;
@@ -22,13 +23,35 @@ export default function PhoneSection({
   const [isEditing, setIsEditing] = useState(false);
   const [tempPhone, setTempPhone] = useState(currentPhone);
   const [phoneJustAdded, setPhoneJustAdded] = useState(false);
+  const [validationError, setValidationError] = useState<string | undefined>();
 
   const handleSave = () => {
-    onPhoneChange(tempPhone);
+    // Validate phone before saving
+    const validation = validatePhoneNumber(tempPhone);
+
+    if (!validation.isValid) {
+      setValidationError(validation.error);
+      return;
+    }
+
+    // Clear error and save with formatted number
+    setValidationError(undefined);
+    const phoneToSave = validation.formatted || tempPhone;
+    onPhoneChange(phoneToSave);
+    setTempPhone(phoneToSave);
     setIsEditing(false);
+
     // Si c'était un ajout (pas de userPhone), marquer comme ajouté
-    if (!userPhone && tempPhone) {
+    if (!userPhone && phoneToSave) {
       setPhoneJustAdded(true);
+    }
+  };
+
+  const handlePhoneChange = (value: string) => {
+    setTempPhone(value);
+    // Clear validation error when user types
+    if (validationError) {
+      setValidationError(undefined);
     }
   };
 
@@ -124,17 +147,17 @@ export default function PhoneSection({
               <input
                 type="tel"
                 value={tempPhone}
-                onChange={(e) => setTempPhone(e.target.value)}
+                onChange={(e) => handlePhoneChange(e.target.value)}
                 placeholder="+236 70 12 34 56 ou 70123456"
                 className={`w-full rounded-lg border-2 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base outline-none transition-all ${
-                  error
+                  validationError || error
                     ? 'border-red-500 focus:border-red-500 focus:ring-red-500/10'
                     : 'border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10'
                 }`}
                 autoFocus
               />
-              {error && (
-                <p className="mt-1 text-xs text-red-600">{error}</p>
+              {(validationError || error) && (
+                <p className="mt-1 text-xs text-red-600">{validationError || error}</p>
               )}
             </div>
 

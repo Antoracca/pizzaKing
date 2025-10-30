@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useNavLoading } from '@/hooks/useNavLoading';
 
@@ -8,14 +8,27 @@ export default function NavLoadingProvider() {
   const pathname = usePathname();
   const { start, stop } = useNavLoading();
 
+  const scheduleStart = useCallback(() => {
+    if (typeof window === 'undefined') return;
+
+    const trigger = () => start();
+
+    if (typeof queueMicrotask === 'function') {
+      queueMicrotask(trigger);
+      return;
+    }
+
+    setTimeout(trigger, 0);
+  }, [start]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const originalPush = window.history.pushState;
     const originalReplace = window.history.replaceState;
 
-    const startNav = () => start();
-    const onPop = () => start();
+    const startNav = () => scheduleStart();
+    const onPop = () => scheduleStart();
 
     const isSameTarget = (url?: string | null) => {
       try {
@@ -32,21 +45,25 @@ export default function NavLoadingProvider() {
     };
 
     // Patch history to detect programmatic navigations (router push/replace)
-      window.history.pushState = function (...args) {
-        try {
-          const url = (args && args[2]) as string | null;
-          if (!isSameTarget(url)) startNav();
-        } catch (_e) { /* noop */ }
-        return originalPush.apply(window.history, args as [any, string, string?]);
-      } as typeof window.history.pushState;
+    window.history.pushState = function (...args) {
+      try {
+        const url = (args && args[2]) as string | null;
+        if (!isSameTarget(url)) startNav();
+      } catch (_e) {
+        /* noop */
+      }
+      return originalPush.apply(window.history, args as [any, string, string?]);
+    } as typeof window.history.pushState;
 
-      window.history.replaceState = function (...args) {
-        try {
-          const url = (args && args[2]) as string | null;
-          if (!isSameTarget(url)) startNav();
-        } catch (_e) { /* noop */ }
-        return originalReplace.apply(window.history, args as [any, string, string?]);
-      } as typeof window.history.replaceState;
+    window.history.replaceState = function (...args) {
+      try {
+        const url = (args && args[2]) as string | null;
+        if (!isSameTarget(url)) startNav();
+      } catch (_e) {
+        /* noop */
+      }
+      return originalReplace.apply(window.history, args as [any, string, string?]);
+    } as typeof window.history.replaceState;
 
     // Back/forward
     window.addEventListener('popstate', onPop);
@@ -80,7 +97,7 @@ export default function NavLoadingProvider() {
       window.removeEventListener('popstate', onPop);
       document.removeEventListener('click', onClick, { capture: true } as any);
     };
-  }, [start]);
+  }, [scheduleStart]);
 
   // Stop loading shortly after the pathname actually changed
   useEffect(() => {

@@ -7,9 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { formatPrice } from '@/lib/utils';
 import { ShoppingBag, Tag, Truck } from 'lucide-react';
 import type { CartItem } from '@/providers/CartProvider';
+import { DELIVERY_CONFIG } from '@/lib/config';
 
-const FREE_DELIVERY_THRESHOLD = 10000;
-const DELIVERY_FEE = 1000;
+const FREE_DELIVERY_THRESHOLD = DELIVERY_CONFIG.FREE_THRESHOLD;
+const DELIVERY_FEE = DELIVERY_CONFIG.FEE;
 
 interface OrderSummaryProps {
   items: CartItem[];

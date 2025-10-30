@@ -1,1 +1,4 @@
 .vercel
+
+# Firebase service account key (contains sensitive credentials)
+service-account.json

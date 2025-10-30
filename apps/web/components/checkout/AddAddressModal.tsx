@@ -5,6 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@pizza-king/shared/src/hooks/useAuth';
+import { ADDRESS_CONFIG } from '@/lib/config';
+import { useAlertMessage } from '@/components/ui/alert-message';
+import { firestoreWrite } from '@/lib/firebase-retry';
 import {
   X,
   Home,
@@ -29,6 +32,7 @@ export default function AddAddressModal({
   onSuccess,
 }: AddAddressModalProps) {
   const { user } = useAuth();
+  const { alert, AlertMessage } = useAlertMessage();
   const [label, setLabel] = useState<AddressLabel>('home');
   const [formData, setFormData] = useState({
     quartier: '',
@@ -41,7 +45,11 @@ export default function AddAddressModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const labelOptions: Array<{ id: AddressLabel; label: string; icon: any }> = [
+  const labelOptions: Array<{
+    id: AddressLabel;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }> = [
     { id: 'home', label: 'Maison', icon: Home },
     { id: 'work', label: 'Travail', icon: Briefcase },
     { id: 'other', label: 'Autre', icon: Building2 },
@@ -81,7 +89,11 @@ export default function AddAddressModal({
     }
 
     if (!user?.id) {
-      alert('Vous devez être connecté pour enregistrer une adresse');
+      alert({
+        title: 'Connexion requise',
+        description: 'Vous devez être connecté pour enregistrer une adresse',
+        variant: 'warning',
+      });
       return;
     }
 
@@ -94,30 +106,32 @@ export default function AddAddressModal({
 
       const addressesRef = collection(db, 'addresses');
 
-      // Check if user already has 5 addresses (max limit)
+      // Check if user already has maximum addresses
       const userAddressesQuery = query(addressesRef, where('userId', '==', user.id));
       const existingSnapshot = await getDocs(userAddressesQuery);
 
-      if (existingSnapshot.size >= 5) {
-        throw new Error('Vous ne pouvez avoir que 5 adresses maximum');
+      if (existingSnapshot.size >= ADDRESS_CONFIG.MAX_ADDRESSES) {
+        throw new Error(`Vous ne pouvez avoir que ${ADDRESS_CONFIG.MAX_ADDRESSES} adresses maximum`);
       }
 
       // Check if this is the first address (make it default)
       const isFirstAddress = existingSnapshot.size === 0;
 
-      // Add new address to Firestore
-      await addDoc(addressesRef, {
-        userId: user.id,
-        label,
-        quartier: formData.quartier.trim(),
-        avenue: formData.avenue.trim(),
-        pointDeRepere: formData.pointDeRepere.trim(),
-        numeroPorte: formData.numeroPorte?.trim() || '',
-        etage: formData.etage?.trim() || '',
-        instructions: formData.instructions?.trim() || '',
-        isDefault: isFirstAddress,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
+      // Add new address to Firestore with retry logic
+      await firestoreWrite(async () => {
+        return addDoc(addressesRef, {
+          userId: user.id,
+          label,
+          quartier: formData.quartier.trim(),
+          avenue: formData.avenue.trim(),
+          pointDeRepere: formData.pointDeRepere.trim(),
+          numeroPorte: formData.numeroPorte?.trim() || '',
+          etage: formData.etage?.trim() || '',
+          instructions: formData.instructions?.trim() || '',
+          isDefault: isFirstAddress,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        });
       });
 
       // Reset form
@@ -135,7 +149,11 @@ export default function AddAddressModal({
       onClose();
     } catch (error) {
       console.error('Failed to add address:', error);
-      alert(error instanceof Error ? error.message : 'Erreur lors de l\'ajout de l\'adresse');
+      alert({
+        title: 'Erreur',
+        description: error instanceof Error ? error.message : 'Erreur lors de l\'ajout de l\'adresse',
+        variant: 'error',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -380,6 +398,7 @@ export default function AddAddressModal({
           </Card>
         </motion.div>
       </div>
+      <AlertMessage />
     </AnimatePresence>
   );
 }

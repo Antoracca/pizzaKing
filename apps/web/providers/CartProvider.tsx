@@ -61,6 +61,7 @@ type CartContextValue = {
   itemCount: number;
   isOpen: boolean;
   subtotal: number;
+  isHydrated: boolean;
   openCart: () => void;
   closeCart: () => void;
   toggleCart: () => void;
@@ -300,6 +301,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       itemCount,
       isOpen,
       subtotal,
+      isHydrated,
       openCart,
       closeCart,
       toggleCart,
@@ -314,6 +316,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       itemCount,
       isOpen,
       subtotal,
+      isHydrated,
       openCart,
       closeCart,
       toggleCart,

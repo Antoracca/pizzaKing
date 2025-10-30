@@ -1,926 +1,961 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import { ArrowLeft, CreditCard, Lock, CheckCircle, AlertCircle } from 'lucide-react';
+import {
+  Elements,
+  CardNumberElement,
+  CardExpiryElement,
+  CardCvcElement,
+  useElements,
+  useStripe,
+} from '@stripe/react-stripe-js';
+import type {
+  StripeCardNumberElement,
+  StripeCardNumberElementChangeEvent,
+  StripeCardExpiryElementChangeEvent,
+  StripeCardCvcElementChangeEvent,
+  StripeCardElementOptions,
+  StripeElementsOptions,
+} from '@stripe/stripe-js';
+import { ArrowLeft, Lock, CheckCircle, AlertCircle, CreditCard } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCartContext } from '@/providers/CartProvider';
 import { useAuth } from '@pizza-king/shared/src/hooks/useAuth';
+import { getStripe } from '@/lib/stripe';
+import { doc, setDoc, Timestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { DELIVERY_CONFIG } from '@/lib/config';
+import { firestoreWrite } from '@/lib/firebase-retry';
 
-// Composants pour les icônes de cartes
 const VisaIcon = () => (
-  <div className="relative h-full w-full bg-white rounded overflow-hidden flex items-center justify-center">
+  <div className="relative h-full w-full bg-white rounded flex items-center justify-center shadow-sm">
     <Image
       src="https://www.svgrepo.com/show/328144/visa.svg"
       alt="Visa"
       fill
-      className="object-contain p-0.5"
-      style={{ opacity: 1 }}
+      className="object-contain p-1"
       unoptimized
+      style={{ opacity: 1 }}
     />
   </div>
 );
 
 const MastercardIcon = () => (
-  <div className="relative h-full w-full bg-white rounded overflow-hidden flex items-center justify-center">
+  <div className="relative h-full w-full bg-white rounded flex items-center justify-center shadow-sm">
     <Image
       src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg"
       alt="Mastercard"
       fill
-      className="object-contain p-0.5"
-      style={{ opacity: 1 }}
+      className="object-contain p-1"
       unoptimized
+      style={{ opacity: 1 }}
     />
   </div>
 );
 
 const AmexIcon = () => (
-  <div className="relative h-full w-full bg-white rounded overflow-hidden flex items-center justify-center">
+  <div className="relative h-full w-full bg-white rounded flex items-center justify-center shadow-sm">
     <Image
       src="https://upload.wikimedia.org/wikipedia/commons/3/30/American_Express_logo.svg"
       alt="American Express"
       fill
-      className="object-contain p-0.5"
-      style={{ opacity: 1 }}
+      className="object-contain p-1"
       unoptimized
+      style={{ opacity: 1 }}
     />
   </div>
 );
 
 const GimacIcon = () => (
-  <svg viewBox="0 0 48 32" className="h-full w-full">
-    <rect width="48" height="32" rx="4" fill="#00A651" />
-    <text x="24" y="20" fontSize="12" fontWeight="bold" fill="white" textAnchor="middle">GIMAC</text>
-  </svg>
+  <div className="flex h-full w-full items-center justify-center rounded bg-green-600 shadow-sm">
+    <span className="text-sm font-bold text-white">GIMAC</span>
+  </div>
 );
 
-// Types de cartes supportées avec leurs patterns de détection
-const CARD_TYPES = [
-  {
-    id: 'visa',
-    name: 'Visa',
-    pattern: /^4/,
-    lengths: [13, 16, 19],
-    cvvLength: 3,
+const DefaultCardIcon = () => (
+  <div className="flex h-full w-full items-center justify-center rounded bg-white">
+    <CreditCard className="h-6 w-6 text-gray-600" />
+  </div>
+);
+
+type CardBrand = 'visa' | 'mastercard' | 'amex' | 'discover' | 'diners' | 'jcb' | 'unionpay' | 'unknown';
+type AcceptedBrand = CardBrand | 'gimac';
+
+const CARD_BRAND_CONFIG: Record<AcceptedBrand, { label: string; colorStart: string; colorEnd: string; icon: React.FC }> = {
+  visa: {
+    label: 'Visa',
+    colorStart: '#1A1F71',
+    colorEnd: '#0D47A1',
     icon: VisaIcon,
-    color: 'from-blue-600 to-blue-700',
   },
-  {
-    id: 'mastercard',
-    name: 'Mastercard',
-    pattern: /^(5[1-5]|222[1-9]|22[3-9][0-9]|2[3-6][0-9]{2}|27[01][0-9]|2720)/,
-    lengths: [16],
-    cvvLength: 3,
+  mastercard: {
+    label: 'Mastercard',
+    colorStart: '#EB001B',
+    colorEnd: '#F79E1B',
     icon: MastercardIcon,
-    color: 'from-orange-600 to-red-600',
   },
-  {
-    id: 'amex',
-    name: 'American Express',
-    pattern: /^3[47]/,
-    lengths: [15],
-    cvvLength: 4,
+  amex: {
+    label: 'American Express',
+    colorStart: '#006FCF',
+    colorEnd: '#003D71',
     icon: AmexIcon,
-    color: 'from-teal-600 to-teal-700',
   },
-  {
-    id: 'gimac',
-    name: 'GIMAC',
-    pattern: /^9/,
-    lengths: [16],
-    cvvLength: 3,
-    icon: GimacIcon,
-    color: 'from-green-600 to-green-700',
+  discover: {
+    label: 'Discover',
+    colorStart: '#FF6000',
+    colorEnd: '#FF9500',
+    icon: DefaultCardIcon,
   },
-];
-
-// Base de données des banques émettrices (BIN = 6 premiers chiffres)
-interface BankIssuer {
-  name: string;
-  colorStart: string;
-  colorEnd: string;
-  bins: string[];
-}
-
-const BANK_ISSUERS: BankIssuer[] = [
-  // Banques françaises
-  {
-    name: 'BNP Paribas',
-    colorStart: '#00915A',
-    colorEnd: '#007A4D',
-    bins: ['497010', '497011', '497012', '484434', '484435', '522371', '522372'],
+  diners: {
+    label: 'Diners Club',
+    colorStart: '#0079BE',
+    colorEnd: '#003D5C',
+    icon: DefaultCardIcon,
   },
-  {
-    name: 'Société Générale',
-    colorStart: '#E60028',
-    colorEnd: '#C20024',
-    bins: ['520489', '545620', '545621', '440066', '491872', '491873'],
-  },
-  {
-    name: 'Crédit Agricole',
-    colorStart: '#00814A',
-    colorEnd: '#006B3D',
-    bins: ['498415', '498416', '498417', '444476', '434826', '434827'],
-  },
-  {
-    name: 'LCL',
-    colorStart: '#003D7A',
-    colorEnd: '#002D5C',
-    bins: ['532908', '532909', '489278', '489279'],
-  },
-  {
-    name: 'Banque Populaire',
-    colorStart: '#ED1C24',
-    colorEnd: '#C81E23',
-    bins: ['517562', '517563', '545301', '545302', '477923', '548747', '514287', '514288'],
-  },
-  {
-    name: 'Caisse d\'Épargne',
-    colorStart: '#D50032',
-    colorEnd: '#B0002A',
-    bins: ['484427', '484428', '522370', '522369'],
-  },
-  {
-    name: 'Crédit Mutuel',
-    colorStart: '#003B5C',
-    colorEnd: '#002A42',
-    bins: ['523401', '523402', '489282', '489283'],
-  },
-  {
-    name: 'La Banque Postale',
-    colorStart: '#FFD200',
-    colorEnd: '#E6BC00',
-    bins: ['491852', '491853', '535801', '535802'],
-  },
-  {
-    name: 'Boursorama',
-    colorStart: '#00B4CC',
-    colorEnd: '#0098AD',
-    bins: ['536765', '536766', '518397', '518398'],
-  },
-  {
-    name: 'Hello Bank',
-    colorStart: '#FF6F00',
-    colorEnd: '#E66300',
-    bins: ['545622', '545623'],
-  },
-  {
-    name: 'Orange Bank',
-    colorStart: '#FF7900',
-    colorEnd: '#E66A00',
-    bins: ['532948', '532949'],
-  },
-  {
-    name: 'Fortuneo',
-    colorStart: '#00A859',
-    colorEnd: '#008F4C',
-    bins: ['520490', '520491'],
-  },
-  {
-    name: 'Monabanq',
-    colorStart: '#E2001A',
-    colorEnd: '#C00016',
-    bins: ['534049', '534050'],
-  },
-  {
-    name: 'N26',
-    colorStart: '#36DECC',
-    colorEnd: '#1FCBB8',
-    bins: ['533441', '533442', '552426', '552427'],
-  },
-  {
-    name: 'Revolut',
-    colorStart: '#0075EB',
-    colorEnd: '#0062C9',
-    bins: ['536462', '536463', '524393', '524394'],
-  },
-  {
-    name: 'Crédit du Nord',
-    colorStart: '#CC0000',
-    colorEnd: '#A80000',
-    bins: ['491874', '491875'],
-  },
-  {
-    name: 'CIC',
-    colorStart: '#0057A0',
-    colorEnd: '#004682',
-    bins: ['535803', '535804', '489284', '489285'],
-  },
-  {
-    name: 'HSBC France',
-    colorStart: '#DB0011',
-    colorEnd: '#B8000E',
-    bins: ['406374', '406375', '457620', '457621'],
-  },
-  // Banques américaines
-  {
-    name: 'Chase Bank',
-    colorStart: '#1E3A8A',
-    colorEnd: '#1E40AF',
-    bins: ['414720', '476173'],
-  },
-  {
-    name: 'Bank of America',
-    colorStart: '#B91C1C',
-    colorEnd: '#991B1B',
-    bins: ['480034', '480035'],
-  },
-  {
-    name: 'Wells Fargo',
-    colorStart: '#CA8A04',
-    colorEnd: '#B45309',
-    bins: ['471822', '471823'],
-  },
-  // Banques centrafricaines
-  {
-    name: 'Ecobank Centrafrique',
-    colorStart: '#005EB8',
-    colorEnd: '#004A94',
-    bins: ['521478', '521479', '464114', '481448', '537856', '537857'],
-  },
-  {
-    name: 'BGFIBANK Centrafrique',
-    colorStart: '#FF6B00',
-    colorEnd: '#E05D00',
-    bins: ['520145', '520146', '535420', '535421'],
-  },
-  {
-    name: 'Banque Populaire Maroco Centrafricaine (BPMC)',
-    colorStart: '#E30613',
-    colorEnd: '#C00510',
-    bins: ['477923', '548747', '489267', '489268'],
-  },
-  {
-    name: 'Société Générale Centrafrique',
-    colorStart: '#E60028',
-    colorEnd: '#C20024',
-    bins: ['440067', '440068'],
-  },
-  {
-    name: 'Commercial Bank Centrafrique (CBCA)',
-    colorStart: '#006837',
-    colorEnd: '#00522B',
-    bins: ['418849', '418850'],
-  },
-  {
-    name: 'Banque Internationale pour le Centrafrique (BICA)',
+  jcb: {
+    label: 'JCB',
     colorStart: '#003DA5',
-    colorEnd: '#002D7A',
-    bins: ['522819', '522820'],
+    colorEnd: '#0071BC',
+    icon: DefaultCardIcon,
   },
-  {
-    name: 'Afriland First Bank Centrafrique',
-    colorStart: '#00A550',
-    colorEnd: '#008741',
-    bins: ['520147', '520148'],
+  unionpay: {
+    label: 'UnionPay',
+    colorStart: '#E21836',
+    colorEnd: '#00447C',
+    icon: DefaultCardIcon,
   },
-  {
-    name: 'Financial Bank Centrafrique',
-    colorStart: '#1B75BB',
-    colorEnd: '#155E96',
-    bins: ['539982', '539981'],
+  unknown: {
+    label: 'Carte bancaire',
+    colorStart: '#6B7280',
+    colorEnd: '#4B5563',
+    icon: DefaultCardIcon,
   },
-  {
-    name: 'Banque Sahélo-Saharienne pour l\'Investissement et le Commerce (BSIC)',
-    colorStart: '#0072BC',
-    colorEnd: '#005A95',
-    bins: ['535422', '535423'],
-  },
-  // Banques africaines (autres pays)
-  {
-    name: 'UBA (United Bank for Africa)',
-    colorStart: '#DC2626',
-    colorEnd: '#B91C1C',
-    bins: ['539983', '539984', '446282', '446283'],
-  },
-  {
-    name: 'Banque Atlantique',
-    colorStart: '#00A859',
-    colorEnd: '#008F4C',
-    bins: ['521456', '521457', '489269', '489270'],
-  },
-  {
-    name: 'Bank of Africa',
-    colorStart: '#E31E24',
-    colorEnd: '#C11A1F',
-    bins: ['535424', '535425', '522821', '522822'],
-  },
-  {
-    name: 'Orabank',
-    colorStart: '#FF6600',
-    colorEnd: '#E05500',
-    bins: ['535426', '535427'],
-  },
-  {
-    name: 'Coris Bank',
+  gimac: {
+    label: 'GIMAC',
     colorStart: '#00A651',
     colorEnd: '#008741',
-    bins: ['539985', '539986'],
+    icon: GimacIcon,
   },
-];
+};
 
-interface CardData {
-  number: string;
-  holder: string;
-  expiry: string;
-  cvv: string;
-}
+const ACCEPTED_BRANDS: AcceptedBrand[] = ['visa', 'mastercard', 'amex', 'gimac'];
 
-interface CardErrors {
-  number?: string;
-  holder?: string;
-  expiry?: string;
-  cvv?: string;
-}
+const formatCardNumber = (value: string) => {
+  if (!value) return '•••• •••• •••• ••••';
+  const cleaned = value.replace(/\s/g, '');
+  const groups = cleaned.match(/.{1,4}/g) || [];
+  const formatted = groups.join(' ');
+  const remaining = 16 - cleaned.length;
+  const dots = '•'.repeat(Math.max(0, remaining));
+  return (formatted + dots.replace(/(.{4})/g, ' $1')).trim().substring(0, 19);
+};
+
+const getOrCreateOrderReference = (): string => {
+  if (typeof window === 'undefined') return `PK${Date.now().toString().slice(-8)}`;
+  
+  const STORAGE_KEY = 'current_order_reference_card';
+  const saved = sessionStorage.getItem(STORAGE_KEY);
+  
+  if (saved) {
+    console.log('📦 OrderReference récupéré:', saved);
+    return saved;
+  }
+  
+  const newRef = `PK${Date.now().toString().slice(-8)}`;
+  sessionStorage.setItem(STORAGE_KEY, newRef);
+  console.log('🆕 Nouveau OrderReference créé:', newRef);
+  return newRef;
+};
 
 export default function CardPaymentPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { subtotal } = useCartContext();
+  const { subtotal, items, clearCart, isHydrated } = useCartContext();
 
-  const [cardData, setCardData] = useState<CardData>({
-    number: '',
-    holder: '',
-    expiry: '',
-    cvv: '',
-  });
-
-  const [errors, setErrors] = useState<CardErrors>({});
-  const [focusedField, setFocusedField] = useState<string | null>(null);
-  const [detectedCardType, setDetectedCardType] = useState<typeof CARD_TYPES[0] | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isCardFlipped, setIsCardFlipped] = useState(false);
-  const [detectedBank, setDetectedBank] = useState<BankIssuer | null>(null);
-
-  // Détecter le type de carte automatiquement
-  const detectCardType = (cardNumber: string) => {
-    const cleaned = cardNumber.replace(/\s/g, '');
-
-    for (const cardType of CARD_TYPES) {
-      if (cardType.pattern.test(cleaned)) {
-        return cardType;
-      }
-    }
-    return null;
-  };
-
-  // Détecter la banque émettrice à partir du BIN (6 premiers chiffres)
-  const detectBankIssuer = (cardNumber: string): BankIssuer | null => {
-    const cleaned = cardNumber.replace(/\s/g, '');
-
-    // On a besoin d'au moins 6 chiffres pour le BIN
-    if (cleaned.length < 6) {
-      return null;
-    }
-
-    const bin = cleaned.substring(0, 6);
-
-    for (const bank of BANK_ISSUERS) {
-      if (bank.bins.includes(bin)) {
-        return bank;
-      }
-    }
-
-    return null;
-  };
-
-  // Formater le numéro de carte (XXXX XXXX XXXX XXXX)
-  const formatCardNumber = (value: string): string => {
-    const cleaned = value.replace(/\D/g, '');
-    const chunks = cleaned.match(/.{1,4}/g);
-    return chunks ? chunks.join(' ') : cleaned;
-  };
-
-  // Formater la date d'expiration (MM/YY)
-  const formatExpiry = (value: string): string => {
-    const cleaned = value.replace(/\D/g, '');
-    if (cleaned.length >= 2) {
-      return `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}`;
-    }
-    return cleaned;
-  };
-
-  // Gérer le changement du numéro de carte
-  const handleCardNumberChange = (value: string) => {
-    const formatted = formatCardNumber(value);
-    const cleaned = formatted.replace(/\s/g, '');
-
-    if (cleaned.length <= 19) {
-      setCardData({ ...cardData, number: formatted });
-      const detected = detectCardType(formatted);
-      setDetectedCardType(detected);
-
-      // Détecter la banque émettrice
-      const bank = detectBankIssuer(formatted);
-      console.log('🔍 Détection banque:', {
-        cardNumber: cleaned,
-        bin: cleaned.substring(0, 6),
-        bankDetected: bank?.name || 'Aucune',
-      });
-      setDetectedBank(bank);
-
-      // Effacer l'erreur si présente
-      if (errors.number) {
-        setErrors({ ...errors, number: undefined });
-      }
-    }
-  };
-
-  // Gérer le changement de la date d'expiration
-  const handleExpiryChange = (value: string) => {
-    const formatted = formatExpiry(value);
-    const cleaned = formatted.replace(/\D/g, '');
-
-    if (cleaned.length <= 4) {
-      setCardData({ ...cardData, expiry: formatted });
-      if (errors.expiry) {
-        setErrors({ ...errors, expiry: undefined });
-      }
-    }
-  };
-
-  // Gérer le changement du CVV
-  const handleCvvChange = (value: string) => {
-    const cleaned = value.replace(/\D/g, '');
-    const maxLength = detectedCardType?.cvvLength || 3;
-
-    if (cleaned.length <= maxLength) {
-      setCardData({ ...cardData, cvv: cleaned });
-      if (errors.cvv) {
-        setErrors({ ...errors, cvv: undefined });
-      }
-    }
-  };
-
-  // Validation complète
-  const validate = (): boolean => {
-    const newErrors: CardErrors = {};
-    const cleanedNumber = cardData.number.replace(/\s/g, '');
-
-    // Validation du numéro de carte
-    if (!cleanedNumber) {
-      newErrors.number = 'Numéro de carte requis';
-    } else if (!detectedCardType) {
-      newErrors.number = 'Type de carte non reconnu';
-    } else if (!detectedCardType.lengths.includes(cleanedNumber.length)) {
-      newErrors.number = `Numéro invalide pour ${detectedCardType.name}`;
-    } else if (!luhnCheck(cleanedNumber)) {
-      newErrors.number = 'Numéro de carte invalide';
-    }
-
-    // Validation du titulaire
-    if (!cardData.holder.trim()) {
-      newErrors.holder = 'Nom du titulaire requis';
-    } else if (cardData.holder.trim().length < 3) {
-      newErrors.holder = 'Nom trop court';
-    } else if (!/^[a-zA-Z\s]+$/.test(cardData.holder)) {
-      newErrors.holder = 'Nom invalide (lettres uniquement)';
-    }
-
-    // Validation de la date d'expiration
-    if (!cardData.expiry) {
-      newErrors.expiry = 'Date d\'expiration requise';
-    } else {
-      const [month, year] = cardData.expiry.split('/');
-      const currentYear = new Date().getFullYear() % 100;
-      const currentMonth = new Date().getMonth() + 1;
-
-      const monthNum = parseInt(month);
-      const yearNum = parseInt(year);
-
-      if (!month || !year || monthNum < 1 || monthNum > 12) {
-        newErrors.expiry = 'Date invalide (MM/YY)';
-      } else if (yearNum < currentYear || (yearNum === currentYear && monthNum < currentMonth)) {
-        newErrors.expiry = 'Carte expirée';
-      }
-    }
-
-    // Validation du CVV
-    const expectedCvvLength = detectedCardType?.cvvLength || 3;
-    if (!cardData.cvv) {
-      newErrors.cvv = 'CVV requis';
-    } else if (cardData.cvv.length !== expectedCvvLength) {
-      newErrors.cvv = `CVV doit contenir ${expectedCvvLength} chiffres`;
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // Algorithme de Luhn pour valider le numéro de carte
-  const luhnCheck = (cardNumber: string): boolean => {
-    let sum = 0;
-    let isEven = false;
-
-    for (let i = cardNumber.length - 1; i >= 0; i--) {
-      let digit = parseInt(cardNumber[i]);
-
-      if (isEven) {
-        digit *= 2;
-        if (digit > 9) {
-          digit -= 9;
+  // États initiaux
+  const [checkoutData, setCheckoutData] = useState<any>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [isIntentLoading, setIsIntentLoading] = useState(true);
+  const [intentError, setIntentError] = useState<string | null>(null);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [cardReady, setCardReady] = useState(false);
+  const [focusedField, setFocusedField] = useState<'number' | 'expiry' | 'cvc' | null>(null);
+  const [intentRetry, setIntentRetry] = useState(0);
+  const [orderReference] = useState(() => getOrCreateOrderReference());
+  const [intentCreated, setIntentCreated] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [isCreating, setIsCreating] = useState(false); // ← LOCK pour empêcher doublons
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedCheckout = localStorage.getItem('pending_checkout');
+      if (savedCheckout) {
+        try {
+          setCheckoutData(JSON.parse(savedCheckout));
+        } catch (e) {
+          console.error('Erreur parsing checkout data:', e);
         }
       }
-
-      sum += digit;
-      isEven = !isEven;
     }
+  }, []);
 
-    return sum % 10 === 0;
-  };
+  const effectiveSubtotal = subtotal > 0 ? subtotal : (checkoutData?.cart?.subtotal || 0);
+  const effectiveItems = items.length > 0 ? items : (checkoutData?.cart?.items || []);
+  const deliveryFee = DELIVERY_CONFIG.FEE;
+  const totalToPay = effectiveSubtotal + deliveryFee;
 
-  // Soumettre le paiement
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  console.log('🎯 RENDER CardPaymentPage', {
+    subtotal,
+    itemsLength: items.length,
+    hasCheckoutData: !!checkoutData,
+    checkoutDataItems: checkoutData?.cart?.items?.length || 0,
+    effectiveSubtotal,
+    effectiveItemsLength: effectiveItems.length,
+    totalToPay,
+    isHydrated,
+    orderReference,
+  });
 
-    if (!validate()) {
+  // 🔴 PROTECTION: Si vraiment aucune donnée, rediriger vers le panier
+  useEffect(() => {
+    if (mounted && !isIntentLoading) {
+      const hasAnyData = 
+        items.length > 0 || 
+        (checkoutData && checkoutData.cart?.items?.length > 0) ||
+        clientSecret;
+      
+      if (!hasAnyData) {
+        console.log('❌ Aucune donnée disponible, redirection vers panier');
+        router.push('/cart');
+      }
+    }
+  }, [mounted, items.length, checkoutData, clientSecret, isIntentLoading, router]);
+
+  const stripePromise = useMemo(() => getStripe(), []);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Récupération du PaymentIntent depuis la session au montage
+  useEffect(() => {
+    if (typeof window !== 'undefined' && orderReference) {
+      const saved = sessionStorage.getItem(`payment_intent_${orderReference}`);
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          console.log('📦 PaymentIntent trouvé en session:', data);
+          
+          // Vérifier que le clientSecret est valide
+          if (data.clientSecret && typeof data.clientSecret === 'string') {
+            setClientSecret(data.clientSecret);
+            setIntentCreated(true);
+            setIsIntentLoading(false);
+            console.log('✅ PaymentIntent récupéré et appliqué');
+            return;
+          }
+        } catch (e) {
+          console.error('❌ Erreur parsing saved intent:', e);
+          // Nettoyer la session corrompue
+          sessionStorage.removeItem(`payment_intent_${orderReference}`);
+        }
+      }
+      
+      // Si pas de session valide, on indique qu'on doit créer un intent
+      console.log('📝 Pas de PaymentIntent en session, création nécessaire');
+      setIntentCreated(false);
+      setIsIntentLoading(true);
+    }
+  }, [orderReference]);
+
+  // Création du PaymentIntent si nécessaire
+  useEffect(() => {
+    let cancelled = false;
+
+    const createIntent = async () => {
+      // Si on a déjà un clientSecret valide, on ne fait rien
+      if (clientSecret && intentCreated) {
+        console.log('✅ ClientSecret déjà présent, pas de création');
+        return;
+      }
+
+      // Si on est déjà en train de créer, on attend
+      if (intentCreated || isCreating) {
+        console.log('⏳ Intent déjà créé ou en cours de création');
+        return;
+      }
+
+      console.log('🚀 Début création PaymentIntent');
+      setIsCreating(true); // ← VERROUILLER
+      setIsIntentLoading(true);
+      setIntentError(null);
+
+      try {
+        const orderSnapshot = {
+          items: effectiveItems.map((item: any) => ({
+            productId: item.productId,
+            name: item.name,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            sizeLabel: item.sizeLabel ?? null,
+            crustLabel: item.crustLabel ?? null,
+            extras: item.extras ?? [],
+            image: item.image ?? null,
+          })),
+          subtotal: effectiveSubtotal,
+          deliveryFee,
+          total: totalToPay,
+          userId: user?.id ?? null,
+          userEmail: user?.email ?? null,
+          userDisplayName: user?.displayName ?? null,
+        };
+
+        const response = await fetch('/api/payments/create-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: totalToPay,
+            currency: 'xaf',
+            customerEmail: user?.email ?? undefined,
+            metadata: {
+              orderReference,
+              userId: user?.id ?? 'guest',
+              itemCount: String(effectiveItems.length),
+              subtotal: String(effectiveSubtotal),
+              deliveryFee: String(deliveryFee),
+            },
+            order: orderSnapshot,
+          }),
+        });
+
+        const data = await response.json();
+        console.log('📡 Réponse API:', data);
+
+        if (!response.ok || !data?.clientSecret) {
+          throw new Error(data?.error || 'Impossible de préparer le paiement');
+        }
+
+        if (!cancelled) {
+          setClientSecret(data.clientSecret as string);
+          setIntentCreated(true);
+          
+          // Sauvegarder en session
+          sessionStorage.setItem(
+            `payment_intent_${orderReference}`,
+            JSON.stringify({
+              clientSecret: data.clientSecret,
+              paymentIntentId: data.paymentIntentId,
+              amount: data.amount,
+              createdAt: Date.now(),
+            })
+          );
+          console.log('✅ PaymentIntent créé et sauvegardé:', data.paymentIntentId);
+        }
+      } catch (error) {
+        console.error('❌ Erreur création intent:', error);
+        if (!cancelled) {
+          setIntentError(
+            error instanceof Error ? error.message : 'Erreur lors de la préparation du paiement'
+          );
+          setIsCreating(false); // ← DÉVERROUILLER en cas d'erreur
+        }
+      } finally {
+        if (!cancelled) {
+          setIsIntentLoading(false);
+        }
+      }
+    };
+
+    // Attendre que les données soient prêtes
+    const hasData = (isHydrated && effectiveItems.length > 0) || 
+                    (checkoutData && checkoutData.cart?.items?.length > 0);
+    
+    if (!hasData) {
+      console.log('⏳ En attente des données...', { 
+        isHydrated, 
+        hasCheckoutData: !!checkoutData,
+        itemsLength: effectiveItems.length 
+      });
+      
+      // Si on n'a pas de données après 3 secondes, afficher une erreur
+      setTimeout(() => {
+        if (!hasData && !clientSecret) {
+          setIntentError('Votre panier est vide ou les données ne sont pas disponibles');
+          setIsIntentLoading(false);
+        }
+      }, 3000);
       return;
     }
 
-    setIsProcessing(true);
-
-    // Simuler le traitement du paiement
-    setTimeout(() => {
-      console.log('Payment data:', {
-        ...cardData,
-        cardType: detectedCardType?.name,
+    if (totalToPay > 0 && effectiveItems.length > 0 && !clientSecret && !intentCreated) {
+      console.log('💳 Lancement création PaymentIntent', {
+        totalToPay,
+        itemsCount: effectiveItems.length,
+        orderReference
       });
+      createIntent();
+    } else if (totalToPay <= 0 || effectiveItems.length === 0) {
+      setIntentError('Votre panier est vide');
+      setIsIntentLoading(false);
+    }
 
-      // Rediriger vers la confirmation
-      router.push('/checkout?step=3');
-      setIsProcessing(false);
-    }, 2000);
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    isHydrated, 
+    checkoutData, 
+    totalToPay, 
+    effectiveItems.length, // ← CRITIQUE: Utiliser .length pas le tableau complet!
+    effectiveSubtotal,
+    deliveryFee,
+    user?.email, 
+    user?.id, 
+    orderReference, 
+    intentRetry,
+    clientSecret,
+    intentCreated
+  ]);
+
+  const handleSuccess = useCallback(
+    async (paymentIntentId: string) => {
+      setPaymentSuccess(true);
+
+      // ✅ OPTION C: Le webhook Stripe crée la commande
+      // On nettoie juste le panier et on redirige
+      console.log('✅ Paiement réussi! Le webhook Stripe va créer la commande.');
+      
+      // Nettoyer les données de session
+      sessionStorage.removeItem(`payment_intent_${orderReference}`);
+      sessionStorage.removeItem('current_order_reference_card');
+      
+      // Nettoyer le panier
+      clearCart();
+      
+      // ⚠️ NE PAS supprimer pending_checkout ici!
+      // Il sera supprimé uniquement sur la page de confirmation finale
+      // Sinon impossible de faire une 2ème commande sans recharger la page
+
+      // Attendre 2 secondes que le webhook crée la commande
+      setTimeout(() => {
+        router.push(`/checkout?step=3&payment_intent=${paymentIntentId}&order_ref=${orderReference}`);
+      }, 2000);
+    },
+    [orderReference, clearCart, router]
+  );
+
+  // Fonction pour réessayer la création du PaymentIntent
+  const handleRetry = () => {
+    console.log('🔄 Réessai de création du PaymentIntent');
+    // Nettoyer l'état et la session
+    sessionStorage.removeItem(`payment_intent_${orderReference}`);
+    setClientSecret(null);
+    setIntentCreated(false);
+    setIntentError(null);
+    setIsIntentLoading(true);
+    setIntentRetry(prev => prev + 1);
+  };
+
+  if (!mounted) {
+    return null;
+  }
+
+  if (paymentSuccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white">
+        <Header />
+        <div className="container mx-auto px-4 py-16">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="mx-auto max-w-md text-center"
+          >
+            <div className="mb-6 flex justify-center">
+              <div className="rounded-full bg-green-100 p-6">
+                <CheckCircle className="h-16 w-16 text-green-600" />
+              </div>
+            </div>
+            <h1 className="mb-4 text-3xl font-bold text-gray-900">Paiement réussi !</h1>
+            <p className="text-gray-600">
+              Votre commande a été enregistrée. Redirection en cours...
+            </p>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  const elementsOptions: StripeElementsOptions = {
+    clientSecret: clientSecret ?? undefined,
+    appearance: {
+      theme: 'stripe',
+      variables: {
+        colorPrimary: '#f97316',
+        colorBackground: '#ffffff',
+        colorText: '#1f2937',
+        colorDanger: '#ef4444',
+        fontFamily: 'system-ui, sans-serif',
+        borderRadius: '8px',
+      },
+    },
+    locale: 'fr',
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white">
       <Header />
 
-      <div className="container mx-auto px-4 py-6 sm:py-8">
-        {/* Header */}
-        <div className="mb-6 flex items-center gap-3">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => router.back()}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+      <div className="container mx-auto px-4 py-8">
+        <button
+          onClick={() => router.push('/checkout?step=2')}
+          className="mb-6 flex items-center gap-2 text-gray-600 transition hover:text-gray-900"
+        >
+          <ArrowLeft className="h-5 w-5" />
+          Retour au checkout
+        </button>
+
+        <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-2">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-              Paiement par carte
-            </h1>
-            <p className="text-sm text-gray-600">
-              Montant à payer: <strong>{subtotal + 1000} FCFA</strong>
-            </p>
-          </div>
-        </div>
+            <h1 className="mb-6 text-3xl font-bold text-gray-900">Paiement par carte</h1>
 
-        {/* Layout Desktop: 2 colonnes / Mobile: 1 colonne */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Colonne gauche: Carte 3D avec flip animation (sticky sur desktop) */}
-          <div className="lg:sticky lg:top-6 lg:h-fit">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              style={{ perspective: '1000px' }}
-            >
-              <motion.div
-                animate={{ rotateY: isCardFlipped ? 180 : 0 }}
-                transition={{ duration: 0.6 }}
-                style={{ transformStyle: 'preserve-3d' }}
-                className="relative h-48 sm:h-56"
-              >
-                {/* Face avant de la carte */}
-                <div
-                  className="absolute inset-0 rounded-2xl p-6 text-white shadow-2xl transition-all duration-300"
-                  style={{
-                    background: detectedBank
-                      ? `linear-gradient(to bottom right, ${detectedBank.colorStart}, ${detectedBank.colorEnd})`
-                      : detectedCardType?.color
-                      ? `linear-gradient(to bottom right, ${detectedCardType.color.includes('blue') ? '#2563EB' : detectedCardType.color.includes('orange') ? '#EA580C' : detectedCardType.color.includes('teal') ? '#0D9488' : detectedCardType.color.includes('green') ? '#16A34A' : '#374151'}, ${detectedCardType.color.includes('blue') ? '#1D4ED8' : detectedCardType.color.includes('orange') ? '#C2410C' : detectedCardType.color.includes('teal') ? '#0F766E' : detectedCardType.color.includes('green') ? '#15803D' : '#1F2937'})`
-                      : 'linear-gradient(to bottom right, #374151, #1F2937)',
-                    backfaceVisibility: 'hidden',
-                    WebkitBackfaceVisibility: 'hidden',
-                  }}
-                >
-                  {/* Chip */}
-                  <div className="mb-8 h-10 w-12 rounded bg-gradient-to-br from-yellow-200 to-yellow-400 opacity-80" />
-
-                  {/* Numéro de carte */}
-                  <div className="mb-4 font-mono text-lg sm:text-xl tracking-widest">
-                    {cardData.number || '•••• •••• •••• ••••'}
+            <Card className="mb-6">
+              <CardContent className="p-6">
+                <h2 className="mb-4 text-lg font-semibold">Récapitulatif</h2>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Sous-total</span>
+                    <span className="font-medium">{effectiveSubtotal.toLocaleString()} FCFA</span>
                   </div>
-
-                  {/* Nom et date */}
-                  <div className="flex items-end justify-between">
-                    <div>
-                      <div className="text-[10px] text-white/60 uppercase mb-1">
-                        Titulaire
-                      </div>
-                      <div className="font-medium text-sm sm:text-base uppercase">
-                        {cardData.holder || 'VOTRE NOM'}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-white/60 uppercase mb-1">
-                        Expire
-                      </div>
-                      <div className="font-mono text-sm sm:text-base">
-                        {cardData.expiry || 'MM/YY'}
-                      </div>
-                    </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Livraison</span>
+                    <span className="font-medium">{deliveryFee.toLocaleString()} FCFA</span>
                   </div>
-
-                  {/* Logo du type de carte */}
-                  {detectedCardType && (
-                    <div className="absolute right-6 top-6 h-10 w-16 bg-white rounded p-1">
-                      <detectedCardType.icon />
+                  <div className="border-t pt-2">
+                    <div className="flex justify-between text-lg font-bold">
+                      <span>Total</span>
+                      <span className="text-orange-600">{totalToPay.toLocaleString()} FCFA</span>
                     </div>
-                  )}
-                </div>
-
-                {/* Face arrière de la carte */}
-                <div
-                  className="absolute inset-0 rounded-2xl text-white shadow-2xl transition-all duration-300"
-                  style={{
-                    background: detectedBank
-                      ? `linear-gradient(to bottom right, ${detectedBank.colorStart}, ${detectedBank.colorEnd})`
-                      : detectedCardType?.color
-                      ? `linear-gradient(to bottom right, ${detectedCardType.color.includes('blue') ? '#2563EB' : detectedCardType.color.includes('orange') ? '#EA580C' : detectedCardType.color.includes('teal') ? '#0D9488' : detectedCardType.color.includes('green') ? '#16A34A' : '#374151'}, ${detectedCardType.color.includes('blue') ? '#1D4ED8' : detectedCardType.color.includes('orange') ? '#C2410C' : detectedCardType.color.includes('teal') ? '#0F766E' : detectedCardType.color.includes('green') ? '#15803D' : '#1F2937'})`
-                      : 'linear-gradient(to bottom right, #374151, #1F2937)',
-                    backfaceVisibility: 'hidden',
-                    WebkitBackfaceVisibility: 'hidden',
-                    transform: 'rotateY(180deg)',
-                  }}
-                >
-                  {/* Bande magnétique */}
-                  <div className="mt-6 h-12 w-full bg-gray-900" />
-
-                  {/* Zone CVV */}
-                  <div className="px-6 mt-6">
-                    <div className="bg-white h-10 rounded flex items-center justify-end px-3">
-                      <div className="text-gray-900 font-mono text-sm italic">
-                        {cardData.cvv ? '•'.repeat(cardData.cvv.length) : 'CVV'}
-                      </div>
-                    </div>
-                    <div className="text-[10px] text-white/80 mt-2 text-right">
-                      Code de sécurité
-                    </div>
-                  </div>
-
-                  {/* Logo du type de carte */}
-                  {detectedCardType && (
-                    <div className="absolute right-6 bottom-6 h-10 w-16 bg-white rounded p-1">
-                      <detectedCardType.icon />
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            </motion.div>
-
-            {/* Affichage de la banque émettrice si détectée */}
-            {detectedBank && cardData.number.replace(/\s/g, '').length >= 6 && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-4"
-              >
-                <div
-                  className="rounded-xl border-2 p-4 shadow-lg"
-                  style={{
-                    background: `linear-gradient(to right, ${detectedBank.colorStart}, ${detectedBank.colorEnd})`,
-                    borderColor: detectedBank.colorStart,
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-md">
-                      <svg
-                        className="h-6 w-6 text-gray-700"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"
-                        />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-xs font-medium text-white/80 uppercase tracking-wide">
-                        Banque émettrice détectée
-                      </div>
-                      <div className="text-lg font-bold text-white">
-                        {detectedBank.name}
-                      </div>
-                    </div>
-                    <CheckCircle className="h-6 w-6 text-white" />
                   </div>
                 </div>
-              </motion.div>
-            )}
+              </CardContent>
+            </Card>
+
+            <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+              <div className="flex items-center gap-2 text-sm text-green-900">
+                <Lock className="h-4 w-4" />
+                <span className="font-medium">Paiement 100% sécurisé</span>
+              </div>
+              <p className="mt-1 text-xs text-green-800">
+                Vos données sont cryptées et protégées par Stripe
+              </p>
+            </div>
           </div>
 
-          {/* Colonne droite: Formulaire */}
-          <Card className="border-0 shadow-lg lg:max-w-xl">
-            <CardContent className="p-6">
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Types de cartes acceptées */}
-                <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-3">
-                  <span className="text-sm font-medium text-gray-700">
-                    Cartes acceptées
-                  </span>
-                  <div className="flex items-center gap-2">
-                    {CARD_TYPES.map((card) => {
-                      const IconComponent = card.icon;
-                      return (
-                        <div
-                          key={card.id}
-                          className={`h-7 w-11 rounded border-2 transition-all ${
-                            detectedCardType?.id === card.id
-                              ? 'scale-110 border-orange-500 shadow-lg ring-2 ring-orange-200'
-                              : 'border-gray-300 hover:scale-105'
-                          }`}
-                          title={card.name}
-                          style={{ opacity: 1 }}
-                        >
-                          <IconComponent />
-                        </div>
-                      );
-                    })}
+          <div>
+            <Card>
+              <CardContent className="p-6">
+                {isIntentLoading && (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
+                    <p className="text-gray-600">Préparation du paiement...</p>
+                    <p className="mt-2 text-xs text-gray-500">Cela peut prendre quelques secondes</p>
                   </div>
-                </div>
+                )}
 
-                {/* Numéro de carte */}
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Numéro de carte <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={cardData.number}
-                      onChange={(e) => handleCardNumberChange(e.target.value)}
-                      onFocus={() => setFocusedField('number')}
-                      onBlur={() => setFocusedField(null)}
-                      placeholder="1234 5678 9012 3456"
-                      className={`w-full rounded-lg border-2 px-4 py-3 pl-12 font-mono text-base outline-none transition-all ${
-                        errors.number
-                          ? 'border-red-500 focus:border-red-500'
-                          : focusedField === 'number'
-                          ? 'border-orange-500 ring-4 ring-orange-500/10'
-                          : 'border-gray-200 focus:border-orange-500'
-                      }`}
-                      disabled={isProcessing}
+                {intentError && (
+                  <div className="rounded-lg bg-red-50 p-4">
+                    <div className="flex items-center gap-2 text-red-800">
+                      <AlertCircle className="h-5 w-5" />
+                      <p className="font-medium">Erreur</p>
+                    </div>
+                    <p className="mt-2 text-sm text-red-700">{intentError}</p>
+                    <Button
+                      onClick={handleRetry}
+                      className="mt-4"
+                      variant="outline"
+                    >
+                      Réessayer
+                    </Button>
+                  </div>
+                )}
+
+                {clientSecret && !isIntentLoading && !intentError && (
+                  <Elements key={clientSecret} stripe={stripePromise} options={elementsOptions}>
+                    <CheckoutForm
+                      clientSecret={clientSecret}
+                      totalToPay={totalToPay}
+                      onSuccess={handleSuccess}
+                      userEmail={user?.email ?? null}
                     />
-                    <CreditCard className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-                  </div>
-                  {errors.number && (
-                    <p className="mt-1 flex items-center gap-1 text-sm text-red-600">
-                      <AlertCircle className="h-4 w-4" />
-                      {errors.number}
-                    </p>
-                  )}
-                </div>
-
-                {/* Nom du titulaire */}
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Nom du titulaire <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={cardData.holder}
-                    onChange={(e) =>
-                      setCardData({ ...cardData, holder: e.target.value.toUpperCase() })
-                    }
-                    onFocus={() => setFocusedField('holder')}
-                    onBlur={() => setFocusedField(null)}
-                    placeholder="JEAN DUPONT"
-                    className={`w-full rounded-lg border-2 px-4 py-3 text-base uppercase outline-none transition-all ${
-                      errors.holder
-                        ? 'border-red-500 focus:border-red-500'
-                        : focusedField === 'holder'
-                        ? 'border-orange-500 ring-4 ring-orange-500/10'
-                        : 'border-gray-200 focus:border-orange-500'
-                    }`}
-                    disabled={isProcessing}
-                  />
-                  {errors.holder && (
-                    <p className="mt-1 flex items-center gap-1 text-sm text-red-600">
-                      <AlertCircle className="h-4 w-4" />
-                      {errors.holder}
-                    </p>
-                  )}
-                </div>
-
-                {/* Date d'expiration et CVV */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                      Expiration <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={cardData.expiry}
-                      onChange={(e) => handleExpiryChange(e.target.value)}
-                      onFocus={() => setFocusedField('expiry')}
-                      onBlur={() => setFocusedField(null)}
-                      placeholder="MM/YY"
-                      className={`w-full rounded-lg border-2 px-4 py-3 font-mono text-base outline-none transition-all ${
-                        errors.expiry
-                          ? 'border-red-500 focus:border-red-500'
-                          : focusedField === 'expiry'
-                          ? 'border-orange-500 ring-4 ring-orange-500/10'
-                          : 'border-gray-200 focus:border-orange-500'
-                      }`}
-                      disabled={isProcessing}
-                    />
-                    {errors.expiry && (
-                      <p className="mt-1 flex items-center gap-1 text-xs text-red-600">
-                        <AlertCircle className="h-3 w-3" />
-                        {errors.expiry}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                      CVV <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={cardData.cvv}
-                      onChange={(e) => handleCvvChange(e.target.value)}
-                      onFocus={() => {
-                        setFocusedField('cvv');
-                        setIsCardFlipped(true);
-                      }}
-                      onBlur={() => {
-                        setFocusedField(null);
-                        setIsCardFlipped(false);
-                      }}
-                      placeholder={detectedCardType?.id === 'amex' ? '1234' : '123'}
-                      className={`w-full rounded-lg border-2 px-4 py-3 font-mono text-base outline-none transition-all ${
-                        errors.cvv
-                          ? 'border-red-500 focus:border-red-500'
-                          : focusedField === 'cvv'
-                          ? 'border-orange-500 ring-4 ring-orange-500/10'
-                          : 'border-gray-200 focus:border-orange-500'
-                      }`}
-                      disabled={isProcessing}
-                    />
-                    {errors.cvv && (
-                      <p className="mt-1 flex items-center gap-1 text-xs text-red-600">
-                        <AlertCircle className="h-3 w-3" />
-                        {errors.cvv}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Sécurité */}
-                <div className="rounded-lg border border-green-200 bg-green-50 p-3">
-                  <div className="flex items-center gap-2 text-sm text-green-900">
-                    <Lock className="h-4 w-4" />
-                    <span className="font-medium">Paiement 100% sécurisé</span>
-                  </div>
-                  <p className="mt-1 text-xs text-green-800">
-                    Vos données sont cryptées et ne sont jamais stockées
-                  </p>
-                </div>
-
-                {/* Bouton de soumission */}
-                <Button
-                  type="submit"
-                  className="h-12 w-full text-base font-semibold"
-                  disabled={isProcessing}
-                >
-                  {isProcessing ? (
-                    <>
-                      <div className="mr-2 h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      Traitement en cours...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="mr-2 h-5 w-5" />
-                      Payer {subtotal + 1000} FCFA
-                    </>
-                  )}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+                  </Elements>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
+  );
+}
+
+interface CheckoutFormProps {
+  clientSecret: string;
+  totalToPay: number;
+  onSuccess: (paymentIntentId: string) => void;
+  userEmail: string | null;
+}
+
+const CARD_NUMBER_OPTIONS: StripeCardElementOptions = {
+  style: {
+    base: {
+      fontSize: '16px',
+      color: '#1f2937',
+      fontFamily: 'system-ui, sans-serif',
+      '::placeholder': {
+        color: '#9ca3af',
+      },
+    },
+    invalid: {
+      color: '#ef4444',
+      iconColor: '#ef4444',
+    },
+  },
+};
+
+const CARD_GENERIC_OPTIONS: StripeCardElementOptions = {
+  style: {
+    base: {
+      fontSize: '16px',
+      color: '#1f2937',
+      fontFamily: 'system-ui, sans-serif',
+      '::placeholder': {
+        color: '#9ca3af',
+      },
+    },
+    invalid: {
+      color: '#ef4444',
+    },
+  },
+};
+
+function CheckoutForm({ clientSecret, totalToPay, onSuccess, userEmail }: CheckoutFormProps) {
+  const stripe = useStripe();
+  const elements = useElements();
+
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const [cardholderName, setCardholderName] = useState('');
+  const [detectedBrand, setDetectedBrand] = useState<AcceptedBrand>('unknown');
+  const [liveNumber, setLiveNumber] = useState('');
+  const [liveExpiry, setLiveExpiry] = useState('');
+  const [liveCvc, setLiveCvc] = useState('');
+  const [focusedField, setFocusedField] = useState<'number' | 'expiry' | 'cvc' | null>(null);
+
+  const [numberComplete, setNumberComplete] = useState(false);
+  const [expiryComplete, setExpiryComplete] = useState(false);
+  const [cvcComplete, setCvcComplete] = useState(false);
+
+  const [numberError, setNumberError] = useState<string | null>(null);
+  const [expiryError, setExpiryError] = useState<string | null>(null);
+  const [cvcError, setCvcError] = useState<string | null>(null);
+
+  const updateCompletion = useCallback(
+    (num: boolean, exp: boolean, cvc: boolean) => {
+      console.log('Form completion:', { num, exp, cvc });
+    },
+    []
+  );
+
+  const handleNumberChange = useCallback(
+    (event: StripeCardNumberElementChangeEvent) => {
+      setSubmitError(null);
+
+      if (event.brand) {
+        const brandMap: Record<string, AcceptedBrand> = {
+          visa: 'visa',
+          mastercard: 'mastercard',
+          amex: 'amex',
+          discover: 'discover',
+          diners: 'diners',
+          jcb: 'jcb',
+          unionpay: 'unionpay',
+          unknown: 'unknown',
+        };
+        setDetectedBrand(brandMap[event.brand] || 'unknown');
+      }
+
+      if (event.complete) {
+        setLiveNumber('•••• •••• •••• ••••');
+      } else if (event.empty) {
+        setLiveNumber('');
+      } else {
+        setLiveNumber('•••• ••••');
+      }
+
+      setNumberComplete(event.complete);
+      setNumberError(event.error?.message ?? null);
+      updateCompletion(event.complete, expiryComplete, cvcComplete);
+    },
+    [cvcComplete, expiryComplete, updateCompletion]
+  );
+
+  const handleExpiryChange = useCallback(
+    (event: StripeCardExpiryElementChangeEvent) => {
+      setSubmitError(null);
+
+      if (event.complete) {
+        setLiveExpiry('••/••');
+      } else if (event.empty) {
+        setLiveExpiry('');
+      } else {
+        setLiveExpiry('••');
+      }
+
+      setExpiryComplete(event.complete);
+      setExpiryError(event.error?.message ?? null);
+      updateCompletion(numberComplete, event.complete, cvcComplete);
+    },
+    [cvcComplete, numberComplete, updateCompletion]
+  );
+
+  const handleCvcChange = useCallback(
+    (event: StripeCardCvcElementChangeEvent) => {
+      setSubmitError(null);
+
+      if (event.complete) {
+        setLiveCvc('•••');
+      } else if (event.empty) {
+        setLiveCvc('');
+      } else {
+        setLiveCvc('•');
+      }
+
+      setCvcComplete(event.complete);
+      setCvcError(event.error?.message ?? null);
+      updateCompletion(numberComplete, expiryComplete, event.complete);
+    },
+    [expiryComplete, numberComplete, updateCompletion]
+  );
+
+  const handleSubmit = useCallback(
+    async (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      setSubmitError(null);
+
+      if (!stripe || !elements) {
+        setSubmitError("Stripe n'est pas prêt. Veuillez recharger la page.");
+        return;
+      }
+
+      if (!cardholderName.trim()) {
+        setSubmitError('Nom du titulaire requis');
+        return;
+      }
+
+      if (!(numberComplete && expiryComplete && cvcComplete)) {
+        setSubmitError('Veuillez compléter toutes les informations');
+        return;
+      }
+
+      const cardNumberElement = elements.getElement(CardNumberElement) as StripeCardNumberElement | null;
+
+      if (!cardNumberElement) {
+        setSubmitError('Impossible de récupérer le formulaire de carte.');
+        return;
+      }
+
+      setIsProcessing(true);
+
+      try {
+        const result = await stripe.confirmCardPayment(clientSecret, {
+          payment_method: {
+            card: cardNumberElement,
+            billing_details: {
+              name: cardholderName.trim(),
+              email: userEmail ?? undefined,
+            },
+          },
+        });
+
+        if (result.error) {
+          throw new Error(result.error.message || 'Le paiement a été refusé');
+        }
+
+        if (
+          result.paymentIntent &&
+          (result.paymentIntent.status === 'succeeded' ||
+            result.paymentIntent.status === 'processing' ||
+            result.paymentIntent.status === 'requires_capture')
+        ) {
+          onSuccess(result.paymentIntent.id);
+          return;
+        }
+
+        throw new Error(`Paiement non confirmé (statut: ${result.paymentIntent?.status ?? 'inconnu'})`);
+      } catch (error) {
+        setSubmitError(
+          error instanceof Error ? error.message : 'Une erreur inattendue est survenue'
+        );
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+    [
+      cardholderName,
+      clientSecret,
+      cvcComplete,
+      elements,
+      expiryComplete,
+      numberComplete,
+      onSuccess,
+      stripe,
+      userEmail,
+    ]
+  );
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <div>
+        <p className="text-sm font-medium text-gray-700 mb-2">
+          Nous acceptons : Visa, Mastercard, American Express, GIMAC
+        </p>
+        <div className="flex items-center gap-3">
+          {ACCEPTED_BRANDS.map(brand => {
+            const Icon = CARD_BRAND_CONFIG[brand].icon;
+            const isSelected = detectedBrand === brand;
+            return (
+              <div
+                key={brand}
+                className={`h-12 w-16 rounded-lg border-2 transition-all ${
+                  isSelected 
+                    ? 'border-orange-500 shadow-md' 
+                    : 'border-gray-300 opacity-70'
+                }`}
+              >
+                <Icon />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Nom du titulaire
+        </label>
+        <input
+          type="text"
+          value={cardholderName}
+          onChange={e => {
+            setCardholderName(e.target.value.toUpperCase());
+            setSubmitError(null);
+          }}
+          onFocus={() => setFocusedField(null)}
+          placeholder="JEAN DUPONT"
+          className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm uppercase outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 disabled:bg-gray-50"
+          disabled={isProcessing}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Numéro de carte
+        </label>
+        <div
+          className={`rounded-lg border px-4 py-3 transition ${
+            numberError
+              ? 'border-red-500'
+              : 'border-gray-300 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20'
+          }`}
+        >
+          <CardNumberElement
+            options={CARD_NUMBER_OPTIONS}
+            onChange={handleNumberChange}
+            onFocus={() => setFocusedField('number')}
+            onBlur={() => setFocusedField(null)}
+          />
+        </div>
+        {numberError && (
+          <p className="mt-2 text-sm text-red-600">{numberError}</p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Date d'expiration
+          </label>
+          <div
+            className={`rounded-lg border px-4 py-3 transition ${
+              expiryError
+                ? 'border-red-500'
+                : 'border-gray-300 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20'
+            }`}
+          >
+            <CardExpiryElement
+              options={CARD_GENERIC_OPTIONS}
+              onChange={handleExpiryChange}
+              onFocus={() => setFocusedField('expiry')}
+              onBlur={() => setFocusedField(null)}
+            />
+          </div>
+          {expiryError && (
+            <p className="mt-2 text-sm text-red-600">{expiryError}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            CVV
+          </label>
+          <div
+            className={`rounded-lg border px-4 py-3 transition ${
+              cvcError
+                ? 'border-red-500'
+                : 'border-gray-300 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20'
+            }`}
+          >
+            <CardCvcElement
+              options={CARD_GENERIC_OPTIONS}
+              onChange={handleCvcChange}
+              onFocus={() => setFocusedField('cvc')}
+              onBlur={() => setFocusedField(null)}
+            />
+          </div>
+          {cvcError && (
+            <p className="mt-2 text-sm text-red-600">{cvcError}</p>
+          )}
+        </div>
+      </div>
+
+      {submitError && (
+        <div className="rounded-lg bg-red-50 border border-red-200 p-4">
+          <p className="text-sm text-red-700">{submitError}</p>
+        </div>
+      )}
+
+      <div className="pt-4">
+        <Button
+          type="submit"
+          className="h-12 w-full text-base font-semibold"
+          disabled={isProcessing || !stripe || !elements}
+        >
+          {isProcessing ? (
+            <>
+              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              Traitement...
+            </>
+          ) : (
+            `Payer ${totalToPay.toLocaleString()} FCFA`
+          )}
+        </Button>
+      </div>
+    </form>
   );
 }

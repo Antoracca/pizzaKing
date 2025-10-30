@@ -15,7 +15,9 @@
       "Bash(rm:*)",
       "Bash(find:*)",
       "Bash(cat:*)",
-      "Bash(firebase firestore:databases:list:*)"
+      "Bash(firebase firestore:databases:list:*)",
+      "Bash(curl:*)",
+      "Bash(firebase login:ci:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,15 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumber-js';
+import { validatePhoneNumber } from '@/lib/phone-validation';
 import Header from '@/components/layout/Header';
 import OrderSummary from '@/components/checkout/OrderSummary';
 import PhoneSection from '@/components/checkout/PhoneSection';
 import AddressDeliverySection from '@/components/checkout/AddressDeliverySection';
 import PaymentMethodSelector, { PaymentMethod } from '@/components/checkout/PaymentMethodSelector';
-import CardPaymentForm, { CardPaymentData } from '@/components/checkout/CardPaymentForm';
 import MobileMoneyForm, { MobileMoneyData } from '@/components/checkout/MobileMoneyForm';
 import CashPaymentInfo from '@/components/checkout/CashPaymentInfo';
 import { SavedAddress } from '@/components/checkout/AddressSelector';
@@ -26,8 +25,10 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { doc, setDoc, collection, addDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { DELIVERY_CONFIG } from '@/lib/config';
+import { firestoreWrite } from '@/lib/firebase-retry';
 
 const steps = [
   { id: 1, name: 'Livraison', icon: MapPin },
@@ -44,72 +45,28 @@ type ManualAddressData = {
   instructions: string;
 };
 
-// Fonction de validation de numéro de téléphone intelligente
-const validatePhoneNumber = (phone: string): { isValid: boolean; error?: string; formatted?: string } => {
-  if (!phone || !phone.trim()) {
-    return { isValid: false, error: 'Numéro de téléphone requis' };
-  }
-
-  // Nettoyer le numéro (enlever les espaces, tirets, etc.)
-  const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
-
-  // Essayer de détecter et valider avec différents pays
-  const countriesToTry: CountryCode[] = ['CF', 'FR', 'CD', 'CG', 'CM']; // Centrafrique, France, RDC, Congo, Cameroun
-
-  // D'abord, essayer de parser avec détection automatique
-  try {
-    if (isValidPhoneNumber(cleanPhone)) {
-      const parsed = parsePhoneNumber(cleanPhone);
-      return {
-        isValid: true,
-        formatted: parsed.formatInternational()
-      };
-    }
-  } catch (e) {
-    // Continue avec les autres méthodes
-  }
-
-  // Essayer avec chaque pays
-  for (const country of countriesToTry) {
-    try {
-      if (isValidPhoneNumber(cleanPhone, country)) {
-        const parsed = parsePhoneNumber(cleanPhone, country);
-        return {
-          isValid: true,
-          formatted: parsed.formatInternational()
-        };
-      }
-    } catch (e) {
-      continue;
-    }
-  }
-
-  // Si rien ne fonctionne, vérifier si c'est au moins un format basique valide
-  const basicPhoneRegex = /^(\+|00)?[0-9]{8,15}$/;
-  if (basicPhoneRegex.test(cleanPhone)) {
-    return {
-      isValid: true,
-      formatted: cleanPhone
-    };
-  }
-
-  return {
-    isValid: false,
-    error: 'Numéro de téléphone invalide. Utilisez un format international (+236...) ou local'
-  };
-};
-
 export default function CheckoutPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { items, subtotal, itemCount, clearCart } = useCartContext();
   const { user, loading: authLoading } = useAuth();
 
-  const [currentStep, setCurrentStep] = useState(1);
+  const stepFromQuery = searchParams.get('step');
+  const parsedInitialStep = stepFromQuery ? Number(stepFromQuery) : NaN;
+  const initialStep =
+    !Number.isNaN(parsedInitialStep) && parsedInitialStep >= 1 && parsedInitialStep <= 3
+      ? parsedInitialStep
+      : 1;
+  const orderRefFromQuery = searchParams.get('order_ref') ?? '';
+
+  const [currentStep, setCurrentStep] = useState(initialStep);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
-  const [cardPaymentData, setCardPaymentData] = useState<CardPaymentData | null>(null);
   const [mobileMoneyData, setMobileMoneyData] = useState<MobileMoneyData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [orderNumber, setOrderNumber] = useState('');
+  const [orderNumber, setOrderNumber] = useState(orderRefFromQuery);
+
+  // Générer un orderReference unique pour cette session (comme dans payment/card)
+  const [orderReference] = useState(() => `PK${Date.now().toString().slice(-8)}`);
   const [showAuthWarning, setShowAuthWarning] = useState(false);
 
   // Phone state
@@ -129,6 +86,27 @@ export default function CheckoutPage() {
   const [saveAddressForLater, setSaveAddressForLater] = useState(false);
   const [addressErrors, setAddressErrors] = useState<Partial<ManualAddressData>>({});
   const [isManualAddressMode, setIsManualAddressMode] = useState(false);
+
+  useEffect(() => {
+    const stepParam = searchParams.get('step');
+    const parsedStep = stepParam ? Number(stepParam) : NaN;
+
+    if (!Number.isNaN(parsedStep) && parsedStep >= 1 && parsedStep <= 3) {
+      setCurrentStep(prev => (prev === parsedStep ? prev : parsedStep));
+      
+      // 🧹 Nettoyer pending_checkout quand on arrive sur la confirmation (step 3)
+      if (parsedStep === 3) {
+        localStorage.removeItem('pending_checkout');
+        localStorage.removeItem('pending_delivery_info');
+        console.log('🧹 Nettoyage pending_checkout sur page de confirmation');
+      }
+    }
+
+    const orderRefParam = searchParams.get('order_ref');
+    if (orderRefParam) {
+      setOrderNumber(prev => (prev === orderRefParam ? prev : orderRefParam));
+    }
+  }, [searchParams]);
 
   // Initialize phone from user account
   useEffect(() => {
@@ -272,8 +250,10 @@ export default function CheckoutPage() {
         }
       }
 
-      // Create order in Firestore
+      // Créer/Mettre à jour la commande dans Firestore avec orderReference comme ID
+      // ANTI-DUPLICATION: Utilisation de setDoc + merge: true
       const orderData = {
+        orderReference,
         userId: user?.id || null,
         items: items.map(item => ({
           productId: item.productId,
@@ -291,19 +271,21 @@ export default function CheckoutPage() {
           phone: currentPhone,
         },
         paymentMethod,
+        paymentStatus: paymentMethod === 'cash' ? 'pending' : 'pending',
         subtotal,
-        deliveryFee: 1000, // Fixed delivery fee
-        total: subtotal + 1000,
+        deliveryFee: DELIVERY_CONFIG.FEE,
+        total: subtotal + DELIVERY_CONFIG.FEE,
         status: 'pending',
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
       };
 
-      const orderRef = await addDoc(collection(db, 'orders'), orderData);
+      // Utiliser setDoc avec orderReference comme ID + merge: true
+      await firestoreWrite(async () => {
+        return setDoc(doc(db, 'orders', orderReference), orderData, { merge: true });
+      });
 
-      // Generate order number
-      const generatedOrderNumber = `PK${Date.now().toString().slice(-8)}`;
-      setOrderNumber(generatedOrderNumber);
+      setOrderNumber(orderReference);
 
       // Clear cart
       clearCart();
@@ -368,7 +350,7 @@ export default function CheckoutPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      <div className="container mx-auto px-4 py-6 sm:py-8">
+      <div className="w-full max-w-full px-3 sm:px-4 py-6 sm:py-8 mx-auto">
         {/* Progress Steps */}
         <div className="mb-6 sm:mb-8">
           <div className="flex items-center justify-center">
@@ -400,9 +382,9 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        <div className={`grid gap-6 ${currentStep === 1 ? 'lg:grid-cols-3' : ''}`}>
+        <div className={`w-full max-w-full ${currentStep === 1 ? 'grid gap-6 lg:grid-cols-3' : ''}`}>
           {/* Main Content */}
-          <div className={`space-y-4 sm:space-y-6 ${currentStep === 1 ? 'lg:col-span-2' : 'max-w-4xl mx-auto w-full'}`}>
+          <div className={`w-full max-w-full min-w-0 space-y-4 sm:space-y-6 ${currentStep === 1 ? 'lg:col-span-2' : 'max-w-xl mx-auto'}`}>
             <AnimatePresence mode="wait">
               {/* Step 1: Delivery */}
               {currentStep === 1 && (
@@ -473,8 +455,8 @@ export default function CheckoutPage() {
                   </div>
 
                   {/* Payment Method Selector ONLY */}
-                  <Card className="border-0 shadow-sm">
-                    <CardContent className="p-4 sm:p-6">
+                  <Card className="border-0 shadow-sm w-full max-w-full">
+                    <CardContent className="p-3 sm:p-4 w-full max-w-full">
                       <PaymentMethodSelector
                         selectedMethod={paymentMethod}
                         onMethodChange={setPaymentMethod}
@@ -483,19 +465,61 @@ export default function CheckoutPage() {
                   </Card>
 
                   {/* Continue to Payment Button */}
-                  <div className="flex gap-3">
+                  <div className="flex gap-2 w-full max-w-full">
                     <Button
                       type="button"
                       variant="outline"
                       onClick={() => setCurrentStep(1)}
-                      className="flex-1"
+                      className="flex-1 min-w-0"
                     >
-                      <ArrowLeft className="mr-2 h-4 w-4" />
-                      Retour
+                      <ArrowLeft className="mr-1 sm:mr-2 h-4 w-4" />
+                      <span className="text-xs sm:text-sm">Retour</span>
                     </Button>
                     <Button
                       type="button"
                       onClick={() => {
+                        // Sauvegarder les infos de livraison pour le paiement
+                        const addressData = selectedAddress ? {
+                          quartier: selectedAddress.quartier,
+                          avenue: selectedAddress.avenue,
+                          pointDeRepere: selectedAddress.pointDeRepere,
+                          numeroPorte: selectedAddress.numeroPorte || '',
+                          etage: selectedAddress.etage || '',
+                          instructions: selectedAddress.instructions || '',
+                        } : manualAddress;
+
+                        const deliveryInfo = {
+                          address: addressData,
+                          phone: currentPhone,
+                          fullName: user?.displayName || 'Client',
+                        };
+
+                        // IMPORTANT: Sauvegarder les infos de livraison ET le panier
+                        // pour éviter que le panier soit vide si la page de paiement se recharge
+                        const checkoutData = {
+                          deliveryInfo,
+                          cart: {
+                            items: items.map(item => ({
+                              productId: item.productId,
+                              name: item.name,
+                              image: item.image,
+                              quantity: item.quantity,
+                              unitPrice: item.unitPrice,
+                              sizeLabel: item.sizeLabel,
+                              crustLabel: item.crustLabel,
+                              extras: item.extras,
+                            })),
+                            subtotal,
+                            deliveryFee: DELIVERY_CONFIG.FEE,
+                            total: subtotal + DELIVERY_CONFIG.FEE,
+                          },
+                        };
+                        
+                        localStorage.setItem('pending_checkout', JSON.stringify(checkoutData));
+                        
+                        // Garder aussi l'ancien format pour compatibilité
+                        localStorage.setItem('pending_delivery_info', JSON.stringify(deliveryInfo));
+
                         // Rediriger vers la page de paiement correspondante
                         if (paymentMethod === 'card') {
                           router.push('/payment/card');
@@ -506,10 +530,10 @@ export default function CheckoutPage() {
                           handleOrderSubmit();
                         }
                       }}
-                      className="flex-1"
+                      className="flex-1 min-w-0"
                     >
-                      Continuer vers le paiement
-                      <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
+                      <span className="text-xs sm:text-sm truncate">Continuer</span>
+                      <ArrowLeft className="ml-1 sm:ml-2 h-4 w-4 rotate-180 flex-shrink-0" />
                     </Button>
                   </div>
                 </motion.div>

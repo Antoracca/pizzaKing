@@ -3,6 +3,9 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 
 // Initialize Firebase Admin SDK for server-side operations
+let adminDb: ReturnType<typeof getFirestore>;
+let adminAuth: ReturnType<typeof getAuth>;
+
 if (!getApps().length) {
   const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
@@ -25,15 +28,19 @@ if (!getApps().length) {
       projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
     });
   }
+
+  // Get Firestore instance with named database 'pizzaking' - only configure once
+  adminDb = getFirestore();
+  adminDb.settings({ databaseId: 'pizzaking' });
+
+  // Get Auth instance for token verification
+  adminAuth = getAuth();
+
+  console.log('✅ Firebase Admin configured for database: pizzaking');
+} else {
+  // Already initialized, just get the instances
+  adminDb = getFirestore();
+  adminAuth = getAuth();
 }
-
-// Get Firestore instance with named database 'pizzaking'
-const adminDb = getFirestore();
-adminDb.settings({ databaseId: 'pizzaking' });
-
-// Get Auth instance for token verification
-const adminAuth = getAuth();
-
-console.log('✅ Firebase Admin configured for database: pizzaking');
 
 export { adminDb, adminAuth };
