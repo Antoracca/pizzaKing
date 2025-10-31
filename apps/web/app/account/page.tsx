@@ -71,6 +71,11 @@ export default function AccountPage() {
 
   const { start: startNavLoading, stop: stopNavLoading } = useNavLoading();
 
+  const userId = user?.id ?? null;
+  const userTotalOrders = user?.totalOrders ?? 0;
+  const userTotalSpent = user?.totalSpent ?? 0;
+  const userFavoriteCount = user?.stats?.favoriteProducts?.length ?? 0;
+
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [photoLoading, setPhotoLoading] = useState(false);
@@ -108,17 +113,17 @@ export default function AccountPage() {
   });
 
   const statsCacheKey = useMemo(
-    () => (user?.id ? `account_stats_cache_${user.id}` : null),
-    [user?.id],
+    () => (userId ? `account_stats_cache_${userId}` : null),
+    [userId],
   );
 
   const initialUserStats = useMemo<AccountStatsSnapshot | null>(() => {
-    if (!user) {
+    if (!userId) {
       return null;
     }
 
-    const totalOrders = user.totalOrders ?? 0;
-    const totalSpent = user.totalSpent ?? 0;
+    const totalOrders = userTotalOrders;
+    const totalSpent = userTotalSpent;
     const averageOrderValue =
       totalOrders > 0 ? totalSpent / totalOrders : 0;
 
@@ -126,15 +131,10 @@ export default function AccountPage() {
       totalOrders,
       totalSpent,
       averageOrderValue,
-      favoriteCount: user.stats?.favoriteProducts?.length ?? 0,
+      favoriteCount: userFavoriteCount,
       lastOrderAt: null,
     };
-  }, [
-    user?.id,
-    user?.stats?.favoriteProducts?.length,
-    user?.totalOrders,
-    user?.totalSpent,
-  ]);
+  }, [userFavoriteCount, userId, userTotalOrders, userTotalSpent]);
 
   const initialCachedStats = useMemo<AccountStatsSnapshot | null>(() => {
     if (!statsCacheKey || typeof window === 'undefined') {
@@ -219,7 +219,7 @@ export default function AccountPage() {
   }, [user, firebaseUser]);
 
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       setAccountStats(null);
       accountStatsRef.current = null;
       setStatsReady(false);
@@ -227,7 +227,7 @@ export default function AccountPage() {
       return;
     }
 
-    const sameUser = currentStatsUserIdRef.current === user.id;
+    const sameUser = currentStatsUserIdRef.current === userId;
 
     if (!sameUser) {
       if (initialCachedStats) {
@@ -243,17 +243,18 @@ export default function AccountPage() {
         accountStatsRef.current = null;
         setStatsReady(false);
       }
-      currentStatsUserIdRef.current = user.id;
+      currentStatsUserIdRef.current = userId;
       return;
     }
 
     setAccountStats(prev => {
       if (!prev) {
         const fallback = initialUserStats ?? {
-          totalOrders: 0,
-          totalSpent: 0,
-          averageOrderValue: 0,
-          favoriteCount: user.stats?.favoriteProducts?.length ?? 0,
+          totalOrders: userTotalOrders,
+          totalSpent: userTotalSpent,
+          averageOrderValue:
+            userTotalOrders > 0 ? userTotalSpent / userTotalOrders : 0,
+          favoriteCount: userFavoriteCount,
           lastOrderAt: null,
         };
         return fallback;
@@ -262,10 +263,17 @@ export default function AccountPage() {
       return {
         ...prev,
         favoriteCount:
-          user.stats?.favoriteProducts?.length ?? prev.favoriteCount ?? 0,
+          userFavoriteCount ?? prev.favoriteCount ?? 0,
       };
     });
-  }, [initialCachedStats, initialUserStats, user]);
+  }, [
+    initialCachedStats,
+    initialUserStats,
+    userFavoriteCount,
+    userId,
+    userTotalOrders,
+    userTotalSpent,
+  ]);
 
   const ensureRecaptcha = (): boolean => {
     if (typeof window === 'undefined') return false;

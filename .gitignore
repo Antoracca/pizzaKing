@@ -30,6 +30,7 @@ apps/mobile/ios/
 .env.production.local
 *.env
 !.env.example
+set-admin-claim.js
 
 # Firebase
 .firebase/

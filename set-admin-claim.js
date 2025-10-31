@@ -15,7 +15,7 @@
 const admin = require('firebase-admin');
 
 // Votre UID superadmin (votre compte actuel)
-const SUPERADMIN_UID = 'UtXv70Qka8RzeT9zSFPgvr4BuzG3';
+const SUPERADMIN_UID = 'h0yuQqBO5XNada6UiiblfuY1Og23';
 
 console.log('🔥 Configuration du custom claim SUPERADMIN...\n');
 
