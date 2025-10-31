@@ -1,34 +1,62 @@
 'use client';
 
 import { useState, type ChangeEvent } from 'react';
-import { User as UserIcon, Upload, CheckCircle, Award, Loader2, ShoppingBag, TrendingUp, Mail, Phone, CalendarClock, RotateCcw, Pizza } from 'lucide-react';
+import {
+  User as UserIcon,
+  Upload,
+  CheckCircle,
+  Award,
+  Loader2,
+  ShoppingBag,
+  TrendingUp,
+  Mail,
+  Phone,
+  CalendarClock,
+  RotateCcw,
+  Pizza,
+  type LucideIcon,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatPrice, formatDate } from '@/lib/utils';
 import { formatPhone } from './utils';
 import type { User } from '@pizza-king/shared';
 import StatModal from './StatModal';
+import type { AccountStatsSnapshot } from './AccountStats';
 
 type Props = {
   user: User;
   emailVerified: boolean;
   photoLoading: boolean;
+  photoURL?: string | null;
   fileInputRef: React.RefObject<HTMLInputElement>;
   onPhotoClick: () => void;
   onPhotoChange: (event: ChangeEvent<HTMLInputElement>) => void;
   onSendVerificationEmail: () => void;
+  stats: AccountStatsSnapshot;
 };
 
 type StatType = 'orders' | 'spent' | 'refunds' | 'favorite';
+
+type StatCard = {
+  id: StatType;
+  label: string;
+  value: number | string;
+  icon: LucideIcon;
+  color: string;
+  background: string;
+};
 
 export default function MobileProfileHeader({
   user,
   emailVerified,
   photoLoading,
+  photoURL,
   fileInputRef,
   onPhotoClick,
   onPhotoChange,
   onSendVerificationEmail,
+  stats,
 }: Props) {
   const [openModal, setOpenModal] = useState<StatType | null>(null);
 
@@ -36,11 +64,14 @@ export default function MobileProfileHeader({
     ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim()
     : (user.displayName ?? 'Compte Pizza King');
 
-  const stats = [
+  const favoriteCount =
+    stats.favoriteCount ?? user.stats?.favoriteProducts?.length ?? 0;
+
+  const statCards: StatCard[] = [
     {
       id: 'orders' as StatType,
       label: 'Commandes',
-      value: user.totalOrders ?? 0,
+      value: stats.totalOrders ?? 0,
       icon: ShoppingBag,
       color: 'text-blue-600',
       background: 'bg-blue-50',
@@ -48,7 +79,7 @@ export default function MobileProfileHeader({
     {
       id: 'spent' as StatType,
       label: 'Dépensé',
-      value: formatPrice(user.totalSpent ?? 0),
+      value: formatPrice(stats.totalSpent ?? 0),
       icon: TrendingUp,
       color: 'text-emerald-600',
       background: 'bg-emerald-50',
@@ -64,7 +95,7 @@ export default function MobileProfileHeader({
     {
       id: 'favorite' as StatType,
       label: 'Plus commandé',
-      value: user.stats?.favoriteProducts?.length ?? 0,
+      value: favoriteCount,
       icon: Pizza,
       color: 'text-purple-600',
       background: 'bg-purple-50',
@@ -74,15 +105,32 @@ export default function MobileProfileHeader({
   const renderModalContent = (statId: StatType) => {
     switch (statId) {
       case 'orders':
+        if (!stats.totalOrders) {
+          return (
+            <div className="rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 p-6 text-center">
+              <ShoppingBag className="mx-auto mb-3 h-10 w-10 text-gray-400" />
+              <p className="text-sm font-semibold text-gray-700">
+                Aucune commande pour le moment
+              </p>
+              <p className="mt-1 text-xs text-gray-500">
+                Vos commandes apparaîtront ici
+              </p>
+            </div>
+          );
+        }
+
         return (
           <div className="rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 p-6 text-center">
             <ShoppingBag className="mx-auto mb-3 h-10 w-10 text-gray-400" />
             <p className="text-sm font-semibold text-gray-700">
-              Aucune commande pour le moment
+              {stats.totalOrders.toLocaleString()} commande
+              {stats.totalOrders > 1 ? 's' : ''}
             </p>
-            <p className="mt-1 text-xs text-gray-500">
-              Vos commandes apparaîtront ici
-            </p>
+            {stats.averageOrderValue > 0 && (
+              <p className="mt-1 text-xs text-gray-500">
+                Panier moyen : {formatPrice(stats.averageOrderValue)}
+              </p>
+            )}
           </div>
         );
 
@@ -91,11 +139,14 @@ export default function MobileProfileHeader({
           <div className="rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 p-6 text-center">
             <TrendingUp className="mx-auto mb-3 h-10 w-10 text-gray-400" />
             <p className="text-sm font-semibold text-gray-700">
-              Total : {formatPrice(user.totalSpent ?? 0)}
+              Total : {formatPrice(stats.totalSpent ?? 0)}
             </p>
-            <p className="mt-1 text-xs text-gray-500">
-              Détails disponibles prochainement
-            </p>
+            {stats.averageOrderValue > 0 && (
+              <p className="mt-1 text-xs text-gray-500">
+                Panier moyen : {formatPrice(stats.averageOrderValue)}
+              </p>
+            )}
+            <p className="mt-1 text-xs text-gray-500">Détails disponibles prochainement</p>
           </div>
         );
 
@@ -116,9 +167,11 @@ export default function MobileProfileHeader({
         return (
           <div className="rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 p-6 text-center">
             <Pizza className="mx-auto mb-3 h-10 w-10 text-gray-400" />
-            <p className="text-sm font-semibold text-gray-700">
-              Aucun produit favori
-            </p>
+              <p className="text-sm font-semibold text-gray-700">
+                {favoriteCount > 0
+                  ? `Vos ${favoriteCount} produits préférés apparaissent ici`
+                  : 'Aucun produit favori'}
+              </p>
             <p className="mt-1 text-xs text-gray-500">
               Commandez pour voir vos préférences
             </p>
@@ -130,16 +183,16 @@ export default function MobileProfileHeader({
     }
   };
 
-  const currentStat = stats.find((s) => s.id === openModal);
+  const currentStat = statCards.find(card => card.id === openModal);
 
   return (
     <div className="mb-6 rounded-3xl bg-white p-6 shadow-lg">
       <div className="flex items-center gap-4 mb-4">
         <div className="relative">
           <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border-2 border-orange-400 bg-gradient-to-br from-orange-400 to-red-500 text-lg font-bold text-white shadow-md">
-            {user.photoURL ? (
+            {photoURL || user.photoURL ? (
               <img
-                src={user.photoURL}
+                src={photoURL || user.photoURL || ''}
                 alt={displayName}
                 className="h-full w-full object-cover"
               />
@@ -227,7 +280,7 @@ export default function MobileProfileHeader({
 
       {/* Stats Mobile Grid - Cliquables */}
       <div className="grid grid-cols-2 gap-3">
-        {stats.map((stat) => (
+        {statCards.map(stat => (
           <button
             key={stat.label}
             onClick={() => setOpenModal(stat.id)}

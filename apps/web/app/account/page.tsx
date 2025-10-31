@@ -33,6 +33,7 @@ import {
   type PreferencesForm,
   type EmailForm,
   type PhoneForm,
+  type AccountStatsSnapshot,
 } from '@/components/account';
 import { auth, storage } from '@/lib/firebase';
 import { checkPhoneExists, getUserByPhone } from '@/lib/auth/validation';
@@ -103,6 +104,17 @@ export default function AccountPage() {
     step: 'idle',
   });
 
+  const [accountStats, setAccountStats] = useState<AccountStatsSnapshot>({
+    totalOrders: user?.totalOrders ?? 0,
+    totalSpent: user?.totalSpent ?? 0,
+    averageOrderValue:
+      user?.totalOrders && (user.totalOrders ?? 0) > 0
+        ? (user.totalSpent ?? 0) / (user.totalOrders ?? 1)
+        : 0,
+    favoriteCount: user?.stats?.favoriteProducts?.length ?? 0,
+    lastOrderAt: null,
+  });
+
   useEffect(() => {
     if (!authLoading && !user) {
       router.replace('/auth/login?redirect=/account');
@@ -128,6 +140,30 @@ export default function AccountPage() {
       });
     }
   }, [user, firebaseUser]);
+
+  useEffect(() => {
+    if (!user) {
+      setAccountStats({
+        totalOrders: 0,
+        totalSpent: 0,
+        averageOrderValue: 0,
+        favoriteCount: 0,
+        lastOrderAt: null,
+      });
+      return;
+    }
+
+    setAccountStats(prev => ({
+      ...prev,
+      totalOrders: user.totalOrders ?? 0,
+      totalSpent: user.totalSpent ?? 0,
+      averageOrderValue:
+        user.totalOrders && user.totalOrders > 0
+          ? (user.totalSpent ?? 0) / user.totalOrders
+          : 0,
+      favoriteCount: user.stats?.favoriteProducts?.length ?? 0,
+    }));
+  }, [user]);
 
   const ensureRecaptcha = (): boolean => {
     if (typeof window === 'undefined') return false;
@@ -169,6 +205,65 @@ export default function AccountPage() {
       container?.remove();
     };
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchAccountStats = async () => {
+      if (!user || !firebaseUser) {
+        return;
+      }
+
+      try {
+        const token = await firebaseUser.getIdToken();
+        const response = await fetch('/api/account/stats', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch account stats (${response.status})`);
+        }
+
+        const data = (await response.json()) as {
+          totalOrders?: number;
+          totalSpent?: number;
+          averageOrderValue?: number;
+          lastOrderAt?: string | null;
+        };
+
+        if (!isMounted) {
+          return;
+        }
+
+        setAccountStats(prev => ({
+          ...prev,
+          totalOrders:
+            typeof data.totalOrders === 'number'
+              ? data.totalOrders
+              : prev.totalOrders,
+          totalSpent:
+            typeof data.totalSpent === 'number'
+              ? data.totalSpent
+              : prev.totalSpent,
+          averageOrderValue:
+            typeof data.averageOrderValue === 'number'
+              ? data.averageOrderValue
+              : prev.averageOrderValue,
+          lastOrderAt: data.lastOrderAt ?? prev.lastOrderAt ?? null,
+        }));
+      } catch (error) {
+        console.error('Failed to load account stats:', error);
+      }
+    };
+
+    void fetchAccountStats();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [firebaseUser, user?.id]);
 
   const showFeedback = (
     message: string,
@@ -501,12 +596,14 @@ export default function AccountPage() {
             user={user}
             emailVerified={emailVerified}
             photoLoading={photoLoading}
+            photoURL={firebaseUser?.photoURL ?? user.photoURL ?? null}
             fileInputRef={fileInputRef}
             onPhotoClick={handlePhotoClick}
             onPhotoChange={handlePhotoChange}
             onSendVerificationEmail={() => {
               void handleSendVerificationEmail();
             }}
+            stats={accountStats}
           />
 
           <MobileTabs
@@ -597,7 +694,7 @@ export default function AccountPage() {
           >
             <ProfileHeader
               user={user}
-              photoURL={firebaseUser?.photoURL}
+              photoURL={firebaseUser?.photoURL ?? user.photoURL ?? null}
               emailVerified={emailVerified}
               photoLoading={photoLoading}
               fileInputRef={fileInputRef}
@@ -615,7 +712,7 @@ export default function AccountPage() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-10"
           >
-            <AccountStats user={user} />
+            <AccountStats user={user} stats={accountStats} />
           </motion.div>
 
           <div className="flex flex-col gap-8 lg:flex-row">

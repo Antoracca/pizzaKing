@@ -13,3 +13,4 @@ export { default as StatModal } from './StatModal';
 
 // Utils & Types
 export * from './utils';
+export type { AccountStatsSnapshot } from './AccountStats';
