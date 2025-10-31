@@ -318,6 +318,81 @@ service cloud.firestore {
     }
 
     // ========================================
+    // COLLECTION: orders
+    // ========================================
+
+    match /orders/{orderId} {
+      // Lecture: propriétaire de la commande, admin ou support
+      allow get: if isSignedIn() && (
+        resource.data.userId == uid()
+        || isAdminRole()
+        || isSupportStaff()
+      );
+
+      // Liste: filtrée par userId côté client
+      allow list: if isSignedIn() && (
+        isAdminRole()
+        || isSupportStaff()
+        || request.auth.uid != null
+      );
+
+      // Création: SEULEMENT depuis le serveur (API routes) pour sécurité
+      // Le client ne peut JAMAIS créer directement une commande "paid"
+      allow create: if (
+        // Serveur (API routes via service account)
+        isSystem()
+        
+        // Admin pour testing seulement
+        || isAdminRole()
+      )
+      // Validations communes
+      && request.resource.data.orderReference is string
+      && request.resource.data.orderReference.size() > 0
+      && request.resource.data.paymentMethod in ['card', 'mobile_money', 'cash']
+      && request.resource.data.amount is number
+      && request.resource.data.amount > 0
+      && request.resource.data.currency == 'xaf'
+      && request.resource.data.items is list
+      && request.resource.data.items.size() > 0
+      && request.resource.data.createdAt is timestamp;
+
+      // Mise à jour: propriétaire, webhook Stripe, admin ou support
+      // Permet au webhook de mettre à jour le statut
+      allow update: if (
+        // Propriétaire peut mettre à jour certains champs
+        (isSignedIn() && resource.data.userId == uid())
+        
+        // Admin et support peuvent tout modifier
+        || isAdminRole()
+        || isSupportStaff()
+        
+        // Webhook Stripe peut mettre à jour (via service account)
+        || isSystem()
+      );
+
+      // Suppression: admin seulement
+      allow delete: if isAdminRole();
+    }
+
+    // ========================================
+    // COLLECTION: payments
+    // ========================================
+
+    match /payments/{paymentId} {
+      // Lecture: admin, support ou système (webhook)
+      allow get, list: if isAdminRole() || isSupportStaff() || isSystem();
+
+      // Création: système (API route) ou utilisateur authentifié
+      allow create: if isSignedIn() || isSystem();
+
+      // Mise à jour: système uniquement (webhook Stripe)
+      allow update: if isSystem();
+
+      // Suppression: interdit
+      allow delete: if false;
+    }
+
+    // ========================================
     // COLLECTION: addresses
     // ========================================
 

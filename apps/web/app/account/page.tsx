@@ -177,19 +177,13 @@ export default function AccountPage() {
   );
   const statsReadyRef = useRef(initialCachedStats !== null);
 
-  const derivedUserStats = useMemo<AccountStatsSnapshot>(() => {
-    if (initialUserStats) {
-      return initialUserStats;
-    }
-
-    return {
-      totalOrders: 0,
-      totalSpent: 0,
-      averageOrderValue: 0,
-      favoriteCount: 0,
-      lastOrderAt: null,
-    };
-  }, [initialUserStats]);
+  const derivedUserStats: AccountStatsSnapshot = initialUserStats ?? {
+    totalOrders: 0,
+    totalSpent: 0,
+    averageOrderValue: 0,
+    favoriteCount: 0,
+    lastOrderAt: null,
+  };
   const effectiveStats = accountStats ?? derivedUserStats;
 
   useEffect(() => {
@@ -267,6 +261,7 @@ export default function AccountPage() {
       };
     });
   }, [
+    user,
     initialCachedStats,
     initialUserStats,
     userFavoriteCount,
@@ -322,10 +317,10 @@ export default function AccountPage() {
 
   useEffect(() => {
     accountStatsRef.current = accountStats;
-    if (accountStats && user?.id) {
-      currentStatsUserIdRef.current = user.id;
+    if (accountStats && userId) {
+      currentStatsUserIdRef.current = userId;
     }
-  }, [accountStats, user?.id]);
+  }, [accountStats, userId]);
 
   useEffect(() => {
     if (!statsCacheKey || typeof window === 'undefined') {
@@ -335,7 +330,7 @@ export default function AccountPage() {
     if (
       statsReadyRef.current &&
       accountStatsRef.current &&
-      currentStatsUserIdRef.current === user?.id
+      currentStatsUserIdRef.current === userId
     ) {
       return;
     }
@@ -364,12 +359,12 @@ export default function AccountPage() {
 
       setAccountStats(cachedStats);
       accountStatsRef.current = cachedStats;
-      currentStatsUserIdRef.current = user?.id ?? null;
+      currentStatsUserIdRef.current = userId;
       setStatsReady(true);
     } catch (error) {
       console.error('Failed to read account stats cache:', error);
     }
-  }, [statsCacheKey, user?.id]);
+  }, [statsCacheKey, userId]);
 
   useEffect(() => {
     let isMounted = true;
@@ -377,7 +372,7 @@ export default function AccountPage() {
     let completed = false;
 
     const fetchAccountStats = async () => {
-      if (!firebaseUser || !user?.id) {
+      if (!firebaseUser || !userId) {
         return;
       }
 
@@ -413,11 +408,11 @@ export default function AccountPage() {
           totalOrders:
             typeof data.totalOrders === 'number'
               ? data.totalOrders
-              : previousStats?.totalOrders ?? user.totalOrders ?? 0,
+              : previousStats?.totalOrders ?? userTotalOrders,
           totalSpent:
             typeof data.totalSpent === 'number'
               ? data.totalSpent
-              : previousStats?.totalSpent ?? user.totalSpent ?? 0,
+              : previousStats?.totalSpent ?? userTotalSpent,
           averageOrderValue:
             typeof data.averageOrderValue === 'number'
               ? data.averageOrderValue
@@ -427,11 +422,11 @@ export default function AccountPage() {
                 data.totalOrders > 0
                   ? data.totalSpent / data.totalOrders
                   : previousStats?.averageOrderValue ??
-                    (user.totalOrders && user.totalOrders > 0
-                      ? (user.totalSpent ?? 0) / user.totalOrders
+                    (userTotalOrders > 0
+                      ? userTotalSpent / userTotalOrders
                       : 0)),
           favoriteCount:
-            user.stats?.favoriteProducts?.length ??
+            userFavoriteCount ??
             previousStats?.favoriteCount ??
             0,
           lastOrderAt: data.lastOrderAt ?? previousStats?.lastOrderAt ?? null,
@@ -439,7 +434,7 @@ export default function AccountPage() {
 
         setAccountStats(updatedStats);
         accountStatsRef.current = updatedStats;
-        currentStatsUserIdRef.current = user.id;
+        currentStatsUserIdRef.current = userId;
         setStatsReady(true);
 
         if (statsCacheKey && typeof window !== 'undefined') {
@@ -481,10 +476,10 @@ export default function AccountPage() {
     startNavLoading,
     statsCacheKey,
     stopNavLoading,
-    user?.id,
-    user?.stats?.favoriteProducts?.length,
-    user?.totalOrders,
-    user?.totalSpent,
+    userFavoriteCount,
+    userId,
+    userTotalOrders,
+    userTotalSpent,
   ]);
 
   const showFeedback = (
@@ -568,10 +563,13 @@ export default function AccountPage() {
           ...user.preferences,
           newsletter: preferencesForm.newsletter,
           notifications: {
+            ...user.preferences?.notifications,
             push: preferencesForm.push,
             sms: preferencesForm.sms,
-            email: preferencesForm.newsletter,
             whatsapp: preferencesForm.whatsapp,
+            email:
+              user.preferences?.notifications?.email ??
+              preferencesForm.newsletter,
           },
         },
       });
@@ -935,11 +933,11 @@ export default function AccountPage() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-10"
           >
-            {statsReady && accountStats ? (
-              <AccountStats user={user} stats={accountStats} />
-            ) : (
-              <StatsSkeleton variant="desktop" />
-            )}
+            <AccountStats
+              user={user}
+              stats={effectiveStats}
+              loading={!statsReady}
+            />
           </motion.div>
 
           <div className="flex flex-col gap-8 lg:flex-row">
@@ -1036,25 +1034,3 @@ export default function AccountPage() {
   );
 }
 
-function StatsSkeleton({ variant }: { variant: 'desktop' | 'mobile' }) {
-  const containerClass =
-    variant === 'desktop'
-      ? 'grid gap-3 sm:grid-cols-2 lg:grid-cols-4'
-      : 'grid grid-cols-2 gap-3';
-  const cardClass =
-    variant === 'desktop'
-      ? 'rounded-2xl border border-gray-100 bg-gray-50 p-4 animate-pulse'
-      : 'rounded-2xl bg-gray-50 p-3 animate-pulse';
-
-  return (
-    <div className={containerClass}>
-      {Array.from({ length: 4 }).map((_, index) => (
-        <div key={index} className={cardClass}>
-          <div className="h-10 w-10 rounded-xl bg-gray-200" />
-          <div className="mt-4 h-3 w-16 rounded bg-gray-200" />
-          <div className="mt-2 h-6 w-24 rounded bg-gray-200" />
-        </div>
-      ))}
-    </div>
-  );
-}

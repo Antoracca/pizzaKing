@@ -25,6 +25,7 @@ export type AccountStatsSnapshot = {
 type Props = {
   user: User;
   stats: AccountStatsSnapshot;
+  loading?: boolean;
 };
 
 type StatType = 'orders' | 'spent' | 'refunds' | 'favorite';
@@ -39,7 +40,15 @@ type StatCard = {
   hoverBackground: string;
 };
 
-export default function AccountStats({ user, stats }: Props) {
+const SkeletonCard = () => (
+  <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 animate-pulse">
+    <div className="h-10 w-10 rounded-xl bg-gray-200" />
+    <div className="mt-4 h-3 w-16 rounded bg-gray-200" />
+    <div className="mt-2 h-6 w-24 rounded bg-gray-200" />
+  </div>
+);
+
+export default function AccountStats({ user, stats, loading }: Props) {
   const [openModal, setOpenModal] = useState<StatType | null>(null);
 
   const favoriteCount =
@@ -205,6 +214,16 @@ export default function AccountStats({ user, stats }: Props) {
   };
 
   const currentStat = statCards.find(card => card.id === openModal);
+
+  if (loading) {
+    return (
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <SkeletonCard key={`stats-skeleton-${index}`} />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <>
