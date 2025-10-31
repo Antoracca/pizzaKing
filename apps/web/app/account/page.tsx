@@ -37,6 +37,7 @@ import {
 } from '@/components/account';
 import { auth, storage } from '@/lib/firebase';
 import { checkPhoneExists, getUserByPhone } from '@/lib/auth/validation';
+import { useNavLoading } from '@/hooks/useNavLoading';
 import {
   updateProfile as updateFirebaseProfile,
   updateEmail as updateFirebaseEmail,
@@ -67,6 +68,8 @@ export default function AccountPage() {
     updateUserProfile,
     signOut,
   } = useAuth();
+
+  const { start: startNavLoading, stop: stopNavLoading } = useNavLoading();
 
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [feedback, setFeedback] = useState<Feedback | null>(null);
@@ -104,16 +107,90 @@ export default function AccountPage() {
     step: 'idle',
   });
 
-  const [accountStats, setAccountStats] = useState<AccountStatsSnapshot>({
-    totalOrders: user?.totalOrders ?? 0,
-    totalSpent: user?.totalSpent ?? 0,
-    averageOrderValue:
-      user?.totalOrders && (user.totalOrders ?? 0) > 0
-        ? (user.totalSpent ?? 0) / (user.totalOrders ?? 1)
-        : 0,
-    favoriteCount: user?.stats?.favoriteProducts?.length ?? 0,
-    lastOrderAt: null,
-  });
+  const statsCacheKey = useMemo(
+    () => (user?.id ? `account_stats_cache_${user.id}` : null),
+    [user?.id],
+  );
+
+  const initialUserStats = useMemo<AccountStatsSnapshot | null>(() => {
+    if (!user) {
+      return null;
+    }
+
+    const totalOrders = user.totalOrders ?? 0;
+    const totalSpent = user.totalSpent ?? 0;
+    const averageOrderValue =
+      totalOrders > 0 ? totalSpent / totalOrders : 0;
+
+    return {
+      totalOrders,
+      totalSpent,
+      averageOrderValue,
+      favoriteCount: user.stats?.favoriteProducts?.length ?? 0,
+      lastOrderAt: null,
+    };
+  }, [
+    user?.id,
+    user?.stats?.favoriteProducts?.length,
+    user?.totalOrders,
+    user?.totalSpent,
+  ]);
+
+  const initialCachedStats = useMemo<AccountStatsSnapshot | null>(() => {
+    if (!statsCacheKey || typeof window === 'undefined') {
+      return null;
+    }
+
+    try {
+      const raw = window.localStorage.getItem(statsCacheKey);
+      if (!raw) {
+        return null;
+      }
+
+      const parsed = JSON.parse(raw) as Partial<AccountStatsSnapshot>;
+      if (!parsed || typeof parsed !== 'object') {
+        return null;
+      }
+
+      return {
+        totalOrders: Number(parsed.totalOrders) || 0,
+        totalSpent: Number(parsed.totalSpent) || 0,
+        averageOrderValue: Number(parsed.averageOrderValue) || 0,
+        favoriteCount: Number(parsed.favoriteCount) || 0,
+        lastOrderAt:
+          typeof parsed.lastOrderAt === 'string' ? parsed.lastOrderAt : null,
+      };
+    } catch (error) {
+      console.error('Failed to parse account stats cache:', error);
+      return null;
+    }
+  }, [statsCacheKey]);
+
+  const [accountStats, setAccountStats] =
+    useState<AccountStatsSnapshot | null>(initialCachedStats ?? initialUserStats);
+  const accountStatsRef = useRef<AccountStatsSnapshot | null>(
+    initialCachedStats ?? initialUserStats,
+  );
+  const currentStatsUserIdRef = useRef<string | null>(user?.id ?? null);
+  const [statsReady, setStatsReady] = useState<boolean>(
+    initialCachedStats !== null,
+  );
+  const statsReadyRef = useRef(initialCachedStats !== null);
+
+  const derivedUserStats = useMemo<AccountStatsSnapshot>(() => {
+    if (initialUserStats) {
+      return initialUserStats;
+    }
+
+    return {
+      totalOrders: 0,
+      totalSpent: 0,
+      averageOrderValue: 0,
+      favoriteCount: 0,
+      lastOrderAt: null,
+    };
+  }, [initialUserStats]);
+  const effectiveStats = accountStats ?? derivedUserStats;
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -143,27 +220,52 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (!user) {
-      setAccountStats({
-        totalOrders: 0,
-        totalSpent: 0,
-        averageOrderValue: 0,
-        favoriteCount: 0,
-        lastOrderAt: null,
-      });
+      setAccountStats(null);
+      accountStatsRef.current = null;
+      setStatsReady(false);
+      currentStatsUserIdRef.current = null;
       return;
     }
 
-    setAccountStats(prev => ({
-      ...prev,
-      totalOrders: user.totalOrders ?? 0,
-      totalSpent: user.totalSpent ?? 0,
-      averageOrderValue:
-        user.totalOrders && user.totalOrders > 0
-          ? (user.totalSpent ?? 0) / user.totalOrders
-          : 0,
-      favoriteCount: user.stats?.favoriteProducts?.length ?? 0,
-    }));
-  }, [user]);
+    const sameUser = currentStatsUserIdRef.current === user.id;
+
+    if (!sameUser) {
+      if (initialCachedStats) {
+        setAccountStats(initialCachedStats);
+        accountStatsRef.current = initialCachedStats;
+        setStatsReady(true);
+      } else if (initialUserStats) {
+        setAccountStats(initialUserStats);
+        accountStatsRef.current = initialUserStats;
+        setStatsReady(false);
+      } else {
+        setAccountStats(null);
+        accountStatsRef.current = null;
+        setStatsReady(false);
+      }
+      currentStatsUserIdRef.current = user.id;
+      return;
+    }
+
+    setAccountStats(prev => {
+      if (!prev) {
+        const fallback = initialUserStats ?? {
+          totalOrders: 0,
+          totalSpent: 0,
+          averageOrderValue: 0,
+          favoriteCount: user.stats?.favoriteProducts?.length ?? 0,
+          lastOrderAt: null,
+        };
+        return fallback;
+      }
+
+      return {
+        ...prev,
+        favoriteCount:
+          user.stats?.favoriteProducts?.length ?? prev.favoriteCount ?? 0,
+      };
+    });
+  }, [initialCachedStats, initialUserStats, user]);
 
   const ensureRecaptcha = (): boolean => {
     if (typeof window === 'undefined') return false;
@@ -207,12 +309,72 @@ export default function AccountPage() {
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
+    statsReadyRef.current = statsReady;
+  }, [statsReady]);
 
-    const fetchAccountStats = async () => {
-      if (!user || !firebaseUser) {
+  useEffect(() => {
+    accountStatsRef.current = accountStats;
+    if (accountStats && user?.id) {
+      currentStatsUserIdRef.current = user.id;
+    }
+  }, [accountStats, user?.id]);
+
+  useEffect(() => {
+    if (!statsCacheKey || typeof window === 'undefined') {
+      return;
+    }
+
+    if (
+      statsReadyRef.current &&
+      accountStatsRef.current &&
+      currentStatsUserIdRef.current === user?.id
+    ) {
+      return;
+    }
+
+    try {
+      const raw = window.localStorage.getItem(statsCacheKey);
+      if (!raw) {
         return;
       }
+
+      const parsed = JSON.parse(raw) as Partial<AccountStatsSnapshot> & {
+        cachedAt?: number;
+      };
+
+      if (!parsed || typeof parsed !== 'object') {
+        return;
+      }
+
+      const cachedStats: AccountStatsSnapshot = {
+        totalOrders: Number(parsed.totalOrders) || 0,
+        totalSpent: Number(parsed.totalSpent) || 0,
+        averageOrderValue: Number(parsed.averageOrderValue) || 0,
+        favoriteCount: Number(parsed.favoriteCount) || 0,
+        lastOrderAt: typeof parsed.lastOrderAt === 'string' ? parsed.lastOrderAt : null,
+      };
+
+      setAccountStats(cachedStats);
+      accountStatsRef.current = cachedStats;
+      currentStatsUserIdRef.current = user?.id ?? null;
+      setStatsReady(true);
+    } catch (error) {
+      console.error('Failed to read account stats cache:', error);
+    }
+  }, [statsCacheKey, user?.id]);
+
+  useEffect(() => {
+    let isMounted = true;
+    let didStartLoading = false;
+    let completed = false;
+
+    const fetchAccountStats = async () => {
+      if (!firebaseUser || !user?.id) {
+        return;
+      }
+
+      didStartLoading = true;
+      startNavLoading();
 
       try {
         const token = await firebaseUser.getIdToken();
@@ -234,27 +396,67 @@ export default function AccountPage() {
         };
 
         if (!isMounted) {
+          completed = true;
           return;
         }
 
-        setAccountStats(prev => ({
-          ...prev,
+        const previousStats = accountStatsRef.current;
+        const updatedStats: AccountStatsSnapshot = {
           totalOrders:
             typeof data.totalOrders === 'number'
               ? data.totalOrders
-              : prev.totalOrders,
+              : previousStats?.totalOrders ?? user.totalOrders ?? 0,
           totalSpent:
             typeof data.totalSpent === 'number'
               ? data.totalSpent
-              : prev.totalSpent,
+              : previousStats?.totalSpent ?? user.totalSpent ?? 0,
           averageOrderValue:
             typeof data.averageOrderValue === 'number'
               ? data.averageOrderValue
-              : prev.averageOrderValue,
-          lastOrderAt: data.lastOrderAt ?? prev.lastOrderAt ?? null,
-        }));
+              : previousStats?.averageOrderValue ??
+                (typeof data.totalOrders === 'number' &&
+                typeof data.totalSpent === 'number' &&
+                data.totalOrders > 0
+                  ? data.totalSpent / data.totalOrders
+                  : previousStats?.averageOrderValue ??
+                    (user.totalOrders && user.totalOrders > 0
+                      ? (user.totalSpent ?? 0) / user.totalOrders
+                      : 0)),
+          favoriteCount:
+            user.stats?.favoriteProducts?.length ??
+            previousStats?.favoriteCount ??
+            0,
+          lastOrderAt: data.lastOrderAt ?? previousStats?.lastOrderAt ?? null,
+        };
+
+        setAccountStats(updatedStats);
+        accountStatsRef.current = updatedStats;
+        currentStatsUserIdRef.current = user.id;
+        setStatsReady(true);
+
+        if (statsCacheKey && typeof window !== 'undefined') {
+          window.localStorage.setItem(
+            statsCacheKey,
+            JSON.stringify({
+              ...updatedStats,
+              cachedAt: Date.now(),
+            }),
+          );
+        }
+
+        completed = true;
       } catch (error) {
         console.error('Failed to load account stats:', error);
+        if (isMounted && !statsReadyRef.current) {
+          setStatsReady(true);
+        }
+      } finally {
+        if (didStartLoading) {
+          stopNavLoading();
+        }
+        if (!completed && isMounted && !statsReadyRef.current) {
+          setStatsReady(true);
+        }
       }
     };
 
@@ -262,8 +464,20 @@ export default function AccountPage() {
 
     return () => {
       isMounted = false;
+      if (didStartLoading && !completed) {
+        stopNavLoading();
+      }
     };
-  }, [firebaseUser, user?.id]);
+  }, [
+    firebaseUser,
+    startNavLoading,
+    statsCacheKey,
+    stopNavLoading,
+    user?.id,
+    user?.stats?.favoriteProducts?.length,
+    user?.totalOrders,
+    user?.totalSpent,
+  ]);
 
   const showFeedback = (
     message: string,
@@ -603,7 +817,8 @@ export default function AccountPage() {
             onSendVerificationEmail={() => {
               void handleSendVerificationEmail();
             }}
-            stats={accountStats}
+            stats={effectiveStats}
+            statsReady={statsReady}
           />
 
           <MobileTabs
@@ -712,7 +927,11 @@ export default function AccountPage() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-10"
           >
-            <AccountStats user={user} stats={accountStats} />
+            {statsReady && accountStats ? (
+              <AccountStats user={user} stats={accountStats} />
+            ) : (
+              <StatsSkeleton variant="desktop" />
+            )}
           </motion.div>
 
           <div className="flex flex-col gap-8 lg:flex-row">
@@ -805,6 +1024,29 @@ export default function AccountPage() {
       </div>
 
       <Footer />
+    </div>
+  );
+}
+
+function StatsSkeleton({ variant }: { variant: 'desktop' | 'mobile' }) {
+  const containerClass =
+    variant === 'desktop'
+      ? 'grid gap-3 sm:grid-cols-2 lg:grid-cols-4'
+      : 'grid grid-cols-2 gap-3';
+  const cardClass =
+    variant === 'desktop'
+      ? 'rounded-2xl border border-gray-100 bg-gray-50 p-4 animate-pulse'
+      : 'rounded-2xl bg-gray-50 p-3 animate-pulse';
+
+  return (
+    <div className={containerClass}>
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div key={index} className={cardClass}>
+          <div className="h-10 w-10 rounded-xl bg-gray-200" />
+          <div className="mt-4 h-3 w-16 rounded bg-gray-200" />
+          <div className="mt-2 h-6 w-24 rounded bg-gray-200" />
+        </div>
+      ))}
     </div>
   );
 }

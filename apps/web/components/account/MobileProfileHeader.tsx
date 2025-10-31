@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ChangeEvent } from 'react';
+import { useEffect, useState, type ChangeEvent } from 'react';
 import {
   User as UserIcon,
   Upload,
@@ -34,6 +34,7 @@ type Props = {
   onPhotoChange: (event: ChangeEvent<HTMLInputElement>) => void;
   onSendVerificationEmail: () => void;
   stats: AccountStatsSnapshot;
+  statsReady: boolean;
 };
 
 type StatType = 'orders' | 'spent' | 'refunds' | 'favorite';
@@ -57,8 +58,15 @@ export default function MobileProfileHeader({
   onPhotoChange,
   onSendVerificationEmail,
   stats,
+  statsReady,
 }: Props) {
   const [openModal, setOpenModal] = useState<StatType | null>(null);
+
+  useEffect(() => {
+    if (!statsReady && openModal) {
+      setOpenModal(null);
+    }
+  }, [statsReady, openModal]);
 
   const displayName = user.firstName || user.lastName
     ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim()
@@ -183,7 +191,9 @@ export default function MobileProfileHeader({
     }
   };
 
-  const currentStat = statCards.find(card => card.id === openModal);
+  const currentStat = statsReady
+    ? statCards.find(card => card.id === openModal)
+    : null;
 
   return (
     <div className="mb-6 rounded-3xl bg-white p-6 shadow-lg">
@@ -280,21 +290,32 @@ export default function MobileProfileHeader({
 
       {/* Stats Mobile Grid - Cliquables */}
       <div className="grid grid-cols-2 gap-3">
-        {statCards.map(stat => (
-          <button
-            key={stat.label}
-            onClick={() => setOpenModal(stat.id)}
-            className="rounded-2xl bg-gray-50 p-3 text-center transition-all hover:bg-gray-100 hover:shadow-md active:scale-95"
-          >
-            <div
-              className={`mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-xl ${stat.background}`}
-            >
-              <stat.icon className={`h-4 w-4 ${stat.color}`} />
-            </div>
-            <p className="text-xs text-gray-500">{stat.label}</p>
-            <p className="text-sm font-bold text-gray-900">{stat.value}</p>
-          </button>
-        ))}
+        {statsReady
+          ? statCards.map(stat => (
+              <button
+                key={stat.label}
+                onClick={() => setOpenModal(stat.id)}
+                className="rounded-2xl bg-gray-50 p-3 text-center transition-all hover:bg-gray-100 hover:shadow-md active:scale-95"
+              >
+                <div
+                  className={`mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-xl ${stat.background}`}
+                >
+                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                </div>
+                <p className="text-xs text-gray-500">{stat.label}</p>
+                <p className="text-sm font-bold text-gray-900">{stat.value}</p>
+              </button>
+            ))
+          : Array.from({ length: statCards.length }).map((_, index) => (
+              <div
+                key={`stat-skeleton-${index}`}
+                className="rounded-2xl bg-gray-50 p-3 text-center animate-pulse"
+              >
+                <div className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100" />
+                <div className="mx-auto h-3 w-16 rounded bg-gray-200" />
+                <div className="mx-auto mt-2 h-4 w-20 rounded bg-gray-200" />
+              </div>
+            ))}
       </div>
 
       {/* Modals */}
