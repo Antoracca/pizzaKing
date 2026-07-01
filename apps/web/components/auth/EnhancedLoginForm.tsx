@@ -427,10 +427,7 @@ export default function EnhancedLoginForm({ backHref = '/' }: EnhancedLoginFormP
           }
         } catch { /* empty */ }
 
-        // ⏳ NE PAS rediriger immédiatement !
-        // Le polling dans AuthContext détectera le custom claim (2-3s) et rechargera la page.
-        // Ensuite, le useEffect détectera l'utilisateur connecté et redirigera.
-        // L'utilisateur voit juste le loader pendant quelques secondes.
+        router.replace(redirectTo || '/');
       } catch (googleError: unknown) {
         const code = (googleError as { code?: string } | null)?.code || '';
         let message = 'Connexion Google impossible. Réessayez.';
@@ -454,6 +451,7 @@ export default function EnhancedLoginForm({ backHref = '/' }: EnhancedLoginFormP
             }
         }
         setPasswordHint(message);
+      } finally {
         setGoogleLoading(false);
       }
     };

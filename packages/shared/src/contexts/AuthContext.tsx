@@ -274,54 +274,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 
       // ⚠️ NE PAS créer le document ici pour Google Sign-In !
       // La Cloud Function onUserCreate s'en charge automatiquement.
-      // Le client doit juste attendre que onAuthStateChanged détecte l'utilisateur.
 
-      // ⏳ Polling en arrière-plan pour le custom claim (TOUJOURS exécuté, même si le user existe)
-      // Fonction inline simple et robuste
-      (async () => {
-        try {
-          console.log('🔄 [Google] Démarrage du polling pour le custom claim...');
-
-          // Attendre que le claim soit ajouté (max 10 secondes)
-          for (let i = 0; i < 20; i++) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            // Force refresh et vérifie le claim
-            const token = await result.user.getIdToken(true);
-
-            // Decode le JWT
-            try {
-              const base64Url = token.split('.')[1];
-              const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-              const payload = JSON.parse(atob(base64));
-
-              if (payload.role) {
-                console.log(`✅ [Google] Custom claim détecté après ${((i + 1) * 0.5).toFixed(1)}s`);
-
-                // 🔄 FORCER le refresh de l'état utilisateur dans l'application
-                const userData = await fetchUserData(result.user.uid);
-                if (userData) {
-                  setUser(userData);
-                  console.log('🔄 [Google] État utilisateur mis à jour automatiquement');
-
-                  // 🔄 Redirection vers la page principale avec le claim activé
-                  if (typeof window !== 'undefined') {
-                    console.log('🔄 [Google] Redirection vers la page principale...');
-                    window.location.href = '/';
-                  }
-                }
-                break;
-              }
-            } catch (e) {
-              // Ignore decode errors
+      // Attendre (au mieux) que le custom claim soit posé par la Cloud Function,
+      // mais borner l'attente : si le claim n'arrive jamais (compte existant,
+      // fonction indisponible...), on continue quand même pour ne pas bloquer
+      // l'utilisateur indéfiniment sur l'écran de chargement.
+      try {
+        for (let i = 0; i < 20; i++) {
+          const token = await result.user.getIdToken(true);
+          try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const payload = JSON.parse(atob(base64));
+            if (payload.role) {
+              console.log(`✅ [Google] Custom claim détecté après ${(i * 0.5).toFixed(1)}s`);
+              break;
             }
+          } catch {
+            // Ignore decode errors
           }
-        } catch (error) {
-          console.error('❌ [Google] Erreur polling:', error);
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
-      })();
+      } catch (claimError) {
+        console.error('❌ [Google] Erreur pendant la vérification du claim:', claimError);
+      }
 
-      // User will be handled by onAuthStateChanged
+      // Rafraîchit l'état utilisateur localement ; onAuthStateChanged prendra
+      // aussi le relais, mais on ne dépend plus de lui pour débloquer l'UI.
+      const userData = await fetchUserData(result.user.uid);
+      if (userData) setUser(userData);
     } catch (error: any) {
       throw new Error(
         error.message || 'Erreur lors de la connexion avec Google'
