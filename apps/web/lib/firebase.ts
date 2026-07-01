@@ -33,8 +33,16 @@ if (!isFirebaseConfigured) {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app);
 
-// Initialize Firestore with named database 'pizzaking'
-const db = initializeFirestore(app, {}, 'pizzaking');
+// Initialize Firestore with named database 'pizzaking'.
+// experimentalAutoDetectLongPolling évite les écritures qui restent bloquées
+// (promesse setDoc jamais résolue) quand le transport streaming par défaut est
+// filtré par un proxy/pare-feu/extension — les lectures passent mais pas les
+// écritures. La détection auto bascule sur du long-polling seulement si besoin.
+const db = initializeFirestore(
+  app,
+  { experimentalAutoDetectLongPolling: true },
+  'pizzaking'
+);
 
 const storage = getStorage(app);
 const functions = getFunctions(app, 'us-central1'); // Région explicite

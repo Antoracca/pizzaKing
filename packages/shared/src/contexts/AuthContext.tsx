@@ -47,6 +47,21 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * Resolve a promise but never wait longer than `ms`.
+ * On timeout the returned promise rejects with a timeout error so callers can
+ * decide to continue instead of hanging forever (e.g. a Firestore write whose
+ * connection never acknowledges).
+ */
+const withTimeout = <T,>(promise: Promise<T>, ms: number, label: string): Promise<T> => {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`timeout:${label}`)), ms)
+    ),
+  ]);
+};
+
 interface AuthProviderProps {
   children: React.ReactNode;
   auth: Auth;
@@ -127,11 +142,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       phoneVerified: false,
     };
 
+    // La Cloud Function onUserCreate peut avoir déjà créé le document (course).
+    // Les règles Firestore interdisent de MODIFIER les champs immuables
+    // (createdAt, provider, role, email, id) lors d'un update : si on les renvoie
+    // alors que le document existe déjà, l'écriture est refusée. On adapte donc
+    // le payload selon que le document existe ou non.
     try {
-      await setDoc(userRef, {
-        id: uid,
-        ...baseData,
-      }, { merge: true }); // Merge pour éviter d'écraser si onUserCreate a déjà créé le document
+      let exists = false;
+      try {
+        const existing = await getDoc(userRef);
+        exists = existing.exists();
+      } catch (readError) {
+        // Lecture impossible : on retombe sur un merge complet (create probable)
+        console.error('createUserDocument: read check failed:', readError);
+      }
+
+      if (exists) {
+        // Update : on n'envoie QUE les champs mutables autorisés par les règles
+        // (surtout phoneNumber, que onUserCreate ne peut pas récupérer).
+        const { createdAt: _createdAt, provider: _provider, role: _role, email: _email, ...mutable } = baseData;
+        void _createdAt; void _provider; void _role; void _email;
+        await setDoc(userRef, { ...mutable, updatedAt: now }, { merge: true });
+      } else {
+        // Create : document complet (la règle create exige id + role='customer').
+        await setDoc(userRef, { id: uid, ...baseData }, { merge: true });
+      }
     } catch (error) {
       console.error('Failed to create user document:', error);
       throw new Error('Impossible de sauvegarder le profil utilisateur.');
@@ -208,55 +243,64 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     lastName: string,
     phoneNumber: string
   ): Promise<{ user: FirebaseUser }> => {
+    // 1) Création du compte Auth. C'est la SEULE étape réellement bloquante :
+    //    si elle échoue, il n'y a pas de compte à conserver.
+    let firebaseUser: FirebaseUser;
     try {
-      const { user: firebaseUser } = await createUserWithEmailAndPassword(
+      const credential = await createUserWithEmailAndPassword(
         auth,
         email,
         password
       );
-
-      // Update Firebase Auth profile
-      await updateProfile(firebaseUser, {
-        displayName: `${firstName} ${lastName}`,
-      });
-
-      // Send email verification to the new user
-      try {
-        await sendEmailVerification(firebaseUser);
-      } catch (verificationError) {
-        // Non-blocking: log but do not fail signup if email send fails
-        console.error('Failed to send verification email:', verificationError);
-      }
-
-      // ⚠️ Pour EMAIL signup, le CLIENT doit créer le document
-      // car onUserCreate ne peut pas récupérer le phoneNumber
-      // (Firebase Auth ne le stocke pas pour email/password)
-      await createUserDocument(
-        firebaseUser.uid,
-        email,
-        firstName,
-        lastName,
-        phoneNumber
-      );
-
-      // Return the user so that SignupForm can refresh the token
-      return { user: firebaseUser };
+      firebaseUser = credential.user;
     } catch (error: any) {
-      // Attempt to clean up partially created auth user
-      try {
-        const currentUser = auth.currentUser;
-        if (currentUser) {
-          await currentUser.delete();
-        }
-      } catch (cleanupError) {
-        console.error(
-          'Failed to cleanup auth user after signup error:',
-          cleanupError
-        );
-      }
-
-      throw new Error(error.message || "Erreur lors de l'inscription");
+      const err: any = new Error(error?.message || "Erreur lors de l'inscription");
+      if (error?.code) err.code = error.code;
+      throw err;
     }
+
+    // 2) Étapes secondaires : bornées dans le temps et NON bloquantes.
+    //    Le compte existe déjà et la Cloud Function onUserCreate crée le
+    //    document utilisateur côté serveur. On ne doit JAMAIS laisser une de
+    //    ces étapes bloquer l'inscription indéfiniment, ni supprimer le compte.
+
+    try {
+      await withTimeout(
+        updateProfile(firebaseUser, { displayName: `${firstName} ${lastName}` }),
+        8000,
+        'updateProfile'
+      );
+    } catch (profileError) {
+      console.error('Failed to update auth profile (non-blocking):', profileError);
+    }
+
+    // Email de vérification (best effort)
+    try {
+      await withTimeout(
+        sendEmailVerification(firebaseUser),
+        8000,
+        'sendEmailVerification'
+      );
+    } catch (verificationError) {
+      console.error('Failed to send verification email (non-blocking):', verificationError);
+    }
+
+    // Document Firestore : pour l'inscription EMAIL, le client tente d'écrire le
+    // profil (notamment le phoneNumber que onUserCreate ne peut pas récupérer).
+    // Si la connexion Firestore n'acquitte jamais l'écriture, on continue quand
+    // même après le timeout — onUserCreate garantit l'existence du document.
+    try {
+      await withTimeout(
+        createUserDocument(firebaseUser.uid, email, firstName, lastName, phoneNumber),
+        8000,
+        'createUserDocument'
+      );
+    } catch (docError) {
+      console.error('Failed to persist user document (non-blocking):', docError);
+    }
+
+    // Return the user so that SignupForm can refresh the token
+    return { user: firebaseUser };
   };
 
   /**
